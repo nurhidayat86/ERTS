@@ -11,6 +11,7 @@
  */
 
 #include "in4073.h"
+//#include "control.h"
 
 #define MAX_MOTOR 1000            ///< Maximum PWM signal (1000us is added)
 #define MAX_CMD 1024              ///< Maximum thrust, roll, pitch and yaw command
@@ -47,27 +48,32 @@ void update_motors(void)
 static void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw) {
   // Front motor
   ae[0] = thrust + pitch - yaw;
-  ae[0] *= MAX_MOTOR;
-  ae[0] /= MIN_CMD;
-  Bound(ae[0], MIN_CMD, MAX_CMD);
+  //ae[0] *= MAX_MOTOR;
+  //ae[0] /= MIN_CMD;
+  //Bound(ae[0], MIN_CMD, MAX_CMD);
+  Bound(ae[0], 0, 1000);
 
   // Right motor
   ae[1] = thrust - roll + yaw;
-  ae[1] *= MAX_MOTOR;
-  ae[1] /= MIN_CMD;
-  Bound(ae[1], MIN_CMD, MAX_CMD);
+  // ae[1] *= MAX_MOTOR;
+  // ae[1] /= MIN_CMD;
+  // Bound(ae[1], MIN_CMD, MAX_CMD);
+  Bound(ae[1], 0, 1000);
 
   // Back motor
   ae[2] = thrust - pitch - yaw;
-  ae[2] *= MAX_MOTOR;
-  ae[2] /= MIN_CMD;
-  Bound(ae[2], MIN_CMD, MAX_CMD);
+  // ae[2] *= MAX_MOTOR;
+  // ae[2] /= MIN_CMD;
+  // Bound(ae[2], MIN_CMD, MAX_CMD);
+  Bound(ae[2], 0, 1000);
 
   // Left motor
   ae[3] = thrust + roll + yaw;
-  ae[3] *= MAX_MOTOR;
-  ae[3] /= MIN_CMD;
-  Bound(ae[3], MIN_CMD, MAX_CMD);
+  // ae[3] *= MAX_MOTOR;
+  // ae[3] /= MIN_CMD;
+  // Bound(ae[3], MIN_CMD, MAX_CMD);
+  Bound(ae[3], 0, 1000);
+
 }
 
 /* Change the control mode */
@@ -115,6 +121,7 @@ void set_control_from_js(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
       cmd_roll = roll;
       cmd_pitch = pitch;
       cmd_yaw = yaw;
+      printf("%d %d %d %d\n", cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
       break;
 
     /* Mode yaw sets the yaw setpoint and the rest as commands */

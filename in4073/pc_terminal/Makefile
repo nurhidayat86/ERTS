@@ -1,9 +1,9 @@
 CC=gcc
 CFLAGS = -g -Wall -lm
-EXEC = ./joystick_pc_terminal
+EXEC = ./pc_terminal
 
 all:
-	$(CC) $(CFLAGS) joystick_pc_terminal.c -o $(EXEC)
+	$(CC) $(CFLAGS) ../protocol.c serial.c term.c keyboard.c joystick.c pc_terminal.c -o $(EXEC)
 
 run: all
 	$(EXEC)

@@ -42,7 +42,8 @@ enum control_mode_t {
   MODE_YAW,
   MODE_FULL,
   MODE_RAW,
-  MODE_HEIGHT
+  MODE_HEIGHT,
+  ESCAPE
 };
 enum control_mode_t control_mode;
 int16_t ae[4];
