@@ -45,8 +45,19 @@ enum control_mode_t {
   MODE_HEIGHT,
   ESCAPE
 };
+
+//log messages
+struct log_t {
+  int16_t phi, theta, psi, sp, sq, sr, sax, say, saz, roll, pitch, yaw, bat_volt, ae[4];
+  uint16_t thrust;
+  uint8_t mode;
+  uint32_t temperature, pressure;
+}__attribute__((packed, aligned(1)));
+
 enum control_mode_t control_mode;
 int16_t ae[4];
+struct log_t log_write, log_read;
+
 void set_control_mode(enum control_mode_t mode);
 void set_control_gains(uint16_t yaw_d);
 void set_control_from_js(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw);
@@ -117,6 +128,9 @@ bool flash_write_byte(uint32_t address, uint8_t data);
 bool flash_write_bytes(uint32_t address, uint8_t *data, uint32_t count);
 bool flash_read_byte(uint32_t address, uint8_t *buffer);
 bool flash_read_bytes(uint32_t address, uint8_t *buffer, uint32_t count);
+//additional flash
+bool write_log(struct log_t data_write, uint8_t index);
+bool download_log (struct log_t *data_read);
 
 // BLE
 queue ble_rx_queue;
