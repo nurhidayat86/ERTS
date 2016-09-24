@@ -17,3 +17,4 @@ p.s. If dfu_serial complains about pyserial, you can install it with "pip instal
 Have fun and remember: Google it before asking the TAs!
 
 
+Code available on this repository cannot be directly used to compile the drone's code (the gcc arm lib is not here), You should copy the in4073 folder to your local repository and provide the library there.
