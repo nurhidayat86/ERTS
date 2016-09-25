@@ -24,10 +24,24 @@ enum msg_status {
 	GOT_PACKET
 };
 
-enum msg_ids {
+enum msg_id{
 	MSG_JOYSTICK,
 	MSG_KEYBOARD,
-	MSG_COMBINE
+	MSG_COMBINE,
+	MSG_TELEMETRY
+};
+
+// Control
+enum control_mode_t {
+  MODE_SAFE,
+  MODE_PANIC,
+  MODE_MANUAL,
+  MODE_CALIBRATION,
+  MODE_YAW,
+  MODE_FULL,
+  MODE_RAW,
+  MODE_HEIGHT,
+  ESCAPE
 };
 
 struct msg_joystick_t{
@@ -55,6 +69,16 @@ struct msg_combine_t{
  	int16_t pitch;
  	int16_t yaw;
  	bool update;
+}__attribute__((packed, aligned(1)));
+
+struct msg_telemetry_t{
+	uint8_t mode;
+	uint16_t thrust;
+	int16_t roll;
+ 	int16_t pitch;
+ 	int16_t yaw;
+ 	bool update;
+ 	int16_t engine[4];
 }__attribute__((packed, aligned(1)));
 
 struct msg_p {

@@ -11,6 +11,7 @@
  */
 
 #include "in4073.h"
+ #include "protocol.h"
 //#include "control.h"
 
 #define MAX_MOTOR 1000            ///< Maximum PWM signal (1000us is added)
@@ -20,6 +21,8 @@
 #define PANIC_THRUST 0.4*MAX_CMD  ///< The amount of thrust in panic mode
 #define MAX_YAW_RATE 45*131       ///< The maximum yaw rate from js (131 LSB / (degrees/s))
 #define MAX_ANGLE 0               ///< The maximum angle from js
+
+#define PRESCALE 3
 
 #define Bound(_x, _min, _max) { if (_x > (_max)) _x = (_max); else if (_x < (_min)) _x = (_min); }
 
@@ -51,29 +54,33 @@ static void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
   //ae[0] *= MAX_MOTOR;
   //ae[0] /= MIN_CMD;
   //Bound(ae[0], MIN_CMD, MAX_CMD);
-  Bound(ae[0], 0, 1000);
+  ae[0] = ae[0]>>PRESCALE;
+  Bound(ae[0], 0, MAX_MOTOR);
 
   // Right motor
   ae[1] = thrust - roll + yaw;
   // ae[1] *= MAX_MOTOR;
   // ae[1] /= MIN_CMD;
   // Bound(ae[1], MIN_CMD, MAX_CMD);
-  Bound(ae[1], 0, 1000);
+  ae[1] = ae[1]>>PRESCALE;
+  Bound(ae[1], 0, MAX_MOTOR);
 
   // Back motor
   ae[2] = thrust - pitch - yaw;
   // ae[2] *= MAX_MOTOR;
   // ae[2] /= MIN_CMD;
   // Bound(ae[2], MIN_CMD, MAX_CMD);
-  Bound(ae[2], 0, 1000);
+  ae[2] = ae[2]>>PRESCALE;
+  Bound(ae[2], 0, MAX_MOTOR);
 
   // Left motor
   ae[3] = thrust + roll + yaw;
   // ae[3] *= MAX_MOTOR;
   // ae[3] /= MIN_CMD;
   // Bound(ae[3], MIN_CMD, MAX_CMD);
-  Bound(ae[3], 0, 1000);
-
+  ae[3] = ae[3]>>PRESCALE;
+  Bound(ae[3], 0, MAX_MOTOR);
+  //printf("%d %d %d %d\n", ae[0], ae[1], ae[2], ae[3]);
 }
 
 /* Change the control mode */
@@ -112,7 +119,7 @@ void set_control_gains(uint16_t yaw_d) {
 }
 
 /* Set the control commands (from joystick or keyboard) */
-void set_control_from_js(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw) {
+void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw) {
   /* Based on the control mode we need to use it seperately */
   switch(control_mode) {
     /* Mode manual copies it to the commands */
@@ -121,7 +128,6 @@ void set_control_from_js(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
       cmd_roll = roll;
       cmd_pitch = pitch;
       cmd_yaw = yaw;
-      printf("%d %d %d %d\n", cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
       break;
 
     /* Mode yaw sets the yaw setpoint and the rest as commands */
