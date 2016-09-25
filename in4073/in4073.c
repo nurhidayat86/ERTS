@@ -14,7 +14,6 @@
  */
 
 #include "in4073.h"
-#include "protocol.h"
 //#include "control.h" 
 
 bool loop;
@@ -22,22 +21,26 @@ bool loop;
 static void process_bytes(uint8_t byte) {
 	
 	static struct msg_p msg;
-	struct msg_keyboard_t *msg_key;
+	struct msg_combine_t *msg_com;	
 	msg_parse(&msg, byte);
 	if(msg.status == GOT_PACKET) {
 		nrf_gpio_pin_toggle(RED);
 		// We got a valid packet
 		switch(msg.msg_id) {
-			case MSG_JOYSTICK: {
-				struct msg_joystick_t *msg_js = (struct msg_joystick_t *)&msg.payload[0];
-				printf("%d %d %d %d %d\n", msg_js->mode, msg_js->thrust, msg_js->roll, msg_js->pitch, msg_js->yaw);
-				break;
-			}
-			case MSG_KEYBOARD: {
-				msg_key = (struct msg_keyboard_t *)&msg.payload[0];
-				printf("%d %d %d %d %d\n", msg_key->mode, msg_key->thrust, msg_key->roll, msg_key->pitch, msg_key->yaw);
+			case MSG_COMBINE: 
+			{
+				msg_com = (struct msg_combine_t *)&msg.payload[0];
+				msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
 				
-				if(msg_key->mode == ESCAPE)
+				//printf("co %d %d %d %d %d\n", msg_com->mode, msg_com->thrust, msg_com->roll, msg_com->pitch, msg_com->yaw);
+				//printf("%d %d %d %d\n", ae[0], ae[1], ae[2], ae[3]);
+				msg_tele->update = TRUE;
+				msg_tele->engine[0] = ae[0];
+				msg_tele->engine[1] = ae[1];
+				msg_tele->engine[2] = ae[2];
+				msg_tele->engine[3] = ae[3];
+
+				if(msg_com->mode == ESCAPE)
 				{loop = false;}
 		
 				break;
@@ -50,21 +53,13 @@ static void process_bytes(uint8_t byte) {
 		msg.status = UNITINIT;
 	}
 
-	// escape : exit from main loop to prevent the need to unplug the serial 
-	// switch (byte) 
-	// {
-	// 	case 27:
-	// 		loop = false;
-	// 		break;
-	// 	default:
-	// 		nrf_gpio_pin_toggle(RED);
-	// }
+	// receive the mode
+	set_control_mode(msg_com->mode);
 	
-	//set_control_mode(MODE_...)
-	set_control_mode(msg_key->mode);
-	set_control_from_js(msg_key->thrust, msg_key->roll, msg_key->pitch, msg_key->yaw);
-	//set_control_from_js(msg_thrust, msg_key.roll, msg_key.pitch, msg_key.yaw);
-	//set_control_gains(yaw_d)			
+	// set control command 
+	set_control_command(msg_com->thrust, msg_com->roll, msg_com->pitch, msg_com->yaw);
+	
+	// set_control_gains(yaw_d)			
 }
 
 /*------------------------------------------------------------------
@@ -83,8 +78,14 @@ int main(void)
 	spi_flash_init();
 //	ble_init();
 
+	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
+	uint8_t output_size;
+	uint8_t i = 0;
+	
 	uint32_t counter = 0;
+	
 	loop = true;
+	
 	while (loop)
 	{
 		if (rx_queue.count) process_bytes( dequeue(&rx_queue) );
@@ -97,10 +98,17 @@ int main(void)
 			read_baro();
 
 			// printf("%10ld | ", get_time_us());
-			// printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
+			// printf("ae %d %d %d %d \n",ae[0],ae[1],ae[2],ae[3]);
 			// printf("%6d %6d %6d | ", phi, theta, psi);
 			// printf("%6d %6d %6d | ", sp, sq, sr);
 			// printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
+			
+			if(msg_tele->update)
+			{
+				encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
+				for (i=0; i<output_size; i++) {uart_put(output_data[i]);}	
+				msg_tele->update = FALSE;			
+			}
 
 			clear_timer_flag();
 		}

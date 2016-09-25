@@ -19,6 +19,8 @@
 #include "inv_mpu_dmp_motion_driver.h"
 #include "ml.h"
 
+#include "protocol.h"
+
 #define RED				22
 #define YELLOW				24
 #define GREEN				28
@@ -33,34 +35,13 @@
 // Fractions
 #define CONTROL_FRAC 6            ///< The control gains fraction in powers of 2
 
-// Control
-enum control_mode_t {
-  MODE_SAFE,
-  MODE_PANIC,
-  MODE_MANUAL,
-  MODE_CALIBRATION,
-  MODE_YAW,
-  MODE_FULL,
-  MODE_RAW,
-  MODE_HEIGHT,
-  ESCAPE
-};
-
-//log messages
-struct log_t {
-  int16_t phi, theta, psi, sp, sq, sr, sax, say, saz, roll, pitch, yaw, bat_volt, ae[4];
-  uint16_t thrust;
-  uint8_t mode;
-  uint32_t temperature, pressure;
-}__attribute__((packed, aligned(1)));
-
 enum control_mode_t control_mode;
-int16_t ae[4];
-struct log_t log_write, log_read;
+struct msg_telemetry_t *msg_tele;
 
+int16_t ae[4];
 void set_control_mode(enum control_mode_t mode);
 void set_control_gains(uint16_t yaw_d);
-void set_control_from_js(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw);
+void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw);
 void run_filters_and_control(void);
 
 // Timers
@@ -128,9 +109,6 @@ bool flash_write_byte(uint32_t address, uint8_t data);
 bool flash_write_bytes(uint32_t address, uint8_t *data, uint32_t count);
 bool flash_read_byte(uint32_t address, uint8_t *buffer);
 bool flash_read_bytes(uint32_t address, uint8_t *buffer, uint32_t count);
-//additional flash
-bool write_log(struct log_t data_write, uint8_t index);
-bool download_log (struct log_t *data_read);
 
 // BLE
 queue ble_rx_queue;

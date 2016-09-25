@@ -14,7 +14,7 @@ void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_d
   	uint8_t checksum2 = 0;
 
  	// Setting the header
-	output_data[0] = 0x99;
+	output_data[0] = (uint8_t)0x99;
 	output_data[1] = len;
 	checksum1 = checksum2 = len;
 	output_data[2] = msg_id;
