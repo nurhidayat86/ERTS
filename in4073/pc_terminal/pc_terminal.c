@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <inttypes.h>
+#include "../protocol.c"
+#include "../protocol.h"
 
 /*------------------------------------------------------------
  * console I/O
@@ -181,7 +183,7 @@ int 	rs232_putchar(char c)
 int main(int argc, char **argv)
 {
 	char	c;
-	
+	int i;
 	term_puts("\nTerminal program - Embedded Real-Time Systems\n");
 
 	term_initio();
@@ -201,8 +203,17 @@ int main(int argc, char **argv)
 		if ((c = term_getchar_nb()) != -1) 
 			rs232_putchar(c);
 		
-		if ((c = rs232_getchar_nb()) != -1) 
+		if ((c = rs232_getchar_nb()) != -1)
+		{
 			term_putchar(c);
+			// msg_parse(&msg, (uint8_t *) &c);
+			// for(i=0;i<msg.payload_len;i+=1)
+			// {
+			// 	term_putchar(msg.payload[i]);
+			// }
+
+		}
+
 
 	}
 

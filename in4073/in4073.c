@@ -14,6 +14,9 @@
  */
 
 #include "in4073.h"
+ #include "protocol.h"
+
+ bool demo_done;
 
 /*------------------------------------------------------------------
  * process_key -- process command keys
@@ -53,6 +56,21 @@ void process_key(uint8_t c)
 			break;
 		case 27:
 			demo_done = true;
+		case 'p':
+			if ((status_log = write_log())==true)
+			{
+				
+			}
+			else
+				printf("failed to write log");
+			break;
+		case 'z':
+			if ((status_log = read_log())==true)
+			{
+				printf("Reading Log");
+			}
+			else
+				printf("failed to read log");
 			break;
 		default:
 			nrf_gpio_pin_toggle(RED);
@@ -77,6 +95,13 @@ int main(void)
 
 	uint32_t counter = 0;
 	demo_done = false;
+	index_logging = 0;
+	
+	if((status_log = flash_chip_erase()) == false)
+	{
+		printf("Error flash erase");
+		return -1;
+	}
 
 	while (!demo_done)
 	{	
@@ -89,11 +114,16 @@ int main(void)
 			adc_request_sample();
 			read_baro();
 
-			printf("%10ld | ", get_time_us());
-			printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
-			printf("%6d %6d %6d | ", phi, theta, psi);
-			printf("%6d %6d %6d | ", sp, sq, sr);
-			printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
+			// printf("%10ld | ", get_time_us());
+			// printf("%3d %3d %3d %3d | ",ae[0],ae[1],ae[2],ae[3]);
+			// printf("%6d %6d %6d | ", phi, theta, psi);
+			// printf("%6d %6d %6d | ", sp, sq, sr);
+			// printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
+			if((status_log = flash_data()) == false)
+			{
+				printf("Error initiate flash");
+				return -1;
+			}
 
 			clear_timer_flag();
 		}
