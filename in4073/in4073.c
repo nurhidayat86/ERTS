@@ -14,6 +14,7 @@
  */
 
 #include "in4073.h"
+ #include "protocol.h"
 
  bool demo_done;
 

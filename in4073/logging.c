@@ -1,26 +1,38 @@
 #include "in4073.h"
+#include "protocol.h"
 
 
 bool write_log() {
 	bool status;
 	status = flash_write_bytes((uint32_t) index_logging*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t));
-	printf("log_msg.phi %6d | %6d |", log_msg.phi, phi);
-	printf("log_msg.theta %6d | %6d|", log_msg.theta, theta);
-	printf("log_msg.psi %6d | %6d|\n", log_msg.psi, psi);
+	// printf("log_msg.phi %6d | %6d |", log_msg.phi, phi);
+	// printf("log_msg.theta %6d | %6d|", log_msg.theta, theta);
+	// printf("log_msg.psi %6d | %6d|\n", log_msg.psi, psi);
 	index_logging+=1;
 	return status;
 }
 
 bool read_log() {
 	bool status;
-	for (uint8_t i=0; i<index_logging; i+=1) 
+	uint8_t i, j;
+	for (i=0; i<index_logging; i+=1) 
 	{
 		status = flash_read_bytes((uint32_t) i*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t));
-		printf(" log_msg.phi %6d | phi: %6d |", log_msg.phi, phi);
-		printf(" log_msg.theta %6d | theta: %6d|", log_msg.theta, theta);
-		printf(" log_msg.psi %6d | psi: %6d|\n", log_msg.psi, psi);
+		// printf(" log_msg.phi %6d | phi: %6d |", log_msg.phi, phi);
+		// printf(" log_msg.theta %6d | theta: %6d|", log_msg.theta, theta);
+		// printf(" log_msg.psi %6d | psi: %6d|\n", log_msg.psi, psi);
 		if (status == false)
+		{
 			break;
+		}
+		else
+		{
+			encode_packet((uint8_t *) &log_msg, (uint8_t) sizeof(struct log_t), MSG_LOG, output_data, &output_size);
+			for (j=0;j<output_size;j+=1)
+			{
+				uart_put(output_data[j]);
+			}
+		}
 	}
 	return status;
 }

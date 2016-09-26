@@ -185,10 +185,12 @@ errno               0x4               /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/
 saz                 0x2               _build/in4073.o
 rx_queue            0x83              _build/in4073.o
 phi                 0x2               _build/in4073.o
+msg                 0xcf              _build/in4073.o
 temperature         0x4               _build/in4073.o
 log_msg             0x2d              _build/in4073.o
 theta               0x2               _build/in4073.o
 pressure            0x4               _build/in4073.o
+output_size         0x1               _build/in4073.o
 tx_queue            0x83              _build/in4073.o
 sax                 0x2               _build/in4073.o
 index_logging       0x1               _build/in4073.o
@@ -198,6 +200,7 @@ log_write           0x2d              _build/in4073.o
 bat_volt            0x2               _build/in4073.o
 ble_rx_queue        0x83              _build/in4073.o
 sp                  0x2               _build/in4073.o
+output_data         0x4               _build/in4073.o
 ble_tx_queue        0x83              _build/in4073.o
 control_mode        0x1               _build/in4073.o
 ae                  0x8               _build/in4073.o
@@ -250,6 +253,13 @@ Discarded input sections
  .bss           0x00000000        0x0 _build/control.o
  .text.update_motors
                 0x00000000       0x4c _build/control.o
+ .text          0x00000000        0x0 _build/protocol.o
+ .data          0x00000000        0x0 _build/protocol.o
+ .bss           0x00000000        0x0 _build/protocol.o
+ .text.msg_parse
+                0x00000000       0x90 _build/protocol.o
+ .rodata.msg_parse
+                0x00000000       0x18 _build/protocol.o
  .text          0x00000000        0x0 _build/gpio.o
  .data          0x00000000        0x0 _build/gpio.o
  .bss           0x00000000        0x0 _build/gpio.o
@@ -259,8 +269,6 @@ Discarded input sections
  .text          0x00000000        0x0 _build/uart.o
  .data          0x00000000        0x0 _build/uart.o
  .bss           0x00000000        0x0 _build/uart.o
- .text.uart_put
-                0x00000000       0x44 _build/uart.o
  .text          0x00000000        0x0 _build/queue.o
  .data          0x00000000        0x0 _build/queue.o
  .bss           0x00000000        0x0 _build/queue.o
@@ -1111,6 +1119,7 @@ LOAD _build/nrf_delay.o
 LOAD _build/in4073.o
 LOAD _build/logging.o
 LOAD _build/control.o
+LOAD _build/protocol.o
 LOAD _build/gpio.o
 LOAD _build/timers.o
 LOAD _build/uart.o
@@ -1158,7 +1167,7 @@ END GROUP
  *(fs_data)
                 [!provide]                PROVIDE (__stop_fs_data, .)
 
-.text           0x00018000     0x93b4
+.text           0x00018000     0x92e4
  *(.Vectors)
  .Vectors       0x00018000       0xc0 _build/gcc_startup_nrf51.o
                 0x00018000                __Vectors
@@ -1189,437 +1198,443 @@ END GROUP
                 0x00018400      0x140 _build/in4073.o
                 0x00018400                main
  .text.write_log
-                0x00018540       0x8c _build/logging.o
+                0x00018540       0x28 _build/logging.o
                 0x00018540                write_log
  .text.read_log
-                0x000185cc       0xc4 _build/logging.o
-                0x000185cc                read_log
+                0x00018568       0x80 _build/logging.o
+                0x00018568                read_log
  .text.flash_data
-                0x00018690      0x11c _build/logging.o
-                0x00018690                flash_data
+                0x000185e8      0x11c _build/logging.o
+                0x000185e8                flash_data
  .text.run_filters_and_control
-                0x000187ac       0x4c _build/control.o
-                0x000187ac                run_filters_and_control
+                0x00018704       0x4c _build/control.o
+                0x00018704                run_filters_and_control
+ .text.encode_packet
+                0x00018750       0x44 _build/protocol.o
+                0x00018750                encode_packet
  .text.gpio_init
-                0x000187f8       0x9c _build/gpio.o
-                0x000187f8                gpio_init
+                0x00018794       0x9c _build/gpio.o
+                0x00018794                gpio_init
  .text.GPIOTE_IRQHandler
-                0x00018894       0x20 _build/gpio.o
-                0x00018894                GPIOTE_IRQHandler
+                0x00018830       0x20 _build/gpio.o
+                0x00018830                GPIOTE_IRQHandler
  .text.check_sensor_int_flag
-                0x000188b4        0xc _build/gpio.o
-                0x000188b4                check_sensor_int_flag
+                0x00018850        0xc _build/gpio.o
+                0x00018850                check_sensor_int_flag
  .text.clear_sensor_int_flag
-                0x000188c0        0xc _build/gpio.o
-                0x000188c0                clear_sensor_int_flag
+                0x0001885c        0xc _build/gpio.o
+                0x0001885c                clear_sensor_int_flag
  .text.timers_init
-                0x000188cc       0xd0 _build/timers.o
-                0x000188cc                timers_init
+                0x00018868       0xd0 _build/timers.o
+                0x00018868                timers_init
  .text.TIMER2_IRQHandler
-                0x0001899c       0xa8 _build/timers.o
-                0x0001899c                TIMER2_IRQHandler
+                0x00018938       0xa8 _build/timers.o
+                0x00018938                TIMER2_IRQHandler
  .text.TIMER1_IRQHandler
-                0x00018a44       0x7c _build/timers.o
-                0x00018a44                TIMER1_IRQHandler
+                0x000189e0       0x7c _build/timers.o
+                0x000189e0                TIMER1_IRQHandler
  .text.get_time_us
-                0x00018ac0       0x20 _build/timers.o
-                0x00018ac0                get_time_us
+                0x00018a5c       0x20 _build/timers.o
+                0x00018a5c                get_time_us
  .text.check_timer_flag
-                0x00018ae0        0xc _build/timers.o
-                0x00018ae0                check_timer_flag
+                0x00018a7c        0xc _build/timers.o
+                0x00018a7c                check_timer_flag
  .text.clear_timer_flag
-                0x00018aec        0xc _build/timers.o
-                0x00018aec                clear_timer_flag
- .text._write   0x00018af8       0x84 _build/uart.o
-                0x00018af8                _write
+                0x00018a88        0xc _build/timers.o
+                0x00018a88                clear_timer_flag
+ .text.uart_put
+                0x00018a94       0x44 _build/uart.o
+                0x00018a94                uart_put
+ .text._write   0x00018ad8       0x84 _build/uart.o
+                0x00018ad8                _write
  .text.UART0_IRQHandler
-                0x00018b7c       0x84 _build/uart.o
-                0x00018b7c                UART0_IRQHandler
+                0x00018b5c       0x84 _build/uart.o
+                0x00018b5c                UART0_IRQHandler
  .text.uart_init
-                0x00018c00       0xa0 _build/uart.o
-                0x00018c00                uart_init
+                0x00018be0       0xa0 _build/uart.o
+                0x00018be0                uart_init
  .text.init_queue
-                0x00018ca0       0x14 _build/queue.o
-                0x00018ca0                init_queue
- .text.enqueue  0x00018cb4       0x1c _build/queue.o
-                0x00018cb4                enqueue
- .text.dequeue  0x00018cd0       0x1c _build/queue.o
-                0x00018cd0                dequeue
+                0x00018c80       0x14 _build/queue.o
+                0x00018c80                init_queue
+ .text.enqueue  0x00018c94       0x1c _build/queue.o
+                0x00018c94                enqueue
+ .text.dequeue  0x00018cb0       0x1c _build/queue.o
+                0x00018cb0                dequeue
  .text.i2c_read
-                0x00018cec       0xc0 _build/twi.o
-                0x00018cec                i2c_read
+                0x00018ccc       0xc0 _build/twi.o
+                0x00018ccc                i2c_read
  .text.i2c_write
-                0x00018dac       0x70 _build/twi.o
-                0x00018dac                i2c_write
+                0x00018d8c       0x70 _build/twi.o
+                0x00018d8c                i2c_write
  .text.SPI0_TWI0_IRQHandler
-                0x00018e1c       0x6c _build/twi.o
-                0x00018e1c                SPI0_TWI0_IRQHandler
+                0x00018dfc       0x6c _build/twi.o
+                0x00018dfc                SPI0_TWI0_IRQHandler
  .text.twi_init
-                0x00018e88       0x84 _build/twi.o
-                0x00018e88                twi_init
+                0x00018e68       0x84 _build/twi.o
+                0x00018e68                twi_init
  .text.adc_request_sample
-                0x00018f0c       0x18 _build/adc.o
-                0x00018f0c                adc_request_sample
+                0x00018eec       0x18 _build/adc.o
+                0x00018eec                adc_request_sample
  .text.ADC_IRQHandler
-                0x00018f24       0x24 _build/adc.o
-                0x00018f24                ADC_IRQHandler
+                0x00018f04       0x24 _build/adc.o
+                0x00018f04                ADC_IRQHandler
  .text.adc_init
-                0x00018f48       0x3c _build/adc.o
-                0x00018f48                adc_init
+                0x00018f28       0x3c _build/adc.o
+                0x00018f28                adc_init
  .text.read_baro
-                0x00018f84      0x1a4 _build/baro.o
-                0x00018f84                read_baro
+                0x00018f64      0x1a4 _build/baro.o
+                0x00018f64                read_baro
  .text.baro_init
-                0x00019128       0x34 _build/baro.o
-                0x00019128                baro_init
+                0x00019108       0x34 _build/baro.o
+                0x00019108                baro_init
  .text.flash_chip_erase
-                0x0001915c       0x9c _build/spi_flash.o
-                0x0001915c                flash_chip_erase
+                0x0001913c       0x9c _build/spi_flash.o
+                0x0001913c                flash_chip_erase
  .text.flash_write_bytes
-                0x000191f8      0x248 _build/spi_flash.o
-                0x000191f8                flash_write_bytes
+                0x000191d8      0x248 _build/spi_flash.o
+                0x000191d8                flash_write_bytes
  .text.flash_read_bytes
-                0x00019440       0xf0 _build/spi_flash.o
-                0x00019440                flash_read_bytes
+                0x00019420       0xf0 _build/spi_flash.o
+                0x00019420                flash_read_bytes
  .text.spi_flash_init
-                0x00019530      0x274 _build/spi_flash.o
-                0x00019530                spi_flash_init
+                0x00019510      0x274 _build/spi_flash.o
+                0x00019510                spi_flash_init
  .text.mpu_reset_fifo
-                0x000197a4      0x15c _build/inv_mpu.o
-                0x000197a4                mpu_reset_fifo
+                0x00019784      0x15c _build/inv_mpu.o
+                0x00019784                mpu_reset_fifo
  .text.mpu_lp_accel_mode
-                0x00019900      0x1b8 _build/inv_mpu.o
-                0x00019900                mpu_lp_accel_mode
+                0x000198e0      0x1b8 _build/inv_mpu.o
+                0x000198e0                mpu_lp_accel_mode
  .text.mpu_get_accel_fsr
-                0x00019ab8       0x4c _build/inv_mpu.o
-                0x00019ab8                mpu_get_accel_fsr
+                0x00019a98       0x4c _build/inv_mpu.o
+                0x00019a98                mpu_get_accel_fsr
  .text.mpu_set_lpf
-                0x00019b04       0x78 _build/inv_mpu.o
-                0x00019b04                mpu_set_lpf
+                0x00019ae4       0x78 _build/inv_mpu.o
+                0x00019ae4                mpu_set_lpf
  .text.mpu_set_sample_rate
-                0x00019b7c      0x168 _build/inv_mpu.o
-                0x00019b7c                mpu_set_sample_rate
+                0x00019b5c      0x168 _build/inv_mpu.o
+                0x00019b5c                mpu_set_sample_rate
  .text.mpu_configure_fifo
-                0x00019ce4       0xd0 _build/inv_mpu.o
-                0x00019ce4                mpu_configure_fifo
+                0x00019cc4       0xd0 _build/inv_mpu.o
+                0x00019cc4                mpu_configure_fifo
  .text.mpu_set_sensors
-                0x00019db4      0x140 _build/inv_mpu.o
-                0x00019db4                mpu_set_sensors
+                0x00019d94      0x140 _build/inv_mpu.o
+                0x00019d94                mpu_set_sensors
  .text.mpu_init
-                0x00019ef4      0x1f4 _build/inv_mpu.o
-                0x00019ef4                mpu_init
+                0x00019ed4      0x1f4 _build/inv_mpu.o
+                0x00019ed4                mpu_init
  .text.mpu_read_fifo_stream
-                0x0001a0e8       0xb0 _build/inv_mpu.o
-                0x0001a0e8                mpu_read_fifo_stream
+                0x0001a0c8       0xb0 _build/inv_mpu.o
+                0x0001a0c8                mpu_read_fifo_stream
  .text.mpu_write_mem
-                0x0001a198       0x58 _build/inv_mpu.o
-                0x0001a198                mpu_write_mem
+                0x0001a178       0x58 _build/inv_mpu.o
+                0x0001a178                mpu_write_mem
  .text.mpu_load_firmware
-                0x0001a1f0      0x15c _build/inv_mpu.o
-                0x0001a1f0                mpu_load_firmware
+                0x0001a1d0      0x15c _build/inv_mpu.o
+                0x0001a1d0                mpu_load_firmware
  .text.mpu_set_dmp_state
-                0x0001a34c      0x174 _build/inv_mpu.o
-                0x0001a34c                mpu_set_dmp_state
+                0x0001a32c      0x174 _build/inv_mpu.o
+                0x0001a32c                mpu_set_dmp_state
  .text.dmp_load_motion_driver_firmware
-                0x0001a4c0       0x1c _build/inv_mpu_dmp_motion_driver.o
-                0x0001a4c0                dmp_load_motion_driver_firmware
+                0x0001a4a0       0x1c _build/inv_mpu_dmp_motion_driver.o
+                0x0001a4a0                dmp_load_motion_driver_firmware
  .text.dmp_set_orientation
-                0x0001a4dc      0x118 _build/inv_mpu_dmp_motion_driver.o
-                0x0001a4dc                dmp_set_orientation
+                0x0001a4bc      0x118 _build/inv_mpu_dmp_motion_driver.o
+                0x0001a4bc                dmp_set_orientation
  .text.dmp_set_fifo_rate
-                0x0001a5f4       0x64 _build/inv_mpu_dmp_motion_driver.o
-                0x0001a5f4                dmp_set_fifo_rate
+                0x0001a5d4       0x64 _build/inv_mpu_dmp_motion_driver.o
+                0x0001a5d4                dmp_set_fifo_rate
  .text.dmp_set_tap_thresh
-                0x0001a658      0x164 _build/inv_mpu_dmp_motion_driver.o
-                0x0001a658                dmp_set_tap_thresh
+                0x0001a638      0x164 _build/inv_mpu_dmp_motion_driver.o
+                0x0001a638                dmp_set_tap_thresh
  .text.dmp_enable_feature
-                0x0001a7bc      0x28c _build/inv_mpu_dmp_motion_driver.o
-                0x0001a7bc                dmp_enable_feature
+                0x0001a79c      0x28c _build/inv_mpu_dmp_motion_driver.o
+                0x0001a79c                dmp_enable_feature
  .text.dmp_read_fifo
-                0x0001aa48      0x20c _build/inv_mpu_dmp_motion_driver.o
-                0x0001aa48                dmp_read_fifo
+                0x0001aa28      0x20c _build/inv_mpu_dmp_motion_driver.o
+                0x0001aa28                dmp_read_fifo
  .text.inv_orientation_matrix_to_scalar
-                0x0001ac54      0x11c _build/ml.o
-                0x0001ac54                inv_orientation_matrix_to_scalar
+                0x0001ac34      0x11c _build/ml.o
+                0x0001ac34                inv_orientation_matrix_to_scalar
  .text.update_euler_from_quaternions
-                0x0001ad70      0x198 _build/mpu_wrapper.o
-                0x0001ad70                update_euler_from_quaternions
+                0x0001ad50      0x198 _build/mpu_wrapper.o
+                0x0001ad50                update_euler_from_quaternions
  .text.get_dmp_data
-                0x0001af08       0x84 _build/mpu_wrapper.o
-                0x0001af08                get_dmp_data
+                0x0001aee8       0x84 _build/mpu_wrapper.o
+                0x0001aee8                get_dmp_data
  .text.imu_init
-                0x0001af8c      0x110 _build/mpu_wrapper.o
-                0x0001af8c                imu_init
+                0x0001af6c      0x110 _build/mpu_wrapper.o
+                0x0001af6c                imu_init
  .text.app_error_handler
-                0x0001b09c       0x40 _build/app_error.o
-                0x0001b09c                app_error_handler
+                0x0001b07c       0x40 _build/app_error.o
+                0x0001b07c                app_error_handler
  .text.rtc1_stop
-                0x0001b0dc       0x78 _build/app_timer.o
+                0x0001b0bc       0x78 _build/app_timer.o
  .text.RTC1_IRQHandler
-                0x0001b154       0xe0 _build/app_timer.o
-                0x0001b154                RTC1_IRQHandler
+                0x0001b134       0xe0 _build/app_timer.o
+                0x0001b134                RTC1_IRQHandler
  .text.SWI0_IRQHandler
-                0x0001b234      0x4cc _build/app_timer.o
-                0x0001b234                SWI0_IRQHandler
+                0x0001b214      0x4cc _build/app_timer.o
+                0x0001b214                SWI0_IRQHandler
  .text.sd_evt_get
-                0x0001b700        0x4 _build/softdevice_handler.o
+                0x0001b6e0        0x4 _build/softdevice_handler.o
  .text.sd_ble_evt_get
-                0x0001b704        0x4 _build/softdevice_handler.o
+                0x0001b6e4        0x4 _build/softdevice_handler.o
  .text.intern_softdevice_events_execute.part.0
-                0x0001b708       0xec _build/softdevice_handler.o
+                0x0001b6e8       0xec _build/softdevice_handler.o
  .text.SWI2_IRQHandler
-                0x0001b7f4       0x34 _build/softdevice_handler.o
-                0x0001b7f4                SWI2_IRQHandler
- .text          0x0001b828       0x54 _build/gcc_startup_nrf51.o
-                0x0001b828                Reset_Handler
-                0x0001b870                NMI_Handler
-                0x0001b872                HardFault_Handler
-                0x0001b874                SVC_Handler
-                0x0001b876                PendSV_Handler
-                0x0001b878                SysTick_Handler
-                0x0001b87a                RTC0_IRQHandler
-                0x0001b87a                POWER_CLOCK_IRQHandler
-                0x0001b87a                RADIO_IRQHandler
-                0x0001b87a                LPCOMP_IRQHandler
-                0x0001b87a                SWI4_IRQHandler
-                0x0001b87a                TEMP_IRQHandler
-                0x0001b87a                QDEC_IRQHandler
-                0x0001b87a                SWI5_IRQHandler
-                0x0001b87a                TIMER0_IRQHandler
-                0x0001b87a                ECB_IRQHandler
-                0x0001b87a                Default_Handler
-                0x0001b87a                SWI3_IRQHandler
-                0x0001b87a                CCM_AAR_IRQHandler
-                0x0001b87a                WDT_IRQHandler
-                0x0001b87a                RNG_IRQHandler
-                0x0001b87a                SPI1_TWI1_IRQHandler
-                0x0001b87a                SWI1_IRQHandler
- .text.fabs     0x0001b87c        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_fabs.o)
-                0x0001b87c                fabs
- .text.asin     0x0001b884       0xc4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-w_asin.o)
-                0x0001b884                asin
- .text.atan2    0x0001b948        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-w_atan2.o)
-                0x0001b948                atan2
+                0x0001b7d4       0x34 _build/softdevice_handler.o
+                0x0001b7d4                SWI2_IRQHandler
+ .text          0x0001b808       0x54 _build/gcc_startup_nrf51.o
+                0x0001b808                Reset_Handler
+                0x0001b850                NMI_Handler
+                0x0001b852                HardFault_Handler
+                0x0001b854                SVC_Handler
+                0x0001b856                PendSV_Handler
+                0x0001b858                SysTick_Handler
+                0x0001b85a                RTC0_IRQHandler
+                0x0001b85a                POWER_CLOCK_IRQHandler
+                0x0001b85a                RADIO_IRQHandler
+                0x0001b85a                LPCOMP_IRQHandler
+                0x0001b85a                SWI4_IRQHandler
+                0x0001b85a                TEMP_IRQHandler
+                0x0001b85a                QDEC_IRQHandler
+                0x0001b85a                SWI5_IRQHandler
+                0x0001b85a                TIMER0_IRQHandler
+                0x0001b85a                ECB_IRQHandler
+                0x0001b85a                Default_Handler
+                0x0001b85a                SWI3_IRQHandler
+                0x0001b85a                CCM_AAR_IRQHandler
+                0x0001b85a                WDT_IRQHandler
+                0x0001b85a                RNG_IRQHandler
+                0x0001b85a                SPI1_TWI1_IRQHandler
+                0x0001b85a                SWI1_IRQHandler
+ .text.fabs     0x0001b85c        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_fabs.o)
+                0x0001b85c                fabs
+ .text.asin     0x0001b864       0xc4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-w_asin.o)
+                0x0001b864                asin
+ .text.atan2    0x0001b928        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-w_atan2.o)
+                0x0001b928                atan2
  .text.__ieee754_asin
-                0x0001b950      0x3cc /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_asin.o)
-                0x0001b950                __ieee754_asin
+                0x0001b930      0x3cc /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_asin.o)
+                0x0001b930                __ieee754_asin
  .text.__ieee754_atan2
-                0x0001bd1c      0x178 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_atan2.o)
-                0x0001bd1c                __ieee754_atan2
+                0x0001bcfc      0x178 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_atan2.o)
+                0x0001bcfc                __ieee754_atan2
  .text.__ieee754_sqrt
-                0x0001be94      0x1ec /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_sqrt.o)
-                0x0001be94                __ieee754_sqrt
- .text.atan     0x0001c080      0x33c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_atan.o)
-                0x0001c080                atan
- .text.matherr  0x0001c3bc        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_matherr.o)
-                0x0001c3bc                matherr
- .text.nan      0x0001c3c0        0xc /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_nan.o)
-                0x0001c3c0                nan
- .text          0x0001c3cc      0x114 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_udivsi3.o)
-                0x0001c3cc                __udivsi3
-                0x0001c3cc                __aeabi_uidiv
-                0x0001c4d8                __aeabi_uidivmod
- .text          0x0001c4e0      0x1d4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_divsi3.o)
-                0x0001c4e0                __aeabi_idiv
-                0x0001c4e0                __divsi3
-                0x0001c6ac                __aeabi_idivmod
- .text          0x0001c6b4        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_dvmd_tls.o)
-                0x0001c6b4                __aeabi_ldiv0
-                0x0001c6b4                __aeabi_idiv0
- .text          0x0001c6b8       0x7c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_arm_cmpdf2.o)
-                0x0001c6b8                __aeabi_cdrcmple
-                0x0001c6c8                __aeabi_cdcmple
-                0x0001c6c8                __aeabi_cdcmpeq
-                0x0001c6d8                __aeabi_dcmpeq
-                0x0001c6e4                __aeabi_dcmplt
-                0x0001c6f8                __aeabi_dcmple
-                0x0001c70c                __aeabi_dcmpgt
-                0x0001c720                __aeabi_dcmpge
- .text          0x0001c734       0x74 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_arm_cmpsf2.o)
-                0x0001c734                __aeabi_cfrcmple
-                0x0001c73c                __aeabi_cfcmple
-                0x0001c73c                __aeabi_cfcmpeq
-                0x0001c74c                __aeabi_fcmpeq
-                0x0001c758                __aeabi_fcmplt
-                0x0001c76c                __aeabi_fcmple
-                0x0001c780                __aeabi_fcmpgt
-                0x0001c794                __aeabi_fcmpge
- .text          0x0001c7a8       0x58 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_muldi3.o)
-                0x0001c7a8                __aeabi_lmul
-                0x0001c7a8                __muldi3
- .text          0x0001c800       0x30 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_fixunssfsi.o)
-                0x0001c800                __aeabi_f2uiz
-                0x0001c800                __fixunssfsi
- .text          0x0001c830      0x2ec /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(addsf3.o)
-                0x0001c830                __aeabi_fadd
- .text          0x0001cb1c      0x234 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divsf3.o)
-                0x0001cb1c                __aeabi_fdiv
- .text          0x0001cd50       0x50 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(eqsf2.o)
-                0x0001cd50                __nesf2
-                0x0001cd50                __eqsf2
- .text          0x0001cda0       0x88 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(gesf2.o)
-                0x0001cda0                __gtsf2
-                0x0001cda0                __gesf2
- .text          0x0001ce28       0x88 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(lesf2.o)
-                0x0001ce28                __lesf2
-                0x0001ce28                __ltsf2
- .text          0x0001ceb0      0x228 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(mulsf3.o)
-                0x0001ceb0                __aeabi_fmul
- .text          0x0001d0d8      0x30c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(subsf3.o)
-                0x0001d0d8                __aeabi_fsub
- .text          0x0001d3e4       0x44 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(fixsfsi.o)
-                0x0001d3e4                __aeabi_f2iz
- .text          0x0001d428       0x90 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(floatsisf.o)
-                0x0001d428                __aeabi_i2f
- .text          0x0001d4b8       0x7c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(floatunsisf.o)
-                0x0001d4b8                __aeabi_ui2f
- .text          0x0001d534      0x658 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(adddf3.o)
-                0x0001d534                __aeabi_dadd
- .text          0x0001db8c      0x62c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divdf3.o)
-                0x0001db8c                __aeabi_ddiv
- .text          0x0001e1b8       0x80 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(eqdf2.o)
-                0x0001e1b8                __eqdf2
-                0x0001e1b8                __nedf2
- .text          0x0001e238       0xc8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(gedf2.o)
-                0x0001e238                __gtdf2
-                0x0001e238                __gedf2
- .text          0x0001e300       0xd4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(ledf2.o)
-                0x0001e300                __ltdf2
-                0x0001e300                __ledf2
- .text          0x0001e3d4      0x4f4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(muldf3.o)
-                0x0001e3d4                __aeabi_dmul
- .text          0x0001e8c8      0x6a8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(subdf3.o)
-                0x0001e8c8                __aeabi_dsub
- .text          0x0001ef70       0x40 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(unorddf2.o)
-                0x0001ef70                __aeabi_dcmpun
- .text          0x0001efb0       0x6c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(fixdfsi.o)
-                0x0001efb0                __aeabi_d2iz
- .text          0x0001f01c       0xa8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(extendsfdf2.o)
-                0x0001f01c                __aeabi_f2d
- .text          0x0001f0c4       0x3c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_clzsi2.o)
-                0x0001f0c4                __clzsi2
- .text.__errno  0x0001f100        0xc /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-errno.o)
-                0x0001f100                __errno
- .text.memcmp   0x0001f10c       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memcmp.o)
-                0x0001f10c                memcmp
- .text.memcpy   0x0001f12a       0x12 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memcpy-stub.o)
-                0x0001f12a                memcpy
- .text.printf   0x0001f13c       0x34 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-printf.o)
-                0x0001f13c                printf
-                0x0001f13c                iprintf
+                0x0001be74      0x1ec /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_sqrt.o)
+                0x0001be74                __ieee754_sqrt
+ .text.atan     0x0001c060      0x33c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_atan.o)
+                0x0001c060                atan
+ .text.matherr  0x0001c39c        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_matherr.o)
+                0x0001c39c                matherr
+ .text.nan      0x0001c3a0        0xc /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_nan.o)
+                0x0001c3a0                nan
+ .text          0x0001c3ac      0x114 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_udivsi3.o)
+                0x0001c3ac                __udivsi3
+                0x0001c3ac                __aeabi_uidiv
+                0x0001c4b8                __aeabi_uidivmod
+ .text          0x0001c4c0      0x1d4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_divsi3.o)
+                0x0001c4c0                __aeabi_idiv
+                0x0001c4c0                __divsi3
+                0x0001c68c                __aeabi_idivmod
+ .text          0x0001c694        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_dvmd_tls.o)
+                0x0001c694                __aeabi_ldiv0
+                0x0001c694                __aeabi_idiv0
+ .text          0x0001c698       0x7c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_arm_cmpdf2.o)
+                0x0001c698                __aeabi_cdrcmple
+                0x0001c6a8                __aeabi_cdcmple
+                0x0001c6a8                __aeabi_cdcmpeq
+                0x0001c6b8                __aeabi_dcmpeq
+                0x0001c6c4                __aeabi_dcmplt
+                0x0001c6d8                __aeabi_dcmple
+                0x0001c6ec                __aeabi_dcmpgt
+                0x0001c700                __aeabi_dcmpge
+ .text          0x0001c714       0x74 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_arm_cmpsf2.o)
+                0x0001c714                __aeabi_cfrcmple
+                0x0001c71c                __aeabi_cfcmple
+                0x0001c71c                __aeabi_cfcmpeq
+                0x0001c72c                __aeabi_fcmpeq
+                0x0001c738                __aeabi_fcmplt
+                0x0001c74c                __aeabi_fcmple
+                0x0001c760                __aeabi_fcmpgt
+                0x0001c774                __aeabi_fcmpge
+ .text          0x0001c788       0x58 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_muldi3.o)
+                0x0001c788                __aeabi_lmul
+                0x0001c788                __muldi3
+ .text          0x0001c7e0       0x30 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_fixunssfsi.o)
+                0x0001c7e0                __aeabi_f2uiz
+                0x0001c7e0                __fixunssfsi
+ .text          0x0001c810      0x2ec /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(addsf3.o)
+                0x0001c810                __aeabi_fadd
+ .text          0x0001cafc      0x234 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divsf3.o)
+                0x0001cafc                __aeabi_fdiv
+ .text          0x0001cd30       0x50 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(eqsf2.o)
+                0x0001cd30                __nesf2
+                0x0001cd30                __eqsf2
+ .text          0x0001cd80       0x88 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(gesf2.o)
+                0x0001cd80                __gtsf2
+                0x0001cd80                __gesf2
+ .text          0x0001ce08       0x88 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(lesf2.o)
+                0x0001ce08                __lesf2
+                0x0001ce08                __ltsf2
+ .text          0x0001ce90      0x228 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(mulsf3.o)
+                0x0001ce90                __aeabi_fmul
+ .text          0x0001d0b8      0x30c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(subsf3.o)
+                0x0001d0b8                __aeabi_fsub
+ .text          0x0001d3c4       0x44 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(fixsfsi.o)
+                0x0001d3c4                __aeabi_f2iz
+ .text          0x0001d408       0x90 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(floatsisf.o)
+                0x0001d408                __aeabi_i2f
+ .text          0x0001d498       0x7c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(floatunsisf.o)
+                0x0001d498                __aeabi_ui2f
+ .text          0x0001d514      0x658 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(adddf3.o)
+                0x0001d514                __aeabi_dadd
+ .text          0x0001db6c      0x62c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divdf3.o)
+                0x0001db6c                __aeabi_ddiv
+ .text          0x0001e198       0x80 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(eqdf2.o)
+                0x0001e198                __eqdf2
+                0x0001e198                __nedf2
+ .text          0x0001e218       0xc8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(gedf2.o)
+                0x0001e218                __gtdf2
+                0x0001e218                __gedf2
+ .text          0x0001e2e0       0xd4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(ledf2.o)
+                0x0001e2e0                __ltdf2
+                0x0001e2e0                __ledf2
+ .text          0x0001e3b4      0x4f4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(muldf3.o)
+                0x0001e3b4                __aeabi_dmul
+ .text          0x0001e8a8      0x6a8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(subdf3.o)
+                0x0001e8a8                __aeabi_dsub
+ .text          0x0001ef50       0x40 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(unorddf2.o)
+                0x0001ef50                __aeabi_dcmpun
+ .text          0x0001ef90       0x6c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(fixdfsi.o)
+                0x0001ef90                __aeabi_d2iz
+ .text          0x0001effc       0xa8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(extendsfdf2.o)
+                0x0001effc                __aeabi_f2d
+ .text          0x0001f0a4       0x3c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_clzsi2.o)
+                0x0001f0a4                __clzsi2
+ .text.__errno  0x0001f0e0        0xc /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-errno.o)
+                0x0001f0e0                __errno
+ .text.memcmp   0x0001f0ec       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memcmp.o)
+                0x0001f0ec                memcmp
+ .text.memcpy   0x0001f10a       0x12 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memcpy-stub.o)
+                0x0001f10a                memcpy
+ .text.printf   0x0001f11c       0x34 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-printf.o)
+                0x0001f11c                printf
+                0x0001f11c                iprintf
  .text._cleanup_r
-                0x0001f170       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
-                0x0001f170                _cleanup_r
+                0x0001f150       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
+                0x0001f150                _cleanup_r
  .text.std.isra.0
-                0x0001f180       0x48 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
+                0x0001f160       0x48 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
  .text.__sfmoreglue
-                0x0001f1c8       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
-                0x0001f1c8                __sfmoreglue
- .text.__sinit  0x0001f1f4       0x68 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
-                0x0001f1f4                __sinit
- .text.__sfp    0x0001f25c       0x7c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
-                0x0001f25c                __sfp
+                0x0001f1a8       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
+                0x0001f1a8                __sfmoreglue
+ .text.__sinit  0x0001f1d4       0x68 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
+                0x0001f1d4                __sinit
+ .text.__sfp    0x0001f23c       0x7c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
+                0x0001f23c                __sfp
  .text._fwalk_reent
-                0x0001f2d8       0x42 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fwalk.o)
-                0x0001f2d8                _fwalk_reent
- *fill*         0x0001f31a        0x2 
+                0x0001f2b8       0x42 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fwalk.o)
+                0x0001f2b8                _fwalk_reent
+ *fill*         0x0001f2fa        0x2 
  .text._malloc_r
-                0x0001f31c       0xc0 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-mallocr.o)
-                0x0001f31c                _malloc_r
+                0x0001f2fc       0xc0 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-mallocr.o)
+                0x0001f2fc                _malloc_r
  .text.__sfputc_r
-                0x0001f3dc       0x2a /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf.o)
+                0x0001f3bc       0x2a /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf.o)
  .text.__sfputs_r
-                0x0001f406       0x24 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf.o)
-                0x0001f406                __sfputs_r
- *fill*         0x0001f42a        0x2 
+                0x0001f3e6       0x24 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf.o)
+                0x0001f3e6                __sfputs_r
+ *fill*         0x0001f40a        0x2 
  .text._vfprintf_r
-                0x0001f42c      0x238 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf.o)
-                0x0001f42c                _vfiprintf_r
-                0x0001f42c                _vfprintf_r
+                0x0001f40c      0x238 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf.o)
+                0x0001f40c                _vfiprintf_r
+                0x0001f40c                _vfprintf_r
  .text._printf_common
-                0x0001f664       0xdc /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf_i.o)
-                0x0001f664                _printf_common
+                0x0001f644       0xdc /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf_i.o)
+                0x0001f644                _printf_common
  .text._printf_i
-                0x0001f740      0x244 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf_i.o)
-                0x0001f740                _printf_i
- .text._sbrk_r  0x0001f984       0x24 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-sbrkr.o)
-                0x0001f984                _sbrk_r
- .text.__sread  0x0001f9a8       0x28 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-stdio.o)
-                0x0001f9a8                __sread
+                0x0001f720      0x244 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf_i.o)
+                0x0001f720                _printf_i
+ .text._sbrk_r  0x0001f964       0x24 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-sbrkr.o)
+                0x0001f964                _sbrk_r
+ .text.__sread  0x0001f988       0x28 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-stdio.o)
+                0x0001f988                __sread
  .text.__swrite
-                0x0001f9d0       0x38 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-stdio.o)
-                0x0001f9d0                __swrite
- .text.__sseek  0x0001fa08       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-stdio.o)
-                0x0001fa08                __sseek
+                0x0001f9b0       0x38 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-stdio.o)
+                0x0001f9b0                __swrite
+ .text.__sseek  0x0001f9e8       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-stdio.o)
+                0x0001f9e8                __sseek
  .text.__sclose
-                0x0001fa34        0xc /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-stdio.o)
-                0x0001fa34                __sclose
+                0x0001fa14        0xc /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-stdio.o)
+                0x0001fa14                __sclose
  .text.__swbuf_r
-                0x0001fa40       0xb0 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-wbuf.o)
-                0x0001fa40                __swbuf_r
+                0x0001fa20       0xb0 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-wbuf.o)
+                0x0001fa20                __swbuf_r
  .text._write_r
-                0x0001faf0       0x28 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-writer.o)
-                0x0001faf0                _write_r
+                0x0001fad0       0x28 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-writer.o)
+                0x0001fad0                _write_r
  .text.__swsetup_r
-                0x0001fb18       0xec /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-wsetup.o)
-                0x0001fb18                __swsetup_r
+                0x0001faf8       0xec /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-wsetup.o)
+                0x0001faf8                __swsetup_r
  .text._close_r
-                0x0001fc04       0x24 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-closer.o)
-                0x0001fc04                _close_r
+                0x0001fbe4       0x24 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-closer.o)
+                0x0001fbe4                _close_r
  .text.__sflush_r
-                0x0001fc28      0x10c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fflush.o)
-                0x0001fc28                __sflush_r
+                0x0001fc08      0x10c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fflush.o)
+                0x0001fc08                __sflush_r
  .text._fflush_r
-                0x0001fd34       0x58 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fflush.o)
-                0x0001fd34                _fflush_r
+                0x0001fd14       0x58 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fflush.o)
+                0x0001fd14                _fflush_r
  .text._lseek_r
-                0x0001fd8c       0x28 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-lseekr.o)
-                0x0001fd8c                _lseek_r
+                0x0001fd6c       0x28 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-lseekr.o)
+                0x0001fd6c                _lseek_r
  .text.__swhatbuf_r
-                0x0001fdb4       0x4c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-makebuf.o)
-                0x0001fdb4                __swhatbuf_r
+                0x0001fd94       0x4c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-makebuf.o)
+                0x0001fd94                __swhatbuf_r
  .text.__smakebuf_r
-                0x0001fe00       0x7c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-makebuf.o)
-                0x0001fe00                __smakebuf_r
- .text.memchr   0x0001fe7c       0x16 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memchr-stub.o)
-                0x0001fe7c                memchr
+                0x0001fde0       0x7c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-makebuf.o)
+                0x0001fde0                __smakebuf_r
+ .text.memchr   0x0001fe5c       0x16 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memchr-stub.o)
+                0x0001fe5c                memchr
  .text.__malloc_lock
-                0x0001fe92        0x2 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-mlock.o)
-                0x0001fe92                __malloc_lock
+                0x0001fe72        0x2 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-mlock.o)
+                0x0001fe72                __malloc_lock
  .text.__malloc_unlock
-                0x0001fe94        0x2 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-mlock.o)
-                0x0001fe94                __malloc_unlock
- *fill*         0x0001fe96        0x2 
- .text._free_r  0x0001fe98       0x98 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-freer.o)
-                0x0001fe98                _free_r
- .text._read_r  0x0001ff30       0x28 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-readr.o)
-                0x0001ff30                _read_r
+                0x0001fe74        0x2 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-mlock.o)
+                0x0001fe74                __malloc_unlock
+ *fill*         0x0001fe76        0x2 
+ .text._free_r  0x0001fe78       0x98 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-freer.o)
+                0x0001fe78                _free_r
+ .text._read_r  0x0001ff10       0x28 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-readr.o)
+                0x0001ff10                _read_r
  .text._fstat_r
-                0x0001ff58       0x24 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fstatr.o)
-                0x0001ff58                _fstat_r
+                0x0001ff38       0x24 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fstatr.o)
+                0x0001ff38                _fstat_r
  .text._isatty_r
-                0x0001ff7c       0x24 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-isattyr.o)
-                0x0001ff7c                _isatty_r
- .text._close   0x0001ffa0       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(close.o)
-                0x0001ffa0                _close
- .text._fstat   0x0001ffb0       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(fstat.o)
-                0x0001ffb0                _fstat
- .text._isatty  0x0001ffc0       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(isatty.o)
-                0x0001ffc0                _isatty
- .text._lseek   0x0001ffd0       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(lseek.o)
-                0x0001ffd0                _lseek
- .text._read    0x0001ffe0       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(read.o)
-                0x0001ffe0                _read
- .text._sbrk    0x0001fff0       0x1c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(sbrk.o)
-                0x0001fff0                _sbrk
+                0x0001ff5c       0x24 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-isattyr.o)
+                0x0001ff5c                _isatty_r
+ .text._close   0x0001ff80       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(close.o)
+                0x0001ff80                _close
+ .text._fstat   0x0001ff90       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(fstat.o)
+                0x0001ff90                _fstat
+ .text._isatty  0x0001ffa0       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(isatty.o)
+                0x0001ffa0                _isatty
+ .text._lseek   0x0001ffb0       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(lseek.o)
+                0x0001ffb0                _lseek
+ .text._read    0x0001ffc0       0x10 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(read.o)
+                0x0001ffc0                _read
+ .text._sbrk    0x0001ffd0       0x1c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(sbrk.o)
+                0x0001ffd0                _sbrk
  *(.init)
- .init          0x0002000c        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crti.o
-                0x0002000c                _init
- .init          0x00020010        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtn.o
+ .init          0x0001ffec        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crti.o
+                0x0001ffec                _init
+ .init          0x0001fff0        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtn.o
  *(.fini)
- .fini          0x00020018        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crti.o
-                0x00020018                _fini
- .fini          0x0002001c        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtn.o
+ .fini          0x0001fff8        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crti.o
+                0x0001fff8                _fini
+ .fini          0x0001fffc        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtn.o
  *crtbegin.o(.ctors)
  *crtbegin?.o(.ctors)
  *(EXCLUDE_FILE(*crtend.o *crtend?.o) .ctors)
@@ -1632,107 +1647,104 @@ END GROUP
  *(.dtors)
  *(.rodata*)
  .rodata.str1.1
-                0x00020024        0x2 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-impure.o)
- *fill*         0x00020026        0x2 
+                0x00020004        0x2 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-impure.o)
+ *fill*         0x00020006        0x2 
  .rodata._global_impure_ptr
-                0x00020028        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-impure.o)
-                0x00020028                _global_impure_ptr
+                0x00020008        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-impure.o)
+                0x00020008                _global_impure_ptr
  .rodata.process_key
-                0x0002002c      0x180 _build/in4073.o
+                0x0002000c      0x180 _build/in4073.o
  .rodata.str1.4
-                0x000201ac       0x6e _build/in4073.o
- *fill*         0x0002021a        0x2 
+                0x0002018c       0x6e _build/in4073.o
+ *fill*         0x000201fa        0x2 
  .rodata.str1.4
-                0x0002021c       0xae _build/logging.o
- *fill*         0x000202ca        0x2 
+                0x000201fc       0x11 _build/uart.o
+ *fill*         0x0002020d        0x3 
  .rodata.str1.4
-                0x000202cc       0x11 _build/uart.o
- *fill*         0x000202dd        0x3 
+                0x00020210       0x28 _build/twi.o
+ .rodata.test   0x00020238       0x28 _build/inv_mpu.o
+                0x00020238                test
  .rodata.str1.4
-                0x000202e0       0x28 _build/twi.o
- .rodata.test   0x00020308       0x28 _build/inv_mpu.o
-                0x00020308                test
- .rodata.str1.4
-                0x00020330       0xa6 _build/inv_mpu.o
- *fill*         0x000203d6        0x2 
- .rodata.hw     0x000203d8        0xc _build/inv_mpu.o
-                0x000203d8                hw
- .rodata.reg    0x000203e4       0x1e _build/inv_mpu.o
-                0x000203e4                reg
- *fill*         0x00020402        0x2 
- .rodata        0x00020404       0x4b _build/inv_mpu_dmp_motion_driver.o
- *fill*         0x0002044f        0x1 
+                0x00020260       0xa6 _build/inv_mpu.o
+ *fill*         0x00020306        0x2 
+ .rodata.hw     0x00020308        0xc _build/inv_mpu.o
+                0x00020308                hw
+ .rodata.reg    0x00020314       0x1e _build/inv_mpu.o
+                0x00020314                reg
+ *fill*         0x00020332        0x2 
+ .rodata        0x00020334       0x4b _build/inv_mpu_dmp_motion_driver.o
+ *fill*         0x0002037f        0x1 
  .rodata.dmp_memory
-                0x00020450      0xbf6 _build/inv_mpu_dmp_motion_driver.o
- *fill*         0x00021046        0x2 
+                0x00020380      0xbf6 _build/inv_mpu_dmp_motion_driver.o
+ *fill*         0x00020f76        0x2 
  .rodata.str1.4
-                0x00021048      0x126 _build/mpu_wrapper.o
- *fill*         0x0002116e        0x2 
+                0x00020f78      0x126 _build/mpu_wrapper.o
+ *fill*         0x0002109e        0x2 
  .rodata.str1.4
-                0x00021170       0x27 _build/app_error.o
- *fill*         0x00021197        0x1 
+                0x000210a0       0x27 _build/app_error.o
+ *fill*         0x000210c7        0x1 
  .rodata.str1.4
-                0x00021198        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-w_asin.o)
+                0x000210c8        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-w_asin.o)
                                   0x9 (size before relaxing)
  .rodata.atanlo
-                0x000211a0       0x20 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_atan.o)
+                0x000210d0       0x20 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_atan.o)
  .rodata.atanhi
-                0x000211c0       0x20 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_atan.o)
- .rodata        0x000211e0       0x80 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divsf3.o)
- .rodata        0x00021260       0x40 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(mulsf3.o)
- .rodata        0x000212a0       0x40 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divdf3.o)
- .rodata        0x000212e0       0x40 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(muldf3.o)
+                0x000210f0       0x20 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_atan.o)
+ .rodata        0x00021110       0x80 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divsf3.o)
+ .rodata        0x00021190       0x40 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(mulsf3.o)
+ .rodata        0x000211d0       0x40 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divdf3.o)
+ .rodata        0x00021210       0x40 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(muldf3.o)
  .rodata.__sf_fake_stdin
-                0x00021320       0x20 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
-                0x00021320                __sf_fake_stdin
+                0x00021250       0x20 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
+                0x00021250                __sf_fake_stdin
  .rodata.__sf_fake_stdout
-                0x00021340       0x20 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
-                0x00021340                __sf_fake_stdout
+                0x00021270       0x20 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
+                0x00021270                __sf_fake_stdout
  .rodata.__sf_fake_stderr
-                0x00021360       0x20 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
-                0x00021360                __sf_fake_stderr
+                0x00021290       0x20 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
+                0x00021290                __sf_fake_stderr
  .rodata.str1.1
-                0x00021380       0x11 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf.o)
+                0x000212b0       0x11 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf.o)
  .rodata.str1.1
-                0x00021391       0x22 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf_i.o)
+                0x000212c1       0x22 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf_i.o)
  *(.eh_frame*)
- *fill*         0x000213b3        0x1 
- .eh_frame      0x000213b4        0x0 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtbegin.o
-                0x000213b4                . = ALIGN (0x4)
+ *fill*         0x000212e3        0x1 
+ .eh_frame      0x000212e4        0x0 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtbegin.o
+                0x000212e4                . = ALIGN (0x4)
 
-.glue_7         0x000213b4        0x0
- .glue_7        0x000213b4        0x0 linker stubs
+.glue_7         0x000212e4        0x0
+ .glue_7        0x000212e4        0x0 linker stubs
 
-.glue_7t        0x000213b4        0x0
- .glue_7t       0x000213b4        0x0 linker stubs
+.glue_7t        0x000212e4        0x0
+ .glue_7t       0x000212e4        0x0 linker stubs
 
-.vfp11_veneer   0x000213b4        0x0
- .vfp11_veneer  0x000213b4        0x0 linker stubs
+.vfp11_veneer   0x000212e4        0x0
+ .vfp11_veneer  0x000212e4        0x0 linker stubs
 
-.v4_bx          0x000213b4        0x0
- .v4_bx         0x000213b4        0x0 linker stubs
+.v4_bx          0x000212e4        0x0
+ .v4_bx         0x000212e4        0x0 linker stubs
 
-.iplt           0x000213b4        0x0
- .iplt          0x000213b4        0x0 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtbegin.o
+.iplt           0x000212e4        0x0
+ .iplt          0x000212e4        0x0 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtbegin.o
 
-.ARM.extab      0x000213b4        0x0
+.ARM.extab      0x000212e4        0x0
  *(.ARM.extab* .gnu.linkonce.armextab.*)
-                0x000213b4                . = ALIGN (0x4)
-                0x000213b4                __exidx_start = .
+                0x000212e4                . = ALIGN (0x4)
+                0x000212e4                __exidx_start = .
 
-.ARM.exidx      0x000213b4        0x8
+.ARM.exidx      0x000212e4        0x8
  *(.ARM.exidx* .gnu.linkonce.armexidx.*)
- .ARM.exidx     0x000213b4        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/crt0.o
- .ARM.exidx     0x000213bc        0x0 _build/gcc_startup_nrf51.o
+ .ARM.exidx     0x000212e4        0x8 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/crt0.o
+ .ARM.exidx     0x000212ec        0x0 _build/gcc_startup_nrf51.o
                                   0x8 (size before relaxing)
-                0x000213bc                . = ALIGN (0x4)
-                0x000213bc                __exidx_end = .
-                0x000213bc                __etext = .
+                0x000212ec                . = ALIGN (0x4)
+                0x000212ec                __exidx_end = .
+                0x000212ec                __etext = .
 
-.rel.dyn        0x000213bc        0x0
- .rel.iplt      0x000213bc        0x0 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtbegin.o
+.rel.dyn        0x000212ec        0x0
+ .rel.iplt      0x000212ec        0x0 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtbegin.o
 
-.data           0x20002000       0xa8 load address 0x000213bc
+.data           0x20002000       0xa8 load address 0x000212ec
                 0x20002000                __data_start__ = .
  *(vtable)
  *(.data*)
@@ -1773,10 +1785,10 @@ END GROUP
                 0x200020a8                . = ALIGN (0x4)
                 0x200020a8                __data_end__ = .
 
-.igot.plt       0x200020a8        0x0 load address 0x00021464
+.igot.plt       0x200020a8        0x0 load address 0x00021394
  .igot.plt      0x200020a8        0x0 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtbegin.o
 
-.bss            0x200020a8      0x37c load address 0x00021464
+.bss            0x200020a8      0x454 load address 0x00021394
                 0x200020a8                . = ALIGN (0x4)
                 0x200020a8                __bss_start__ = .
  *(.bss*)
@@ -1847,7 +1859,7 @@ END GROUP
  .bss.heap_end.4167
                 0x20002148        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(sbrk.o)
  *(COMMON)
- COMMON         0x2000214c      0x2cb _build/in4073.o
+ COMMON         0x2000214c      0x3a3 _build/in4073.o
                 0x2000214c                say
                 0x20002150                log_read
                 0x2000217d                status_log
@@ -1856,43 +1868,46 @@ END GROUP
                 0x20002182                saz
                 0x20002184                rx_queue
                 0x20002208                phi
-                0x2000220c                temperature
-                0x20002210                log_msg
-                0x2000223e                theta
-                0x20002240                pressure
-                0x20002244                tx_queue
-                0x200022c8                sax
-                0x200022ca                index_logging
-                0x200022cc                sq
-                0x200022d0                log_write
-                0x200022fe                bat_volt
-                0x20002300                ble_rx_queue
-                0x20002384                sp
-                0x20002388                ble_tx_queue
-                0x2000240b                control_mode
-                0x2000240c                ae
-                0x20002414                sr
-                0x20002416                demo_done
- *fill*         0x20002417        0x1 
- COMMON         0x20002418        0x8 _build/baro.o
-                0x20002418                D2
-                0x2000241c                D1
- COMMON         0x20002420        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-reent.o)
-                0x20002420                errno
-                0x20002424                . = ALIGN (0x4)
-                0x20002424                __bss_end__ = .
+                0x2000220c                msg
+                0x200022dc                temperature
+                0x200022e0                log_msg
+                0x2000230e                theta
+                0x20002310                pressure
+                0x20002314                output_size
+                0x20002318                tx_queue
+                0x2000239c                sax
+                0x2000239e                index_logging
+                0x200023a0                sq
+                0x200023a4                log_write
+                0x200023d2                bat_volt
+                0x200023d4                ble_rx_queue
+                0x20002458                sp
+                0x2000245c                output_data
+                0x20002460                ble_tx_queue
+                0x200024e3                control_mode
+                0x200024e4                ae
+                0x200024ec                sr
+                0x200024ee                demo_done
+ *fill*         0x200024ef        0x1 
+ COMMON         0x200024f0        0x8 _build/baro.o
+                0x200024f0                D2
+                0x200024f4                D1
+ COMMON         0x200024f8        0x4 /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-reent.o)
+                0x200024f8                errno
+                0x200024fc                . = ALIGN (0x4)
+                0x200024fc                __bss_end__ = .
 
-.heap           0x20002428      0x800
-                0x20002428                __end__ = .
-                0x20002428                end = __end__
+.heap           0x20002500      0x800
+                0x20002500                __end__ = .
+                0x20002500                end = __end__
  *(.heap*)
- .heap          0x20002428      0x800 _build/gcc_startup_nrf51.o
-                0x20002428                __HeapBase
-                0x20002c28                __HeapLimit = .
+ .heap          0x20002500      0x800 _build/gcc_startup_nrf51.o
+                0x20002500                __HeapBase
+                0x20002d00                __HeapLimit = .
 
-.stack_dummy    0x20002428      0x800
+.stack_dummy    0x20002500      0x800
  *(.stack*)
- .stack         0x20002428      0x800 _build/gcc_startup_nrf51.o
+ .stack         0x20002500      0x800 _build/gcc_startup_nrf51.o
                 0x20004000                __StackTop = (ORIGIN (RAM) + LENGTH (RAM))
                 0x20003800                __StackLimit = (__StackTop - SIZEOF (.stack_dummy))
                 0x20004000                PROVIDE (__stack, __StackTop)
@@ -1928,177 +1943,179 @@ OUTPUT(_build/in4073.out elf32-littlearm)
  .ARM.attributes
                 0x00000205       0x31 _build/control.o
  .ARM.attributes
-                0x00000236       0x31 _build/gpio.o
+                0x00000236       0x31 _build/protocol.o
  .ARM.attributes
-                0x00000267       0x31 _build/timers.o
+                0x00000267       0x31 _build/gpio.o
  .ARM.attributes
-                0x00000298       0x31 _build/uart.o
+                0x00000298       0x31 _build/timers.o
  .ARM.attributes
-                0x000002c9       0x31 _build/queue.o
+                0x000002c9       0x31 _build/uart.o
  .ARM.attributes
-                0x000002fa       0x31 _build/twi.o
+                0x000002fa       0x31 _build/queue.o
  .ARM.attributes
-                0x0000032b       0x31 _build/adc.o
+                0x0000032b       0x31 _build/twi.o
  .ARM.attributes
-                0x0000035c       0x31 _build/baro.o
+                0x0000035c       0x31 _build/adc.o
  .ARM.attributes
-                0x0000038d       0x31 _build/spi_flash.o
+                0x0000038d       0x31 _build/baro.o
  .ARM.attributes
-                0x000003be       0x31 _build/inv_mpu.o
+                0x000003be       0x31 _build/spi_flash.o
  .ARM.attributes
-                0x000003ef       0x31 _build/inv_mpu_dmp_motion_driver.o
+                0x000003ef       0x31 _build/inv_mpu.o
  .ARM.attributes
-                0x00000420       0x31 _build/ml.o
+                0x00000420       0x31 _build/inv_mpu_dmp_motion_driver.o
  .ARM.attributes
-                0x00000451       0x31 _build/mpu_wrapper.o
+                0x00000451       0x31 _build/ml.o
  .ARM.attributes
-                0x00000482       0x31 _build/app_error.o
+                0x00000482       0x31 _build/mpu_wrapper.o
  .ARM.attributes
-                0x000004b3       0x31 _build/app_timer.o
+                0x000004b3       0x31 _build/app_error.o
  .ARM.attributes
-                0x000004e4       0x31 _build/softdevice_handler.o
+                0x000004e4       0x31 _build/app_timer.o
  .ARM.attributes
-                0x00000515       0x1b _build/gcc_startup_nrf51.o
+                0x00000515       0x31 _build/softdevice_handler.o
  .ARM.attributes
-                0x00000530       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_fabs.o)
+                0x00000546       0x1b _build/gcc_startup_nrf51.o
  .ARM.attributes
-                0x0000055c       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-w_asin.o)
+                0x00000561       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_fabs.o)
  .ARM.attributes
-                0x00000588       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-w_atan2.o)
+                0x0000058d       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-w_asin.o)
  .ARM.attributes
-                0x000005b4       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_asin.o)
+                0x000005b9       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-w_atan2.o)
  .ARM.attributes
-                0x000005e0       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_atan2.o)
+                0x000005e5       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_asin.o)
  .ARM.attributes
-                0x0000060c       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_sqrt.o)
+                0x00000611       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_atan2.o)
  .ARM.attributes
-                0x00000638       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_atan.o)
+                0x0000063d       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-e_sqrt.o)
  .ARM.attributes
-                0x00000664       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_lib_ver.o)
+                0x00000669       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_atan.o)
  .ARM.attributes
-                0x00000690       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_matherr.o)
+                0x00000695       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_lib_ver.o)
  .ARM.attributes
-                0x000006bc       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_nan.o)
+                0x000006c1       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_matherr.o)
  .ARM.attributes
-                0x000006e8       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_udivsi3.o)
+                0x000006ed       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libm.a(lib_a-s_nan.o)
  .ARM.attributes
-                0x00000706       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_divsi3.o)
+                0x00000719       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_udivsi3.o)
  .ARM.attributes
-                0x00000724       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_dvmd_tls.o)
+                0x00000737       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_divsi3.o)
  .ARM.attributes
-                0x00000742       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_arm_cmpdf2.o)
+                0x00000755       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_dvmd_tls.o)
  .ARM.attributes
-                0x00000760       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_arm_cmpsf2.o)
+                0x00000773       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_arm_cmpdf2.o)
  .ARM.attributes
-                0x0000077e       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_muldi3.o)
+                0x00000791       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_arm_cmpsf2.o)
  .ARM.attributes
-                0x000007aa       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_fixunssfsi.o)
+                0x000007af       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_muldi3.o)
  .ARM.attributes
-                0x000007d6       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(addsf3.o)
+                0x000007db       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_fixunssfsi.o)
  .ARM.attributes
-                0x00000802       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divsf3.o)
+                0x00000807       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(addsf3.o)
  .ARM.attributes
-                0x0000082e       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(eqsf2.o)
+                0x00000833       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divsf3.o)
  .ARM.attributes
-                0x0000085a       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(gesf2.o)
+                0x0000085f       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(eqsf2.o)
  .ARM.attributes
-                0x00000886       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(lesf2.o)
+                0x0000088b       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(gesf2.o)
  .ARM.attributes
-                0x000008b2       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(mulsf3.o)
+                0x000008b7       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(lesf2.o)
  .ARM.attributes
-                0x000008de       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(subsf3.o)
+                0x000008e3       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(mulsf3.o)
  .ARM.attributes
-                0x0000090a       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(fixsfsi.o)
+                0x0000090f       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(subsf3.o)
  .ARM.attributes
-                0x00000936       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(floatsisf.o)
+                0x0000093b       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(fixsfsi.o)
  .ARM.attributes
-                0x00000962       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(floatunsisf.o)
+                0x00000967       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(floatsisf.o)
  .ARM.attributes
-                0x0000098e       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(adddf3.o)
+                0x00000993       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(floatunsisf.o)
  .ARM.attributes
-                0x000009ba       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divdf3.o)
+                0x000009bf       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(adddf3.o)
  .ARM.attributes
-                0x000009e6       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(eqdf2.o)
+                0x000009eb       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(divdf3.o)
  .ARM.attributes
-                0x00000a12       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(gedf2.o)
+                0x00000a17       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(eqdf2.o)
  .ARM.attributes
-                0x00000a3e       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(ledf2.o)
+                0x00000a43       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(gedf2.o)
  .ARM.attributes
-                0x00000a6a       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(muldf3.o)
+                0x00000a6f       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(ledf2.o)
  .ARM.attributes
-                0x00000a96       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(subdf3.o)
+                0x00000a9b       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(muldf3.o)
  .ARM.attributes
-                0x00000ac2       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(unorddf2.o)
+                0x00000ac7       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(subdf3.o)
  .ARM.attributes
-                0x00000aee       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(fixdfsi.o)
+                0x00000af3       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(unorddf2.o)
  .ARM.attributes
-                0x00000b1a       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(extendsfdf2.o)
+                0x00000b1f       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(fixdfsi.o)
  .ARM.attributes
-                0x00000b46       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_clzsi2.o)
+                0x00000b4b       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(extendsfdf2.o)
  .ARM.attributes
-                0x00000b64       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-errno.o)
+                0x00000b77       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/libgcc.a(_clzsi2.o)
  .ARM.attributes
-                0x00000b90       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memcmp.o)
+                0x00000b95       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-errno.o)
  .ARM.attributes
-                0x00000bbc       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memcpy-stub.o)
+                0x00000bc1       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memcmp.o)
  .ARM.attributes
-                0x00000be8       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-printf.o)
+                0x00000bed       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memcpy-stub.o)
  .ARM.attributes
-                0x00000c14       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
+                0x00000c19       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-printf.o)
  .ARM.attributes
-                0x00000c40       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fwalk.o)
+                0x00000c45       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-findfp.o)
  .ARM.attributes
-                0x00000c6c       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-mallocr.o)
+                0x00000c71       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fwalk.o)
  .ARM.attributes
-                0x00000c98       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf.o)
+                0x00000c9d       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-mallocr.o)
  .ARM.attributes
-                0x00000cc4       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf_i.o)
+                0x00000cc9       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf.o)
  .ARM.attributes
-                0x00000cf0       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-sbrkr.o)
+                0x00000cf5       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-vfprintf_i.o)
  .ARM.attributes
-                0x00000d1c       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-stdio.o)
+                0x00000d21       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-sbrkr.o)
  .ARM.attributes
-                0x00000d48       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-wbuf.o)
+                0x00000d4d       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-stdio.o)
  .ARM.attributes
-                0x00000d74       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-writer.o)
+                0x00000d79       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-wbuf.o)
  .ARM.attributes
-                0x00000da0       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-wsetup.o)
+                0x00000da5       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-writer.o)
  .ARM.attributes
-                0x00000dcc       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-closer.o)
+                0x00000dd1       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-wsetup.o)
  .ARM.attributes
-                0x00000df8       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fflush.o)
+                0x00000dfd       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-closer.o)
  .ARM.attributes
-                0x00000e24       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-lseekr.o)
+                0x00000e29       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fflush.o)
  .ARM.attributes
-                0x00000e50       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-makebuf.o)
+                0x00000e55       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-lseekr.o)
  .ARM.attributes
-                0x00000e7c       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memchr-stub.o)
+                0x00000e81       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-makebuf.o)
  .ARM.attributes
-                0x00000ea8       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-mlock.o)
+                0x00000ead       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-memchr-stub.o)
  .ARM.attributes
-                0x00000ed4       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-freer.o)
+                0x00000ed9       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-mlock.o)
  .ARM.attributes
-                0x00000f00       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-readr.o)
+                0x00000f05       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-nano-freer.o)
  .ARM.attributes
-                0x00000f2c       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-reent.o)
+                0x00000f31       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-readr.o)
  .ARM.attributes
-                0x00000f58       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fstatr.o)
+                0x00000f5d       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-reent.o)
  .ARM.attributes
-                0x00000f84       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-isattyr.o)
+                0x00000f89       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-fstatr.o)
  .ARM.attributes
-                0x00000fb0       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtn.o
+                0x00000fb5       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libc_nano.a(lib_a-isattyr.o)
  .ARM.attributes
-                0x00000fce       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(close.o)
+                0x00000fe1       0x1e /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/armv6-m/crtn.o
  .ARM.attributes
-                0x00000ffa       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(fstat.o)
+                0x00000fff       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(close.o)
  .ARM.attributes
-                0x00001026       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(isatty.o)
+                0x0000102b       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(fstat.o)
  .ARM.attributes
-                0x00001052       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(lseek.o)
+                0x00001057       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(isatty.o)
  .ARM.attributes
-                0x0000107e       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(read.o)
+                0x00001083       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(lseek.o)
  .ARM.attributes
-                0x000010aa       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(sbrk.o)
+                0x000010af       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(read.o)
+ .ARM.attributes
+                0x000010db       0x2c /home/neo/ERTS/ERTS/gcc-arm-none-eabi/bin/../lib/gcc/arm-none-eabi/5.4.1/../../../../arm-none-eabi/lib/armv6-m/libnosys.a(sbrk.o)
 
 .comment        0x00000000       0x6e
  .comment       0x00000000       0x6e _build/system_nrf51.o
@@ -2107,6 +2124,7 @@ OUTPUT(_build/in4073.out elf32-littlearm)
  .comment       0x0000006e       0x6f _build/in4073.o
  .comment       0x0000006e       0x6f _build/logging.o
  .comment       0x0000006e       0x6f _build/control.o
+ .comment       0x0000006e       0x6f _build/protocol.o
  .comment       0x0000006e       0x6f _build/gpio.o
  .comment       0x0000006e       0x6f _build/timers.o
  .comment       0x0000006e       0x6f _build/uart.o
