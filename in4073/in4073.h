@@ -19,8 +19,6 @@
 #include "inv_mpu_dmp_motion_driver.h"
 #include "ml.h"
 
-#include "protocol.h"
-
 #define RED				22
 #define YELLOW				24
 #define GREEN				28
@@ -32,17 +30,11 @@
 #define MOTOR_2_PIN			25
 #define MOTOR_3_PIN			29
 
-// Fractions
-#define CONTROL_FRAC 6            ///< The control gains fraction in powers of 2
+bool demo_done;
 
-enum control_mode_t control_mode;
-struct msg_telemetry_t *msg_tele;
-
+// Control
 int16_t ae[4];
-void set_control_mode(enum control_mode_t mode);
-void set_control_gains(uint16_t yaw_d);
-void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw);
-void run_filters_and_control(void);
+void run_filters_and_control();
 
 // Timers
 #define TIMER_PERIOD	50000 //50000us=50ms=20Hz (MAX 16bit, 65ms)
@@ -61,7 +53,7 @@ void clear_sensor_int_flag(void);
 typedef struct {
 	uint8_t Data[QUEUE_SIZE];
 	uint8_t first,last;
-  	uint8_t count;
+  	uint8_t count; 
 } queue;
 void init_queue(queue *q);
 void enqueue(queue *q, char x);
@@ -84,7 +76,7 @@ bool i2c_read(uint8_t slave_addr, uint8_t reg_addr, uint8_t length, uint8_t *dat
 
 // MPU wrapper
 int16_t phi, theta, psi;
-int16_t sp, sq, sr; ///< 131 LSB / (degrees / s)
+int16_t sp, sq, sr;
 int16_t sax, say, saz;
 uint8_t sensor_fifo_count;
 void imu_init(bool dmp, uint16_t interrupt_frequency); // if dmp is true, the interrupt frequency is 100Hz - otherwise 32Hz-8kHz
