@@ -43,6 +43,7 @@ $(abspath ./in4073.c) \
 $(abspath ./logging.c) \
 $(abspath ./control.c) \
 $(abspath ./protocol.c) \
+$(abspath ./telemetry.c) \
 $(abspath ./drivers/gpio.c) \
 $(abspath ./drivers/timers.c) \
 $(abspath ./drivers/uart.c) \

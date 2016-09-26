@@ -35,18 +35,18 @@ enum msg_id{
 	MSG_LOG
 };
 
-// // Control
-// enum control_mode_t {
-//   MODE_SAFE,
-//   MODE_PANIC,
-//   MODE_MANUAL,
-//   MODE_CALIBRATION,
-//   MODE_YAW,
-//   MODE_FULL,
-//   MODE_RAW,
-//   MODE_HEIGHT,
-//   ESCAPE
-// };
+// Control
+enum control_mode_t {
+  MODE_SAFE,
+  MODE_PANIC,
+  MODE_MANUAL,
+  MODE_CALIBRATION,
+  MODE_YAW,
+  MODE_FULL,
+  MODE_RAW,
+  MODE_HEIGHT,
+  ESCAPE
+};
 
 struct msg_joystick_t{
 	uint8_t mode;
@@ -76,7 +76,8 @@ struct msg_combine_t{
 }__attribute__((packed, aligned(1)));
 
 struct msg_telemetry_t{
-	uint8_t mode;
+	uint32_t telemetry_time;
+	enum control_mode_t control_mode;
 	uint16_t thrust;
 	int16_t roll;
  	int16_t pitch;
@@ -96,8 +97,11 @@ struct msg_p {
 };
 
 struct msg_p msg;
+struct msg_telemetry_t telemetry_msg;
 
 void msg_parse(struct msg_p *msg, uint8_t c);
 void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_data, uint8_t *output_size);
+void fill_telemetry(void);
+void send_telemetry(void);
 
 #endif  /* #ifndef _PROTOCOL_H_ */

@@ -14,7 +14,6 @@
  */
 
 #include "in4073.h"
- #include "protocol.h"
 
  bool demo_done;
 
@@ -56,7 +55,7 @@ void process_key(uint8_t c)
 			break;
 		case 27:
 			demo_done = true;
-		case 'p':
+		case 'p': {
 			if ((status_log = write_log())==true)
 			{
 				
@@ -64,7 +63,8 @@ void process_key(uint8_t c)
 			else
 				printf("failed to write log");
 			break;
-		case 'z':
+		}
+		case 'z': {
 			if ((status_log = read_log())==true)
 			{
 				printf("Reading Log");
@@ -72,6 +72,10 @@ void process_key(uint8_t c)
 			else
 				printf("failed to read log");
 			break;
+		}
+		case 'x': {
+			send_telemetry();
+		}
 		default:
 			nrf_gpio_pin_toggle(RED);
 	}
@@ -132,9 +136,9 @@ int main(void)
 		{
 			get_dmp_data();
 			run_filters_and_control();
-
 			clear_sensor_int_flag();
 		}
+		fill_telemetry();
 	}	
 	
 	printf("\n\t Goodbye \n\n");

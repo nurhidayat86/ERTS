@@ -19,6 +19,9 @@
 #include "inv_mpu_dmp_motion_driver.h"
 #include "ml.h"
 
+//external library
+#include "protocol.h"
+
 #define RED				22
 #define YELLOW				24
 #define GREEN				28
@@ -34,17 +37,17 @@
 #define CONTROL_FRAC 6            ///< The control gains fraction in powers of 2
 
 // Control
-enum control_mode_t {
-  MODE_SAFE,
-  MODE_PANIC,
-  MODE_MANUAL,
-  MODE_CALIBRATION,
-  MODE_YAW,
-  MODE_FULL,
-  MODE_RAW,
-  MODE_HEIGHT,
-  ESCAPE
-};
+// enum control_mode_t {
+//   MODE_SAFE,
+//   MODE_PANIC,
+//   MODE_MANUAL,
+//   MODE_CALIBRATION,
+//   MODE_YAW,
+//   MODE_FULL,
+//   MODE_RAW,
+//   MODE_HEIGHT,
+//   ESCAPE
+// };
 
 //log messages
 struct log_t {
@@ -54,9 +57,11 @@ struct log_t {
   uint32_t temperature, pressure;
 }__attribute__((packed, aligned(1)));
 
+//control input additional
 enum control_mode_t control_mode;
-int16_t ae[4];
+int16_t ae[4], roll, pitch, yaw;
 struct log_t log_write, log_read;
+uint16_t thrust;
 
 void set_control_mode(enum control_mode_t mode);
 void set_control_gains(uint16_t yaw_d);
