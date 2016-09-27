@@ -45,7 +45,7 @@ void get_dmp_data(void)
 		sq = gyro[1];
 		sr = gyro[2];
 	}
-	else printf("Error reading sensor fifo: %d\n", read_stat);
+	//else printf("Error reading sensor fifo: %d\n", read_stat);
 }
 
 

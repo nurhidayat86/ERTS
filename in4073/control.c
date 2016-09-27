@@ -14,15 +14,19 @@
  #include "protocol.h"
 //#include "control.h"
 
+#define PRESCALE 3
+#define MAX_THRUST_COM 8192
+#define MIN_THRUST_COM 0
+#define MAX_ATTITUDE_COM 8192
+#define MIN_ATTITUDE_COM -MAX_ATTITUDE_COM
+
 #define MAX_MOTOR 1000            ///< Maximum PWM signal (1000us is added)
 #define MAX_CMD 1024              ///< Maximum thrust, roll, pitch and yaw command
 #define MIN_CMD -MAX_CMD          ///< Minimum roll, pitch, yaw command
-#define PANIC_TIME 2*1000         ///< Time to keep thrust in panic mode (us)
-#define PANIC_THRUST 0.4*MAX_CMD  ///< The amount of thrust in panic mode
+#define PANIC_TIME 1000*1000         ///< Time to keep thrust in panic mode (us)
+#define PANIC_THRUST 0.4*MAX_THRUST_COM  ///< The amount of thrust in panic mode
 #define MAX_YAW_RATE 45*131       ///< The maximum yaw rate from js (131 LSB / (degrees/s))
 #define MAX_ANGLE 0               ///< The maximum angle from js
-
-#define PRESCALE 3
 
 #define Bound(_x, _min, _max) { if (_x > (_max)) _x = (_max); else if (_x < (_min)) _x = (_min); }
 
@@ -180,6 +184,7 @@ void run_filters_and_control(void)
     case MODE_CALIBRATION:
       ae[0] = ae[1] = ae[2] = ae[3] = 0;
 
+      // It takae sometimes (~ 6s) until it returns a stable value
       // Also calibrate here (until leave mode)
       cphi = phi;
       ctheta = theta;

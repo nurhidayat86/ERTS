@@ -32,6 +32,14 @@
 #define MOTOR_2_PIN			25
 #define MOTOR_3_PIN			29
 
+ // additional
+bool write_log(void);
+bool read_log(void);
+bool flash_data(void);
+struct log_t log_msg;
+
+uint8_t index_logging;
+
 // Fractions
 #define CONTROL_FRAC 6            ///< The control gains fraction in powers of 2
 
