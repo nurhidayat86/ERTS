@@ -44,6 +44,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 		case UNITINIT:
 			if (c == HDR) {
 				msg->status++;
+				//printf("got status \n");
 			}
 			break;
 
@@ -51,6 +52,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			msg->ck1 = msg->ck2 = c;
 			msg->payload_len = c;
 			msg->status++;
+			//printf("got length %d \n", msg->ck1);
 			break;
 
 		case GOT_LEN:
@@ -59,6 +61,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			msg->ck2 += msg->ck1;
 			msg->payload_idx = 0;
 			msg->status++;
+			//printf("got ID %d \n", msg->ck1);
 			break;
 
 		case GOT_ID:
@@ -66,17 +69,19 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			msg->payload_idx++;
 			msg->ck1 += c;
 			msg->ck2 += msg->ck1;
-			if (msg->payload_idx == msg->payload_len)
-				msg->status++;
+			if (msg->payload_idx == msg->payload_len) msg->status++;
+			//printf("got payload %d \n", msg->ck1);
 			break;
 
 		case GOT_PAYLOAD:
 			if (c != msg->ck1) {
 				msg->crc_fails++;
 				msg->status = UNITINIT;
+				//printf("crc fail %d %d \n", c, msg->ck1);
 			}
 			else {
 				msg->status++;
+				//printf("crc success %d \n", msg->ck1);
 			}
 			break;
 
@@ -84,9 +89,12 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			if (c != msg->ck2) {
 				msg->crc_fails++;
 				msg->status = UNITINIT;
+				//printf("crc2 fail\n");
 			}
 			else {
 				msg->status++;
+	 			//printf("back to init\n");
+ 
 			}
 			break;
 

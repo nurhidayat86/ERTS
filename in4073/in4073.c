@@ -31,15 +31,15 @@ static void process_bytes(uint8_t byte) {
 			{
 				msg_com = (struct msg_combine_t *)&msg.payload[0];
 				msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
+				// printf("%d \n", msg.crc_fails);
+				// printf("%d %d %d %d %d \n", msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+				// //printf("%d %d %d %d\n", ae[0], ae[1], ae[2], ae[3]);
+				// msg_tele->engine[0] = ae[0];
+				// msg_tele->engine[1] = ae[1];
+				// msg_tele->engine[2] = ae[2];
+				// msg_tele->engine[3] = ae[3];
+				// msg_tele->update = TRUE;
 				
-				//printf("co %d %d %d %d %d\n", msg_com->mode, msg_com->thrust, msg_com->roll, msg_com->pitch, msg_com->yaw);
-				//printf("%d %d %d %d\n", ae[0], ae[1], ae[2], ae[3]);
-				msg_tele->update = TRUE;
-				msg_tele->engine[0] = ae[0];
-				msg_tele->engine[1] = ae[1];
-				msg_tele->engine[2] = ae[2];
-				msg_tele->engine[3] = ae[3];
-
 				if(msg_com->mode == ESCAPE)
 				{loop = false;}
 		
@@ -48,6 +48,7 @@ static void process_bytes(uint8_t byte) {
 
 			default:
 				break;
+
 		};
 		// Start to receive a new packet
 		msg.status = UNITINIT;
@@ -60,6 +61,18 @@ static void process_bytes(uint8_t byte) {
 	set_control_command(msg_com->thrust, msg_com->roll, msg_com->pitch, msg_com->yaw);
 	
 	// set_control_gains(yaw_d)			
+}
+
+void send_telemetry(void)
+{
+	// encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
+	// for (i=0; i<output_size; i++) {uart_put(output_data[i]);}				
+	// printf("%10ld | ", get_time_us());
+	printf("%d %d %d %d %d |", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+	printf("%d %d %d %d | ", ae[0],ae[1],ae[2],ae[3]);
+	printf("%d %d %d | ", phi, theta, psi);
+	printf("%d %d %d \n", sp, sq, sr);
+	//printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
 }
 
 /*------------------------------------------------------------------
@@ -77,11 +90,12 @@ int main(void)
 	baro_init();
 	spi_flash_init();
 //	ble_init();
-
+	
 	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
 	uint8_t output_size;
 	uint8_t i = 0;
 	
+	bool status = true;
 	uint32_t counter = 0;
 	
 	loop = true;
@@ -92,37 +106,46 @@ int main(void)
 
 		if (check_timer_flag())
 		{
-			if (counter++%20 == 0) nrf_gpio_pin_toggle(BLUE);
-
+			if (counter++%20 == 0) 
+			{
+				nrf_gpio_pin_toggle(BLUE);
+				flash_data();
+				write_log();
+			}
 			adc_request_sample();
 			read_baro();
-
-			// printf("%10ld | ", get_time_us());
-			// printf("ae %d %d %d %d \n",ae[0],ae[1],ae[2],ae[3]);
-			// printf("%6d %6d %6d | ", phi, theta, psi);
-			// printf("%6d %6d %6d | ", sp, sq, sr);
-			// printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
-			
-			if(msg_tele->update)
-			{
-				encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
-				for (i=0; i<output_size; i++) {uart_put(output_data[i]);}	
-				msg_tele->update = FALSE;			
-			}
-
+			// if(msg_tele->update)
+			// {	
+			// 	msg_tele->update = FALSE;		
+			// }
+			encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
+			for (i=0; i<output_size; i++) {uart_put(output_data[i]);}
+			// printf("%d %d %d %d %d \n", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+			// send_telemetry();
 			clear_timer_flag();
 		}
 
 		if (check_sensor_int_flag())
 		{
-			//get_dmp_data();
+			get_dmp_data();
 			run_filters_and_control();
-
 			clear_sensor_int_flag();
 		}
+
+	}
+
+	while(control_mode == ESCAPE)
+	{
+		if ((status = read_log())==true)
+		{
+			printf("Reading Log");
+			control_mode = MODE_SAFE;
+		}	
 	}
 
 	printf("\n\t Goodbye \n\n");
 	nrf_delay_ms(100);
 	NVIC_SystemReset();
 }
+
+				

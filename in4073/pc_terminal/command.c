@@ -7,13 +7,12 @@
 #include "command.h"
 #include "keyboard.h"
 
-
 void CombineCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* keyboard_msg, struct msg_joystick_t* joystick_msg)
 {
 	if(keyboard_msg->update)
 	{combine_msg->mode = joystick_msg->mode = keyboard_msg->mode;}
-	else
-	{combine_msg->mode = joystick_msg->mode;}
+	//else
+	//{combine_msg->mode = joystick_msg->mode;}
 
 	if(combine_msg->mode != MODE_SAFE && combine_msg->mode != MODE_PANIC){
 		
