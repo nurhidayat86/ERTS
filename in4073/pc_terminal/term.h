@@ -20,11 +20,4 @@ void term_putchar(char c);
 int	term_getchar_nb();
 int	term_getchar();
 
-
-//additional file output
-bool fopen_stat;
-FILE *fp;
-void write_to_csv(void);
-void leave_log_mode(void);
-
 #endif  /* #ifndef _TERM_H_ */
