@@ -1,4 +1,3 @@
-/*------------------------------------------------------------
  * console I/O
  *------------------------------------------------------------
  */
@@ -56,35 +55,3 @@ int	term_getchar()
                 ;
         return c;
 }
-
-struct log_t {
-  int16_t phi, theta, psi, sp, sq, sr, sax, say, saz, roll, pitch, yaw, bat_volt, ae[4];
-  uint16_t thrust;
-  uint8_t mode;
-  uint32_t temperature, pressure;
-}__attribute__((packed, aligned(1)));
-
-void write_to_csv(char *filename, struct log_t msg_log) {
-	if (fopen_stat == false) 
-	{
-		fp = fopen(filename, "w+");
-		fopen_stat = true;
-		fprintf(fp, "phi, theta, psi, sp, sq, sr, sax, say, saz, thrust, roll, pitch, yaw, bat_volt, ae[0], ae[1], ae[2], ae[3], mode, temperature, pressure\n")
-		fprintf(fp, "%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
-			msg_log->phi, msg_log->theta, msg_log->psi, msg_log->sp, 
-			msg_log->sq, msg_log->sr, msg_log->sax, msg_log->say, msg_log->saz, 
-			msg_log->thrust, msg_log->roll, msg_log->pitch, msg_log->yaw, msg_log->bat_volt,
-			msg_log->ae[0], msg_log->ae[1], msg_log->ae[2], msg_log->ae[3], msg_log->mode, msg_log->temperature, msg_log->roll->pressure);
-	}
-	else 
-	{
-		fprintf(fp, "%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
-			msg_log->phi, msg_log->theta, msg_log->psi, msg_log->sp, 
-			msg_log->sq, msg_log->sr, msg_log->sax, msg_log->say, msg_log->saz, 
-			msg_log->thrust, msg_log->roll, msg_log->pitch, msg_log->yaw, msg_log->bat_volt,
-			msg_log->ae[0], msg_log->ae[1], msg_log->ae[2], msg_log->ae[3], msg_log->mode, msg_log->temperature, msg_log->roll->pressure);
-	}
-
-}
-
-void leave_log_mode() {fopen_stat = false;}
