@@ -15,12 +15,20 @@
 #define JOYSTICK_TYPE 0x10;
 #define KEYBOARD_TYPE 0x20;
 
-//log messages
+// #define ENCODE
+
+//log messages 45 bytes w/o acceleration
 struct log_t {
-  int16_t phi, theta, psi, sp, sq, sr, sax, say, saz, roll, pitch, yaw, bat_volt, ae[4];
-  uint16_t thrust;
+  uint32_t time_stamp;
   uint8_t mode;
-  uint32_t temperature, pressure;
+  uint16_t thrust;
+  int16_t roll, pitch, yaw; 
+  int16_t ae[4];
+  int16_t phi, theta, psi; 
+  int16_t sp, sq, sr; 
+  //int16_t sax, say, saz;
+  uint16_t bat_volt;
+  int32_t temperature, pressure;
 }__attribute__((packed, aligned(1)));
 
 enum msg_status {
@@ -90,7 +98,7 @@ struct msg_telemetry_t{
 	int16_t roll;
  	int16_t pitch;
  	int16_t yaw;
- 	//int16_t engine[4];
+ 	// int16_t engine[4];
 }__attribute__((packed));
 
 struct msg_p {

@@ -73,7 +73,7 @@ void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg)
 		}
 	}
 
-	if(keyboard_msg->mode == MODE_SAFE || keyboard_msg->mode == MODE_PANIC ) // for time being
+	if(keyboard_msg->mode == MODE_SAFE)
 	{
 		switch(c) {
 			case '0':
