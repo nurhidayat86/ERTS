@@ -17,7 +17,6 @@
 //#include "control.h" 
 
 bool loop;
-
 static void process_bytes(uint8_t byte) {
 	
 	static struct msg_p msg;
@@ -31,6 +30,7 @@ static void process_bytes(uint8_t byte) {
 			{
 				msg_com = (struct msg_combine_t *)&msg.payload[0];
 				msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
+				// msg_tele->mode = 2;
 				// printf("%d \n", msg.crc_fails);
 				// printf("%d %d %d %d %d \n", msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 				// //printf("%d %d %d %d\n", ae[0], ae[1], ae[2], ae[3]);
@@ -58,6 +58,7 @@ static void process_bytes(uint8_t byte) {
 	set_control_mode(msg_com->mode);
 	
 	// set control command 
+	// set_control_command(msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 	set_control_command(msg_com->thrust, msg_com->roll, msg_com->pitch, msg_com->yaw);
 	
 	// set_control_gains(yaw_d)			
@@ -68,7 +69,7 @@ void send_telemetry(void)
 	// encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
 	// for (i=0; i<output_size; i++) {uart_put(output_data[i]);}				
 	// printf("%10ld | ", get_time_us());
-	printf("%d %d %d %d %d |", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+	// printf("%d %d %d %d %d |", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 	printf("%d %d %d %d | ", ae[0],ae[1],ae[2],ae[3]);
 	printf("%d %d %d | ", phi, theta, psi);
 	printf("%d %d %d \n", sp, sq, sr);
@@ -91,12 +92,24 @@ int main(void)
 	spi_flash_init();
 //	ble_init();
 	
-	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
-	uint8_t output_size;
-	uint8_t i = 0;
+	// uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
+	// uint8_t output_size;
+	// uint8_t i = 0;
 	
+    // command_init();
+	msg_tele->update = FALSE;
+	msg_tele->mode = 0;
+	msg_tele->thrust = 0;
+	msg_tele->roll = 0;
+ 	msg_tele->pitch = 0;
+ 	msg_tele->yaw = 0;
+
+ 	cphi = ctheta = cpsi = 0;           ///< Calibration values of phi, theta, psi
+	cp = cq = cr = 0;                ///< Calibration valies of p, q and r
+
 	bool status = true;
 	uint32_t counter = 0;
+	uint32_t counter_log = 0;
 	
 	loop = true;
 	
@@ -109,19 +122,34 @@ int main(void)
 			if (counter++%20 == 0) 
 			{
 				nrf_gpio_pin_toggle(BLUE);
-				flash_data();
-				write_log();
+				
 			}
+			
 			adc_request_sample();
 			read_baro();
-			// if(msg_tele->update)
-			// {	
-			// 	msg_tele->update = FALSE;		
-			// }
-			encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
-			for (i=0; i<output_size; i++) {uart_put(output_data[i]);}
-			// printf("%d %d %d %d %d \n", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-			// send_telemetry();
+			
+			// write to FLASH EVERY 100 ms
+			if (counter_log++%2 == 0)
+			{
+				flash_data();
+				write_log();
+			} 
+			
+			// send telemetry on 50 ms			
+			#ifdef ENCODE
+				encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
+				for (i=0; i<output_size; i++) {uart_put(output_data[i]);}
+			#else
+				// 	printf("%d %d %d %d %d \n", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+				//  send_telemetry();
+				printf("%d %d %d %d %d| ", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+				printf("%d %d %d %d| ", ae[0],ae[1],ae[2],ae[3]);
+				//printf("%d %d %d| ", phi-cphi, theta-ctheta, psi-cpsi);
+				printf("%d %d %d| ", phi, theta, -psi);
+				printf("%d %d %d| ", sp-cp, -(sq-cq), -(sr-cr));
+				printf("%d\n", bat_volt);
+			#endif
+			
 			clear_timer_flag();
 		}
 
@@ -138,7 +166,7 @@ int main(void)
 	{
 		if ((status = read_log())==true)
 		{
-			printf("Reading Log");
+			printf("Reading Log Data Finished");
 			control_mode = MODE_SAFE;
 		}	
 	}

@@ -7,7 +7,6 @@
 
 #include "protocol.h"
 
-//void encode_packet(struct msg_joystick_t *joystick_msg, int16_t c)
 void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_data, uint8_t *output_size) {
 	uint8_t i = 0;
 	uint8_t checksum1 = 0;
@@ -44,7 +43,9 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 		case UNITINIT:
 			if (c == HDR) {
 				msg->status++;
-				//printf("got status \n");
+				#ifdef PC_DEBUG 
+				printf("got status \n");
+				#endif
 			}
 			break;
 
@@ -52,7 +53,9 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			msg->ck1 = msg->ck2 = c;
 			msg->payload_len = c;
 			msg->status++;
-			//printf("got length %d \n", msg->ck1);
+			#ifdef PC_DEBUG
+			printf("got length %d \n", msg->ck1);
+			#endif
 			break;
 
 		case GOT_LEN:
@@ -61,7 +64,9 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			msg->ck2 += msg->ck1;
 			msg->payload_idx = 0;
 			msg->status++;
-			//printf("got ID %d \n", msg->ck1);
+			#ifdef PC_DEBUG
+			printf("got ID %d \n", msg->ck1);
+			#endif
 			break;
 
 		case GOT_ID:
@@ -70,18 +75,24 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			msg->ck1 += c;
 			msg->ck2 += msg->ck1;
 			if (msg->payload_idx == msg->payload_len) msg->status++;
-			//printf("got payload %d \n", msg->ck1);
+			#ifdef PC_DEBUG
+			printf("got payload %d \n", msg->ck1);
+			#endif
 			break;
 
 		case GOT_PAYLOAD:
 			if (c != msg->ck1) {
 				msg->crc_fails++;
 				msg->status = UNITINIT;
-				//printf("crc fail %d %d \n", c, msg->ck1);
+				//#ifdef PC_DEBUG
+				printf("crc fail %d \n", msg->crc_fails);
+				//#endif
 			}
 			else {
 				msg->status++;
-				//printf("crc success %d \n", msg->ck1);
+				#ifdef PC_DEBUG
+				printf("crc success %d \n", msg->ck1);
+				#endif
 			}
 			break;
 
@@ -89,12 +100,13 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			if (c != msg->ck2) {
 				msg->crc_fails++;
 				msg->status = UNITINIT;
-				//printf("crc2 fail\n");
+				printf("crc2 fail\n");
 			}
 			else {
 				msg->status++;
-	 			//printf("back to init\n");
- 
+	 			#ifdef PC_DEBUG
+	 			printf("receive success\n");
+				#endif 
 			}
 			break;
 

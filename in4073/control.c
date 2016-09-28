@@ -23,7 +23,7 @@
 #define MAX_MOTOR 1000            ///< Maximum PWM signal (1000us is added)
 #define MAX_CMD 1024              ///< Maximum thrust, roll, pitch and yaw command
 #define MIN_CMD -MAX_CMD          ///< Minimum roll, pitch, yaw command
-#define PANIC_TIME 1000*1000         ///< Time to keep thrust in panic mode (us)
+#define PANIC_TIME 2000*1000         ///< Time to keep thrust in panic mode (us)
 #define PANIC_THRUST 0.4*MAX_THRUST_COM  ///< The amount of thrust in panic mode
 #define MAX_YAW_RATE 45*131       ///< The maximum yaw rate from js (131 LSB / (degrees/s))
 #define MAX_ANGLE 0               ///< The maximum angle from js
@@ -36,11 +36,11 @@ static uint16_t cmd_thrust = 0;                   ///< The thrust command
 static int16_t cmd_roll, cmd_pitch, cmd_yaw = 0;  ///< The roll, pitch, yaw command
 static uint16_t sp_thrust = 0;                    ///< The thrust setpoint
 static int16_t sp_roll, sp_pitch, sp_yaw = 0;     ///< The roll, pitch, yaw setpoint
-static int16_t cphi, ctheta, cpsi = 0;            ///< Calibration values of phi, theta, psi
-static int16_t cp, cq, cr = 0;                    ///< Calibration valies of p, q and r
+//static int16_t cphi, ctheta, cpsi = 0;            ///< Calibration values of phi, theta, psi
+//static int16_t cp, cq, cr = 0;                    ///< Calibration valies of p, q and r
 //static uint16_t groll_p, groll_i, groll_d = 0;    ///< The roll control gains (2^CONTROL_FRAC)
 //static uint16_t gpitch_p, gpitch_i, gpitch_d = 0; ///< The pitch control gains (2^CONTROL_FRAC)
-static uint16_t gyaw_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
+static uint16_t gyaw_d = 1;                       ///< The yaw control gains (2^CONTROL_FRAC)
 
 /* Set the motor commands */
 void update_motors(void)
@@ -139,7 +139,8 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
       cmd_thrust = thrust;
       cmd_roll = roll;
       cmd_pitch = pitch;
-      sp_yaw = yaw * MAX_YAW_RATE / MAX_CMD;
+      //sp_yaw = yaw * MAX_YAW_RATE / MAX_CMD;
+      sp_yaw = yaw >> 1;
       break;
 
     /* Roll, pitch and yaw setpoint is set and the thrust as command */
@@ -184,7 +185,7 @@ void run_filters_and_control(void)
     case MODE_CALIBRATION:
       ae[0] = ae[1] = ae[2] = ae[3] = 0;
 
-      // It takae sometimes (~ 6s) until it returns a stable value
+      // It takas sometimes (~ 6s) until it returns a stable value
       // Also calibrate here (until leave mode)
       cphi = phi;
       ctheta = theta;
@@ -196,7 +197,8 @@ void run_filters_and_control(void)
 
     /* Yaw rate controlled mode */
     case MODE_YAW:
-      cmd_yaw = ((sp_yaw - sr - cr) * gyaw_d) >> CONTROL_FRAC;
+      //cmd_yaw = ((sp_yaw - sr - cr) * gyaw_d) >> CONTROL_FRAC;
+      cmd_yaw = ((sp_yaw + (sr - cr))* gyaw_d) >> CONTROL_FRAC;
       motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
       break;
 

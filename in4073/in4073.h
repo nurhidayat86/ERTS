@@ -33,18 +33,21 @@
 #define MOTOR_3_PIN			29
 
  // additional
+enum control_mode_t control_mode;
+struct msg_telemetry_t *msg_tele;
+
 bool write_log(void);
 bool read_log(void);
 bool flash_data(void);
 struct log_t log_msg;
+uint16_t index_logging;
 
-uint8_t index_logging;
+int16_t cphi, ctheta, cpsi;           ///< Calibration values of phi, theta, psi
+int16_t cp, cq, cr;                ///< Calibration valies of p, q and r
 
 // Fractions
-#define CONTROL_FRAC 6            ///< The control gains fraction in powers of 2
+#define CONTROL_FRAC 2            ///< The control gains fraction in powers of 2
 
-enum control_mode_t control_mode;
-struct msg_telemetry_t *msg_tele;
 
 int16_t ae[4];
 void set_control_mode(enum control_mode_t mode);
