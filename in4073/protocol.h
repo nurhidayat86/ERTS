@@ -17,20 +17,6 @@
 
 // #define ENCODE
 
-//log messages 45 bytes w/o acceleration
-struct log_t {
-  uint32_t time_stamp;
-  uint8_t mode;
-  uint16_t thrust;
-  int16_t roll, pitch, yaw; 
-  int16_t ae[4];
-  int16_t phi, theta, psi; 
-  int16_t sp, sq, sr; 
-  //int16_t sax, say, saz;
-  uint16_t bat_volt;
-  int32_t temperature, pressure;
-}__attribute__((packed, aligned(1)));
-
 enum msg_status {
 	UNITINIT,
 	GOT_HDR,

@@ -1,14 +1,8 @@
-#include "in4073.h"
-#include "protocol.h"
+#include "logging.h"
 
 bool write_log() {
 	bool status;
 	status = flash_write_bytes((uint32_t) index_logging*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t));
-	// printf("%c", HDR);
-	// printf("%c", index_logging);
-	// printf("%d ", log_msg.phi);
-	// printf("%d ", log_msg.theta);
-	// printf("%d \n", log_msg.psi);
 	index_logging+=1;
 	return status;
 }
@@ -26,15 +20,6 @@ bool read_log() {
 	printf("%d \n", index_logging);
 	for (i=0; i<index_logging; i+=1) 
 	{
-		// if (status == false)
-		// {
-		// 	break;
-		// }
-		// else
-		// {
-			
-		// }
-		//printf("%d |", i);
 		#ifdef ENCODE
 			status = flash_read_bytes((uint32_t) i*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t));
 			encode_packet((uint8_t *) &log_msg, sizeof(struct log_t), MSG_LOG, output_data, &output_size);
@@ -53,33 +38,14 @@ bool read_log() {
 	return status;
 }
 
-// bool read_log (struct log_t *log_read, uint8_t *log_index) {
-// 	bool status = true;
-// 	uint8_t index = 0;
-// 	while (((index*sizeof(log_t)) <= 125000) && (status == true))
-// 	{
-// 		status = flash_read_bytes(index*sizeof(struct log_t), (uint8_t *) &log_read, sizeof(struct log_t));
-// 		if (status == true)
-// 		{
-// 			//send encoded data to the pc here here
-// 		}
-// 		else
-// 		{
-// 			status = false;
-// 			break;
-// 		}
-// 	}
-// 	return status;
-// }
-
 bool flash_data() {
 	log_msg.time_stamp = get_time_us();
-	log_msg.mode = control_mode;
-	log_msg.thrust = msg_tele->thrust;
+	log_msg.mode = 1;
+	log_msg.thrust = 3;
 	
-	log_msg.roll = msg_tele->roll;
-	log_msg.pitch = msg_tele->pitch;
-	log_msg.yaw = msg_tele->yaw;
+	log_msg.roll = 300;
+	log_msg.pitch = 200;
+	log_msg.yaw = 100;
 	
 	log_msg.ae[0] = ae[0];
 	log_msg.ae[1] = ae[1];
