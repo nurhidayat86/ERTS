@@ -9,7 +9,7 @@
 #define	FALSE 0
 #define	TRUE 1
 #define PERIODIC_COM 250
-#define HDR 0x99
+#define HDR 0x7a
 #define MAX_PAYLOAD 200
 #define HDR_FTR_SIZE 5
 #define JOYSTICK_TYPE 0x10;
@@ -17,23 +17,23 @@
 
 // #define ENCODE
 
-enum msg_status {
-	UNITINIT,
-	GOT_HDR,
-	GOT_LEN,
-	GOT_ID,
-	GOT_PAYLOAD,
-	GOT_CRC1,
-	GOT_PACKET
-};
+//msg_status
+#define	UNITINIT 0x10
+#define GOT_HDR 0x20
+#define GOT_LEN 0x30
+#define GOT_ID 0x40
+#define GOT_PAYLOAD 0x50
+#define GOT_CRC1 0x60
+#define GOT_PACKET 0x70
 
-enum msg_id{
-	MSG_JOYSTICK,
-	MSG_KEYBOARD,
-	MSG_COMBINE,
-	MSG_TELEMETRY,
-	MSG_LOG
-};
+
+//msg_id
+#define	MSG_JOYSTICK 0x15
+#define MSG_KEYBOARD 0x25
+#define MSG_COMBINE 0x35
+#define MSG_TELEMETRY 0x45
+#define MSG_LOG 0x55
+
 
 // Control
 enum control_mode_t {
@@ -88,7 +88,7 @@ struct msg_telemetry_t{
 }__attribute__((packed));
 
 struct msg_p {
-	enum msg_status status;
+	uint8_t status;
 	uint8_t ck1, ck2;
 	uint8_t msg_id;
 	uint8_t payload_len;

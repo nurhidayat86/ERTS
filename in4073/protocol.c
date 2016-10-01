@@ -6,7 +6,7 @@ void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_d
   	uint8_t checksum2 = 0;
 
  	// Setting the header
-	output_data[0] = 0x99;
+	output_data[0] = HDR;
 	output_data[1] = len;
 	checksum1 = checksum2 = len;
 	output_data[2] = msg_id;
@@ -35,7 +35,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 		//waitng start byte
 		case UNITINIT:
 			if (c == HDR) {
-				msg->status++;
+				msg->status = GOT_HDR;
 				#ifdef PC_DEBUG 
 				printf("got status \n");
 				#endif
@@ -45,7 +45,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 		case GOT_HDR:
 			msg->ck1 = msg->ck2 = c;
 			msg->payload_len = c;
-			msg->status++;
+			msg->status = GOT_LEN;
 			#ifdef PC_DEBUG
 			printf("got length %d \n", msg->ck1);
 			#endif
@@ -56,7 +56,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			msg->ck1 += c;
 			msg->ck2 += msg->ck1;
 			msg->payload_idx = 0;
-			msg->status++;
+			msg->status = GOT_ID;
 			#ifdef PC_DEBUG
 			printf("got ID %d \n", msg->ck1);
 			#endif
@@ -67,7 +67,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			msg->payload_idx++;
 			msg->ck1 += c;
 			msg->ck2 += msg->ck1;
-			if (msg->payload_idx == msg->payload_len) msg->status++;
+			if (msg->payload_idx == msg->payload_len) msg->status = GOT_PAYLOAD;
 			#ifdef PC_DEBUG
 			printf("got payload %d \n", msg->ck1);
 			#endif
@@ -82,7 +82,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 				//#endif
 			}
 			else {
-				msg->status++;
+				msg->status = GOT_CRC1;
 				#ifdef PC_DEBUG
 				printf("crc success %d \n", msg->ck1);
 				#endif
@@ -96,7 +96,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 				printf("crc2 fail\n");
 			}
 			else {
-				msg->status++;
+				msg->status = GOT_PACKET;
 	 			#ifdef PC_DEBUG
 	 			printf("receive success\n");
 				#endif 

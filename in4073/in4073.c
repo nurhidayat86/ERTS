@@ -14,14 +14,14 @@
  */
 
 #include "logging.h"
-#include "protocol.h"
+#include "logging_protocol.h"
 
 /*------------------------------------------------------------------
  * process_key -- process command keys
  *------------------------------------------------------------------
  */
 
-uint8_t mode = 0;
+uint8_t mode;
 
 void process_key(uint8_t c)
 {
@@ -73,6 +73,11 @@ void process_key(uint8_t c)
 			mode = 2;
 			break;
 		}
+		case 'm':
+		{
+			uart_put(0x7a);
+			break;
+		}
 		default:
 			nrf_gpio_pin_toggle(RED);
 	}
@@ -84,12 +89,9 @@ void process_key(uint8_t c)
  */
 int main(void)
 {
-	// uint8_t output_data[255];
-	// uint8_t output_size;
+	mode=0;
 
 	index_logging = 0;
-	// uint8_t j;
-	uint i_log = 0;
 	uart_init();
 	gpio_init();
 	timers_init();
@@ -132,21 +134,8 @@ int main(void)
 				} 
 			}
 			else if (mode == 2) {
-				if (counter++%5 == 0)
-				{
-					if(i_log<index_logging) {
-						if(i_log == 0){printf("time_stamp, mode, thrust, roll, pitch, yaw, ae[0], ae[1], ae[2], ae[3], phi, theta, psi, sp, sq, sr, bat_volt, temperature, pressure \n\r");}
-						if ((status = flash_read_bytes((uint32_t) i_log*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t)))==true)
-						{
-							printf("%10ld, %6d, %6d, %6d, %6d, %6d, %6d, %6d, %6d, %6d, %6d, %6d, %6d, %6d, %6d, %6d, %6d, %10ld, %10ld \n\r",
-							log_msg.time_stamp, log_msg.mode, log_msg.thrust, log_msg.roll, log_msg.pitch, log_msg.yaw, 
-							log_msg.ae[0], log_msg.ae[1], log_msg.ae[2], log_msg.ae[3], log_msg.phi, log_msg.theta, log_msg.psi, log_msg.sp, log_msg.sq, log_msg.sr, 
-							log_msg.bat_volt, log_msg.temperature, pressure);
-						}
-						i_log+=1;
-					}
-					
-				}
+				//status = read_log();
+				demo_done = true;
 			}
 
 			clear_timer_flag();
@@ -154,14 +143,14 @@ int main(void)
 
 		if (check_sensor_int_flag()) 
 		{
-			get_dmp_data();
+			if (mode != 2) {get_dmp_data();
 			run_filters_and_control();
-			clear_sensor_int_flag();
+			clear_sensor_int_flag();}
 		}
 
 	}
+	status = read_log();
 	printf("\n\t Goodbye \n\n");
 	nrf_delay_ms(100);
-
 	NVIC_SystemReset();
 }

@@ -1,6 +1,7 @@
 #include "in4073.h"
 
 struct log_t {
+  uint16_t index_log;
   uint32_t time_stamp;
   uint8_t mode;
   uint16_t thrust;
