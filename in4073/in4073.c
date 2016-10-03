@@ -128,7 +128,7 @@ int main(void)
 			else if(mode ==1) {
 				if(counter++%5 == 0) // write log every 1/5 secs;
 				{
-					flash_data();
+					flash_individual_data();
 					if((status = write_log()) == false) {printf("failed to write log");}
 					else printf("index_logging: %6d log_msg |%10ld |%6d |%6d |\n",index_logging, log_msg.time_stamp, log_msg.mode, log_msg.thrust);
 				} 

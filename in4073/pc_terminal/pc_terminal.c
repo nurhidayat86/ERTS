@@ -223,103 +223,102 @@ int main(int argc, char **argv)
 				{
 					switch(msg_log_p.msg_ID){
 						case INDEX_LOG:
-							msg_log->index_log = (uint16_t *)&msg_log_p.payload[0];
+							MSG_log_index = (uint16_t *)&msg_log_p.payload[0];
 							break;
 
 						case T_STAMP:
-							msg_log->time_stamp = (uint32_t *)&msg_log_p.payload[0];
+							MSG_time_stamp = (uint32_t *)&msg_log_p.payload[0];
 							break;
 
 						case MODE:
-							msg_log->mode = (uint8_t *)&msg_log_p.payload[0];
+							MSG_time_mode = (uint8_t *)&msg_log_p.payload[0];
 							break;
 
 						case THRUST:
-							msg_log->thrust = (uint16_t *)&msg_log_p.payload[0];
+							MSG_time_thrust = (uint16_t *)&msg_log_p.payload[0];
 							break;
 
 						case ROLL:
-							msg_log->roll = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_roll = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case PITCH:
-							msg_log->pitch = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_pitch = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case YAW:
-							msg_log->yaw = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_yaw = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case AE_0:
-							msg_log->ae[0] = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_ae[0] = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case AE_1:
-							msg_log->ae[1] = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_ae[1] = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case AE_2:
-							msg_log->ae[2] = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_ae[2] = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case AE_3:
-							msg_log->ae[3] = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_ae[3] = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case PHI:
-							msg_log->phi = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_phi = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case THETA:
-							msg_log->theta = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_theta = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case PSI:
-							msg_log->psi = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_psi = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case SP:
-							msg_log->sp = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_sp = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case SQ:
-							msg_log->sq = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_sq = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						case SR:
-							msg_log->sr = (int16_t *)&msg_log_p.payload[0];
+							MSG_time_sr = (int16_t *)&msg_log_p.payload[0];
 							break;
 
 						// case SAX:
-						// 	msg_log->sax = (int16_t *)&msg_log_p.payload[0];
+						// 	MSG_time_sax = (int16_t *)&msg_log_p.payload[0];
 						// 	break;
 
 						// case SAY:
-						// 	msg_log->say = (int16_t *)&msg_log_p.payload[0];
+						// 	MSG_time_say = (int16_t *)&msg_log_p.payload[0];
 						// 	break;
 
 						// case SAZ:
-						// 	msg_log->saz = (int16_t *)&msg_log_p.payload[0];
+						// 	MSG_time_saz = (int16_t *)&msg_log_p.payload[0];
 						// 	break;
 
 						case BAT_V:
-							msg_log->bat_volt = (uint16_t *)&msg_log_p.payload[0];
+							MSG_time_bat_volt = (uint16_t *)&msg_log_p.payload[0];
 							break;
 
 						case TEMP:
-							msg_log->temperature = (uint32_t *)&msg_log_p.payload[0];
+							MSG_time_temperature = (uint32_t *)&msg_log_p.payload[0];
 							break;
 
     					case PRESS:
-    						msg_log->pressure = (uint32_t *)&msg_log_p.payload[0];
+    						MSG_time_pressure = (uint32_t *)&msg_log_p.payload[0];
     						break;
 
 						case ACK:
-							//msg_lognp = *msg_log;
 							printf("%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", 
-							msg_log->index_log, msg_log->time_stamp, msg_log->mode, msg_log->thrust, msg_log->roll, msg_log->pitch, msg_log->yaw,
-							msg_log->ae[0], msg_log->ae[1], msg_log->ae[2], msg_log->ae[3], msg_log->phi, msg_log->theta, msg_log->psi,
-							msg_log->sp, msg_log->sq, msg_log->sr, msg_log->bat_volt, msg_log->temperature, msg_log->pressure);
+							MSG_time_index_log, MSG_time_time_stamp, MSG_time_mode, MSG_time_thrust, MSG_time_roll, MSG_time_pitch, MSG_time_yaw,
+							MSG_time_ae[0], MSG_time_ae[1], MSG_time_ae[2], MSG_time_ae[3], MSG_time_phi, MSG_time_theta, MSG_time_psi,
+							MSG_time_sp, MSG_time_sq, MSG_time_sr, MSG_time_bat_volt, MSG_time_temperature, MSG_time_pressure);
 							break;
 
 						default:
