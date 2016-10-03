@@ -183,12 +183,12 @@ int 	rs232_putchar(char c)
  */
 int main(int argc, char **argv)
 {
+	FILE *kp;
 	uint8_t mode = 0;
 	uint16_t count = 0;
 	uint8_t decode_status;
 	char	c;
 	static struct msg_p_log msg_log_p;
-	struct log_t *msg_log = malloc(sizeof(struct log_t));
 	term_puts("\nTerminal program - Embedded Real-Time Systems\n");
 
 	term_initio();
@@ -223,102 +223,202 @@ int main(int argc, char **argv)
 				{
 					switch(msg_log_p.msg_ID){
 						case INDEX_LOG:
-							MSG_log_index = (uint16_t *)&msg_log_p.payload[0];
+							MSG_index_log = (uint16_t *)&msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_index_log = *MSG_index_log;
+							//printf(" %d||", *MSG_index_log);
 							break;
 
 						case T_STAMP:
 							MSG_time_stamp = (uint32_t *)&msg_log_p.payload[0];
+							// MSG_time_stamp = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_time_stamp = *MSG_time_stamp;
+							//printf(" %d||", *MSG_time_stamp);
 							break;
 
 						case MODE:
-							MSG_time_mode = (uint8_t *)&msg_log_p.payload[0];
+							MSG_mode = (uint8_t *)&msg_log_p.payload[0];
+							// MSG_mode = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_mode = *MSG_mode;
+							//printf(" %d||", *MSG_mode);
 							break;
 
 						case THRUST:
-							MSG_time_thrust = (uint16_t *)&msg_log_p.payload[0];
-							break;
+							MSG_thrust = (uint16_t *)&msg_log_p.payload[0];
+							// MSG_thrust = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							//printf(" %d||", *MSG_thrust);
+						 	break;
 
 						case ROLL:
-							MSG_time_roll = (int16_t *)&msg_log_p.payload[0];
+							MSG_roll = (int16_t *)&msg_log_p.payload[0];
+							// MSG_roll = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_roll = *MSG_roll;
+							//printf(" %d||", *MSG_roll);
 							break;
 
 						case PITCH:
-							MSG_time_pitch = (int16_t *)&msg_log_p.payload[0];
+							MSG_pitch = (int16_t *)&msg_log_p.payload[0];
+							// MSG_pitch = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_pitch = *MSG_pitch;
+							//printf(" %d||", *MSG_pitch);
 							break;
 
 						case YAW:
-							MSG_time_yaw = (int16_t *)&msg_log_p.payload[0];
+							MSG_yaw = (int16_t *)&msg_log_p.payload[0];
+							// MSG_yaw = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_yaw = *MSG_yaw;
+							//printf(" %d||", *MSG_yaw);
 							break;
 
 						case AE_0:
-							MSG_time_ae[0] = (int16_t *)&msg_log_p.payload[0];
+							MSG_ae_0 = (int16_t *)&msg_log_p.payload[0];
+							// MSG_ae_0 = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_ae_0 = *MSG_ae_0;
+							//printf(" %d||", *MSG_ae_0);
 							break;
 
 						case AE_1:
-							MSG_time_ae[1] = (int16_t *)&msg_log_p.payload[0];
+							MSG_ae_1 = (int16_t *)&msg_log_p.payload[0];
+							// MSG_ae_1 = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_ae_1 = *MSG_ae_1;
+							//printf(" %d||", *MSG_ae_1);
 							break;
 
 						case AE_2:
-							MSG_time_ae[2] = (int16_t *)&msg_log_p.payload[0];
+							MSG_ae_2 = (int16_t *)&msg_log_p.payload[0];
+							// MSG_ae_2 = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_ae_2 = *MSG_ae_2;
+							//printf(" %d||", *MSG_ae_2);
 							break;
 
 						case AE_3:
-							MSG_time_ae[3] = (int16_t *)&msg_log_p.payload[0];
+							MSG_ae_3 = (int16_t *)&msg_log_p.payload[0];
+							// MSG_ae_3 = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_ae_3 = *MSG_ae_3;
+							//printf(" %d||", *MSG_ae_3);
 							break;
 
 						case PHI:
-							MSG_time_phi = (int16_t *)&msg_log_p.payload[0];
+							MSG_phi = (int16_t *)&msg_log_p.payload[0];
+							// MSG_phi = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_phi = *MSG_phi;
+							//printf(" %d||", *MSG_phi);
 							break;
 
 						case THETA:
-							MSG_time_theta = (int16_t *)&msg_log_p.payload[0];
+							MSG_theta = (int16_t *)&msg_log_p.payload[0];
+							// MSG_theta = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_theta = *MSG_theta;
+							//printf(" %d||", *MSG_theta);
 							break;
 
 						case PSI:
-							MSG_time_psi = (int16_t *)&msg_log_p.payload[0];
+							MSG_psi = (int16_t *)&msg_log_p.payload[0];
+							// MSG_psi = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_psi = *MSG_psi;
+							//printf(" %d||", *MSG_psi);
 							break;
 
 						case SP:
-							MSG_time_sp = (int16_t *)&msg_log_p.payload[0];
+							MSG_sp = (int16_t *)&msg_log_p.payload[0];
+							// MSG_sp = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_sp = *MSG_sp;
+							//printf(" %d||", *MSG_sp);
 							break;
 
 						case SQ:
-							MSG_time_sq = (int16_t *)&msg_log_p.payload[0];
+							MSG_sq = (int16_t *)&msg_log_p.payload[0];
+							// MSG_sq = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_sq = *MSG_sq;
+							//printf(" %d||", *MSG_sq);
 							break;
 
 						case SR:
-							MSG_time_sr = (int16_t *)&msg_log_p.payload[0];
+							MSG_sr = (int16_t *)&msg_log_p.payload[0];
+							// MSG_sr = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_sr = *MSG_sr;
+							//printf(" %d||\n", *MSG_sr);
 							break;
 
-						// case SAX:
-						// 	MSG_time_sax = (int16_t *)&msg_log_p.payload[0];
-						// 	break;
+						// // case SAX:
+						// // 	MSG_sax = (int16_t *)&msg_log_p.payload[0];
+							// np_MSG_sax = *MSG_time_sax
+						// // 	break;
 
-						// case SAY:
-						// 	MSG_time_say = (int16_t *)&msg_log_p.payload[0];
-						// 	break;
+						// // case SAY:
+						// // 	MSG_say = (int16_t *)&msg_log_p.payload[0];
+						// // 	break;
 
-						// case SAZ:
-						// 	MSG_time_saz = (int16_t *)&msg_log_p.payload[0];
-						// 	break;
+						// // case SAZ:
+						// // 	MSG_saz = (int16_t *)&msg_log_p.payload[0];
+						// // 	break;
 
 						case BAT_V:
-							MSG_time_bat_volt = (uint16_t *)&msg_log_p.payload[0];
+							MSG_bat_volt = (uint16_t *)&msg_log_p.payload[0];
+							// MSG_sr = &msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_bat_volt = *MSG_bat_volt;
+							//printf(" %d||\n", *MSG_bat_volt);
 							break;
 
 						case TEMP:
-							MSG_time_temperature = (uint32_t *)&msg_log_p.payload[0];
+							MSG_temperature = (uint32_t *)&msg_log_p.payload[0];
+							term_putchar(msg_log_p.payload[0]+60);
+							np_MSG_temperature = *MSG_temperature;
+							//printf(" %d||\n", *MSG_temperature);
 							break;
 
     					case PRESS:
-    						MSG_time_pressure = (uint32_t *)&msg_log_p.payload[0];
+    						MSG_pressure = (uint32_t *)&msg_log_p.payload[0];
+    						term_putchar(msg_log_p.payload[0]+60);
+    						np_MSG_pressure = *MSG_pressure;
+    						//printf(" %d||\n", *MSG_pressure);
     						break;
 
-						case ACK:
-							printf("%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", 
-							MSG_time_index_log, MSG_time_time_stamp, MSG_time_mode, MSG_time_thrust, MSG_time_roll, MSG_time_pitch, MSG_time_yaw,
-							MSG_time_ae[0], MSG_time_ae[1], MSG_time_ae[2], MSG_time_ae[3], MSG_time_phi, MSG_time_theta, MSG_time_psi,
-							MSG_time_sp, MSG_time_sq, MSG_time_sr, MSG_time_bat_volt, MSG_time_temperature, MSG_time_pressure);
+						 case ACK:
+						 	MSG_ack = (uint8_t *)&msg_log_p.payload[0];
+						 	np_MSG_ack = *MSG_ack;
+						 	if (np_MSG_ack == INIT)
+						 	{
+						 		kp = fopen("logging.csv","w+");
+						 		fprintf(kp,"index, time stamp, mode, thrust, roll, pitch, yaw, ae0, ae1, ae2, ae3, phi, theta, psi, sp, sq, sr, bat_volt, temperature, pressure\n");
+						 		fprintf(kp,"%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", 
+								np_MSG_index_log, np_MSG_time_stamp, np_MSG_mode, np_MSG_thrust, np_MSG_roll, np_MSG_pitch, np_MSG_yaw,
+								np_MSG_ae_0, np_MSG_ae_1, np_MSG_ae_2, np_MSG_ae_3, np_MSG_phi, np_MSG_theta, np_MSG_psi,
+								np_MSG_sp, np_MSG_sq, np_MSG_sr, np_MSG_bat_volt, np_MSG_temperature, np_MSG_pressure);
+						 	}
+						 	else if (np_MSG_ack == OK)
+						 	{
+						 		fprintf(kp,"%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", 
+								np_MSG_index_log, np_MSG_time_stamp, np_MSG_mode, np_MSG_thrust, np_MSG_roll, np_MSG_pitch, np_MSG_yaw,
+								np_MSG_ae_0, np_MSG_ae_1, np_MSG_ae_2, np_MSG_ae_3, np_MSG_phi, np_MSG_theta, np_MSG_psi,
+								np_MSG_sp, np_MSG_sq, np_MSG_sr, np_MSG_bat_volt, np_MSG_temperature, np_MSG_pressure);
+						 	}
+							else if (np_MSG_ack == COMPLETE)
+							{
+								fprintf(kp,"%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", 
+								np_MSG_index_log, np_MSG_time_stamp, np_MSG_mode, np_MSG_thrust, np_MSG_roll, np_MSG_pitch, np_MSG_yaw,
+								np_MSG_ae_0, np_MSG_ae_1, np_MSG_ae_2, np_MSG_ae_3, np_MSG_phi, np_MSG_theta, np_MSG_psi,
+								np_MSG_sp, np_MSG_sq, np_MSG_sr, np_MSG_bat_volt, np_MSG_temperature, np_MSG_pressure);
+								fclose(kp);
+							}
+							flash_np();
 							break;
 
 						default:

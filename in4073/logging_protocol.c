@@ -177,8 +177,8 @@ uint8_t decode_log(uint8_t c, struct msg_p_log *msg_log_p) {
 			else if(c == SAY) {msg_log_p->msg_ID = c; size_payload=sizeof(int16_t);}
 			else if(c == SAZ) {msg_log_p->msg_ID = c; size_payload=sizeof(int16_t);}
 			else if(c == BAT_V) {msg_log_p->msg_ID = c; size_payload=sizeof(uint16_t);}
-			else if(c == TEMP) {msg_log_p->msg_ID = c; size_payload=sizeof(uint32_t);}
-			else if(c == PRESS) {msg_log_p->msg_ID = c; size_payload=sizeof(uint32_t);}
+			else if(c == TEMP) {msg_log_p->msg_ID = c; size_payload=sizeof(int32_t);}
+			else if(c == PRESS) {msg_log_p->msg_ID = c; size_payload=sizeof(int32_t);}
 			else {msg_log_p->msg_ID = c; size_payload=sizeof(uint8_t);}
 			msg_log_p->payload_len = size_payload;
 			msg_log_p->payload_idx = 0;

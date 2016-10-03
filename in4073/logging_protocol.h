@@ -50,6 +50,8 @@ uint8_t encodedlog_size;
 #define OK 0x41
 #define NOK 0x43
 #define PROCESS 0x45
+#define INIT 0x47
+#define COMPLETE 0x49
 
 struct msg_p_log {
 	uint8_t status;
@@ -68,3 +70,4 @@ uint8_t encodedlog_size;
 void encode_log(uint8_t *data, uint8_t msg_ID);
 uint8_t decode_log(uint8_t c, struct msg_p_log *msg_log_p);
 void encode_ack(uint8_t ack_sent);
+void flash_np(void);

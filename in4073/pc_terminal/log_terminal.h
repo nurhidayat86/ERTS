@@ -17,14 +17,99 @@ struct log_t {
   uint32_t *MSG_time_stamp;
   uint8_t *MSG_mode;
   uint16_t *MSG_thrust;
-  int16_t *MSG_roll, *MSG_pitch, *MSG_yaw; 
-  int16_t *MSG_ae[4];
-  int16_t *MSG_phi, *MSG_theta, *MSG_psi; 
-  int16_t *MSG_sp, *MSG_sq, *MSG_sr; 
-  //int16_t *MSG_sax, *MSG_say, *MSG_saz;
+  int16_t *MSG_roll;
+  int16_t *MSG_pitch;
+  int16_t *MSG_yaw;
+  int16_t *MSG_ae_0;
+  int16_t *MSG_ae_1;
+  int16_t *MSG_ae_2;
+  int16_t *MSG_ae_3;
+  int16_t *MSG_phi;
+  int16_t *MSG_theta;
+  int16_t *MSG_psi;
+  int16_t *MSG_sp;
+  int16_t *MSG_sq;
+  int16_t *MSG_sr;
+  //int16_t *MSG_sax, *MSG_say, *MSG_saz = malloc(sizeof(int16_t));
   uint16_t *MSG_bat_volt;
-  int32_t *MSG_temperature, *MSG_pressure;
+  uint32_t *MSG_temperature;
+  uint32_t *MSG_pressure;
+  uint8_t *MSG_ack;
 
+//individual variable
+  uint16_t np_MSG_index_log;
+  uint32_t np_MSG_time_stamp;
+  uint8_t np_MSG_mode;
+  uint16_t np_MSG_thrust;
+  int16_t np_MSG_roll;
+  int16_t np_MSG_pitch;
+  int16_t np_MSG_yaw;
+  int16_t np_MSG_ae_0;
+  int16_t np_MSG_ae_1;
+  int16_t np_MSG_ae_2;
+  int16_t np_MSG_ae_3;
+  int16_t np_MSG_phi;
+  int16_t np_MSG_theta;
+  int16_t np_MSG_psi;
+  int16_t np_MSG_sp;
+  int16_t np_MSG_sq;
+  int16_t np_MSG_sr;
+  //int16_t *MSG_sax, *MSG_say, *MSG_saz = malloc(sizeof(int16_t));
+  uint16_t np_MSG_bat_volt;
+  uint32_t np_MSG_temperature;
+  uint32_t np_MSG_pressure;
+  uint8_t np_MSG_ack;
+
+void initialize_pointer()
+{
+  MSG_index_log = malloc(sizeof(uint16_t));
+  MSG_time_stamp = malloc(sizeof(uint32_t));
+  MSG_mode = malloc(sizeof(uint8_t));
+  MSG_thrust = malloc(sizeof(uint16_t));
+  MSG_roll= malloc(sizeof(int16_t)); 
+  MSG_pitch = malloc(sizeof(int16_t)); 
+  MSG_yaw = malloc(sizeof(int16_t)); 
+  MSG_ae_0 = malloc(sizeof(int16_t));
+  MSG_ae_1 = malloc(sizeof(int16_t));
+  MSG_ae_2 = malloc(sizeof(int16_t));
+  MSG_ae_3 = malloc(sizeof(int16_t));
+  MSG_phi = malloc(sizeof(int16_t));
+  MSG_theta = malloc(sizeof(int16_t));
+  MSG_psi = malloc(sizeof(int16_t));
+  MSG_sp = malloc(sizeof(int16_t));
+  MSG_sq = malloc(sizeof(int16_t));
+  MSG_sr = malloc(sizeof(int16_t));
+  //int16_t *MSG_sax, *MSG_say, *MSG_saz = malloc(sizeof(int16_t));
+  MSG_bat_volt = malloc(sizeof(uint16_t));
+  MSG_temperature = malloc(sizeof(uint32_t));
+  MSG_pressure = malloc(sizeof(uint32_t));
+}
+
+void flash_np()
+{
+  np_MSG_index_log = 99999999;
+  np_MSG_time_stamp = 99999999;
+  np_MSG_mode = 99999999;
+  np_MSG_thrust = 99999999;
+  np_MSG_roll = 99999999;
+  np_MSG_pitch = 99999999;
+  np_MSG_yaw = 99999999;
+  np_MSG_ae_0 = 99999999;
+  np_MSG_ae_1 = 99999999;
+  np_MSG_ae_2 = 99999999;
+  np_MSG_ae_3 = 99999999;
+  np_MSG_phi = 99999999;
+  np_MSG_theta = 99999999;
+  np_MSG_psi = 99999999;
+  np_MSG_sp = 99999999;
+  np_MSG_sq = 99999999;
+  np_MSG_sr = 99999999;
+  //int16_t *MSG_sax, *MSG_say, *MSG_saz = malloc(sizeof(int16_t));
+  np_MSG_bat_volt = 99999999;
+  np_MSG_temperature = 99999999;
+  np_MSG_pressure = 99999999;
+  np_MSG_ack = 99999999;
+}
 //individual_var
 // uint16_t msg_log_p-index_log;
 // uint32_t msg_log_p-time_stamp;

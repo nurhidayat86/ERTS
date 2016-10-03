@@ -128,9 +128,9 @@ int main(void)
 			else if(mode ==1) {
 				if(counter++%5 == 0) // write log every 1/5 secs;
 				{
-					flash_individual_data();
+					status = flash_data() ;
 					if((status = write_log()) == false) {printf("failed to write log");}
-					else printf("index_logging: %6d log_msg |%10ld |%6d |%6d |\n",index_logging, log_msg.time_stamp, log_msg.mode, log_msg.thrust);
+					else printf("index_logging: %6d log_msg |%10ld |%6d |%6d |\n",index_logging, MSG_time_stamp, MSG_mode, MSG_thrust);
 				} 
 			}
 			else if (mode == 2) {
@@ -143,9 +143,9 @@ int main(void)
 
 		if (check_sensor_int_flag()) 
 		{
-			if (mode != 2) {get_dmp_data();
+			get_dmp_data();
 			run_filters_and_control();
-			clear_sensor_int_flag();}
+			clear_sensor_int_flag();
 		}
 
 	}
