@@ -7,10 +7,9 @@
 
 #include "keyboard.h"
 
-void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg)
+void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tuning_t* tuning_msg)
 {
 	if(keyboard_msg->mode != MODE_SAFE && keyboard_msg->mode != MODE_PANIC){
-
 		switch(c) {
 			// Controls
 			case 'a': //thrust up
@@ -68,13 +67,27 @@ void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg)
 			case '1':
 				keyboard_msg->mode = MODE_PANIC;
 				break;
+
+			case 'u':
+				if (tuning_msg->P < 6) {
+					tuning_msg->P+=1;
+				}
+				tuning_msg->update = TRUE;
+				break;
+
+			case 'j':
+				if (tuning_msg->P > 0) {
+					tuning_msg->P-=1;
+				}
+				tuning_msg->update = TRUE;
+				break;
 							
 			default:
 				break;
 		}
 	}
-
-	if(keyboard_msg->mode == MODE_SAFE || keyboard_msg->mode == MODE_PANIC ) // for time being
+	
+	if(keyboard_msg->mode == MODE_SAFE)
 	{
 		switch(c) {
 			case '0':

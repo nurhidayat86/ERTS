@@ -14,15 +14,21 @@
  #include "protocol.h"
 //#include "control.h"
 
+#define THRUST_MIN 180*8
+
+#define PRESCALE 3
+#define MAX_THRUST_COM 8192
+#define MIN_THRUST_COM 0
+#define MAX_ATTITUDE_COM 8192
+#define MIN_ATTITUDE_COM -MAX_ATTITUDE_COM
+
 #define MAX_MOTOR 1000            ///< Maximum PWM signal (1000us is added)
 #define MAX_CMD 1024              ///< Maximum thrust, roll, pitch and yaw command
 #define MIN_CMD -MAX_CMD          ///< Minimum roll, pitch, yaw command
-#define PANIC_TIME 2*1000         ///< Time to keep thrust in panic mode (us)
-#define PANIC_THRUST 0.4*MAX_CMD  ///< The amount of thrust in panic mode
+#define PANIC_TIME 2000*1000         ///< Time to keep thrust in panic mode (us)
+#define PANIC_THRUST 0.4*MAX_THRUST_COM  ///< The amount of thrust in panic mode
 #define MAX_YAW_RATE 45*131       ///< The maximum yaw rate from js (131 LSB / (degrees/s))
 #define MAX_ANGLE 0               ///< The maximum angle from js
-
-#define PRESCALE 3
 
 #define Bound(_x, _min, _max) { if (_x > (_max)) _x = (_max); else if (_x < (_min)) _x = (_min); }
 
@@ -30,13 +36,14 @@
 static uint32_t panic_start = 0;                  ///< Time at which panic mode is entered
 static uint16_t cmd_thrust = 0;                   ///< The thrust command
 static int16_t cmd_roll, cmd_pitch, cmd_yaw = 0;  ///< The roll, pitch, yaw command
+// static int16_t cmd_yaw_old = 0;  ///< The roll, pitch, yaw command
 static uint16_t sp_thrust = 0;                    ///< The thrust setpoint
 static int16_t sp_roll, sp_pitch, sp_yaw = 0;     ///< The roll, pitch, yaw setpoint
-static int16_t cphi, ctheta, cpsi = 0;            ///< Calibration values of phi, theta, psi
-static int16_t cp, cq, cr = 0;                    ///< Calibration valies of p, q and r
+//static int16_t cphi, ctheta, cpsi = 0;            ///< Calibration values of phi, theta, psi
+//static int16_t cp, cq, cr = 0;                    ///< Calibration valies of p, q and r
 //static uint16_t groll_p, groll_i, groll_d = 0;    ///< The roll control gains (2^CONTROL_FRAC)
 //static uint16_t gpitch_p, gpitch_i, gpitch_d = 0; ///< The pitch control gains (2^CONTROL_FRAC)
-static uint16_t gyaw_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
+static uint8_t gyaw_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
 
 /* Set the motor commands */
 void update_motors(void)
@@ -107,6 +114,10 @@ void set_control_mode(enum control_mode_t mode) {
       cr = sr;
       break;
 
+    /* Full Control Mode */
+    case MODE_FULL:
+      break;
+  
     default:
       break;
   };
@@ -114,7 +125,7 @@ void set_control_mode(enum control_mode_t mode) {
 }
 
 /* Set the control gains */
-void set_control_gains(uint16_t yaw_d) {
+void set_control_gains(uint8_t yaw_d) {
   gyaw_d = yaw_d;
 }
 
@@ -135,7 +146,8 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
       cmd_thrust = thrust;
       cmd_roll = roll;
       cmd_pitch = pitch;
-      sp_yaw = yaw * MAX_YAW_RATE / MAX_CMD;
+      //sp_yaw = yaw * MAX_YAW_RATE / MAX_CMD;
+      sp_yaw = yaw;
       break;
 
     /* Roll, pitch and yaw setpoint is set and the thrust as command */
@@ -149,6 +161,44 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
     default:
       break;
   }
+}
+
+void calibration(void)
+{
+    int16_t samples = 100;
+    int16_t sum1, sum2, sum3, sum4, sum5, sum6;
+    uint8_t i = 0, j = 0;
+    
+    for(i=0, sum1=0, sum2=0, sum3=0, sum4=0, sum5=0, sum6=0; i<samples; i++) 
+    {
+      if (check_sensor_int_flag()) 
+      {
+        get_dmp_data();
+        j++;  // number of samples taken
+        clear_sensor_int_flag();
+      }
+/****************************************************/
+      sum1 += phi;
+/****************************************************/
+      sum2 += theta;
+/****************************************************/
+      sum3 += psi;
+/****************************************************/
+      sum4 += sp;
+/****************************************************/
+      sum5 += sp;
+/****************************************************/
+      sum6 += sp;
+
+      nrf_delay_ms(10);
+    }
+    printf("%d samples taken \n", j);
+    cphi = sum1/samples;
+    ctheta = sum2/samples;
+    cpsi = sum3/samples;
+    cp = sum4/samples;
+    cq = sum5/samples;
+    cr = sum6/samples;
 }
 
 /* Run the filters and control */
@@ -180,6 +230,7 @@ void run_filters_and_control(void)
     case MODE_CALIBRATION:
       ae[0] = ae[1] = ae[2] = ae[3] = 0;
 
+      // It takes sometimes (~ 6s) until it returns a stable value
       // Also calibrate here (until leave mode)
       cphi = phi;
       ctheta = theta;
@@ -187,13 +238,42 @@ void run_filters_and_control(void)
       cp = sp;
       cq = sq;
       cr = sr;
+
+      // calibration();
       break;
 
     /* Yaw rate controlled mode */
     case MODE_YAW:
-      cmd_yaw = ((sp_yaw - sr - cr) * gyaw_d) >> CONTROL_FRAC;
-      motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+      //cmd_yaw = ((sp_yaw - sr - cr) * gyaw_d) >> CONTROL_FRAC;
+      if(cmd_thrust > THRUST_MIN)
+      {
+        cmd_yaw = ((sp_yaw + (sr - cr))* gyaw_d) >> CONTROL_FRAC;
+        if(cmd_thrust > (abs(cmd_yaw) + THRUST_MIN))
+        {motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);}
+        // else
+        // {motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw_old);}
+        // cmd_yaw_old = cmd_yaw;
+      }
+      else
+      {motor_mixing(cmd_thrust, 0, 0, 0);}
       break;
+
+    /* Yaw rate controlled mode */
+    case MODE_FULL:
+      //cmd_yaw = ((sp_yaw - sr - cr) * gyaw_d) >> CONTROL_FRAC;
+      if(cmd_thrust > THRUST_MIN)
+      {
+        // rate = y and z have the opposite sign 
+        // attitude angle = z has the opposite sign 
+  
+        // cmd_roll = (sp_roll - (phi - cphi));
+        // cmd_pitch = (sp_pitch + (theta - ctheta));
+
+        // cmd_yaw = ((sp_yaw + (sr - cr))* gyaw_d) >> CONTROL_FRAC;
+        // motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+      }
+      break;
+
 
     /* Just in case an invalid mode is selected go to SAFE */
     default:
@@ -204,3 +284,4 @@ void run_filters_and_control(void)
   /* Update the motor commands */
 	update_motors();
 }
+  
