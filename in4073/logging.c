@@ -1,5 +1,5 @@
-#include "in4073.h"
-#include "protocol.h"
+#include "logging.h"
+#include "logging_protocol.h"
 
 bool write_log() {
 	bool status;
@@ -16,61 +16,67 @@ bool write_log() {
 bool read_log() {
 	
 	#ifdef ENCODE
-	uint8_t output_data[205];
- 	uint8_t output_size;
-	uint8_t j = 0;
+	uint8_t j;
 	#endif
-	uint16_t i = 0;
+	uint16_t i;
 	bool status = true;
 	
 	printf("%d \n", index_logging);
-	for (i=0; i<index_logging; i+=1) 
+	for (i=0; i<index_logging; i++) 
 	{
-		// if (status == false)
-		// {
-		// 	break;
-		// }
-		// else
-		// {
-			
-		// }
-		//printf("%d |", i);
 		#ifdef ENCODE
-			status = flash_read_bytes((uint32_t) i*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t));
-			encode_packet((uint8_t *) &log_msg, sizeof(struct log_t), MSG_LOG, output_data, &output_size);
-			for (j=0;j<output_size;j++) uart_put(output_data[j]);
-			nrf_delay_ms(50);
+			if(flash_read_bytes((uint32_t) i*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t)) == true)
+			{
+				encode_log((uint8_t *)&i,INDEX_LOG);for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.time_stamp,T_STAMP);for (j=0; j<encodedlog_size; j++) {uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.mode,MODE); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.thrust,THRUST); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.roll,ROLL); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.pitch,PITCH); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.yaw,YAW); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.ae[0],AE_0); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.ae[1],AE_1); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.ae[2],AE_2); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.ae[3],AE_3); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.phi,PHI); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.theta,THETA); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.psi,PSI); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.sp,SP); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.sq,SQ); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.sr,SR); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				//encode_log((uint8_t *)&log_msg.sax,SAX); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(100);}
+				//encode_log((uint8_t *)&log_msg.say,SAY); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(100);}
+				//encode_log((uint8_t *)&log_msg.saz,SAZ); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(100);}
+				encode_log((uint8_t *)&log_msg.bat_volt,BAT_V); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.temperature,TEMP); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				encode_log((uint8_t *)&log_msg.pressure,PRESS); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+				if (i == 0)
+					{
+						encode_ack(INIT);
+						for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+					}
+				else if(i == (index_logging-1))
+					{
+						encode_ack(COMPLETE); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+					}
+				else
+					{
+						encode_ack(OK); for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(50);}
+					}
+			}
+			
 		#else
 			status = flash_read_bytes((uint32_t) i*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t));
-			printf("%ld %d | %d | %d %d %d %d | ", log_msg.time_stamp, i, log_msg.mode, log_msg.thrust, log_msg.roll, log_msg.pitch, log_msg.yaw);
-			printf("%d %d %d %d | ", log_msg.ae[0], log_msg.ae[1], log_msg.ae[2], log_msg.ae[3] );
-			printf("%d %d %d | ", log_msg.phi, log_msg.theta, log_msg.psi);
-			printf("%d %d %d | ", log_msg.sp, log_msg.sq, log_msg.sr); 
-			printf("%d %ld %ld\n", log_msg.bat_volt, log_msg.temperature, log_msg.pressure); 
+			printf("%ld %d | %d | %d %d %d %d | ", MSG_time_stamp, i, MSG_mode, MSG_thrust, MSG_roll, MSG_pitch, MSG_yaw);
+			printf("%d %d %d %d | ", MSG_ae[0], MSG_ae[1], MSG_ae[2], MSG_ae[3] );
+			printf("%d %d %d | ", MSG_phi, MSG_theta, MSG_psi);
+			printf("%d %d %d | ", MSG_sp, MSG_sq, MSG_sr); 
+			printf("%d %ld %ld\n", MSG_bat_volt, MSG_temperature, MSG_pressure); 
 			nrf_delay_ms(10);
 		#endif		
 	}
 	return status;
 }
-
-// bool read_log (struct log_t *log_read, uint8_t *log_index) {
-// 	bool status = true;
-// 	uint8_t index = 0;
-// 	while (((index*sizeof(log_t)) <= 125000) && (status == true))
-// 	{
-// 		status = flash_read_bytes(index*sizeof(struct log_t), (uint8_t *) &log_read, sizeof(struct log_t));
-// 		if (status == true)
-// 		{
-// 			//send encoded data to the pc here here
-// 		}
-// 		else
-// 		{
-// 			status = false;
-// 			break;
-// 		}
-// 	}
-// 	return status;
-// }
 
 bool flash_data() {
 	log_msg.time_stamp = get_time_us();

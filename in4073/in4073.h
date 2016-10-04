@@ -39,12 +39,12 @@ uint16_t mthrust;           		///< thrust message from pc
 int16_t mroll, mpitch, myaw;        ///< attitude message from pc
 int16_t cphi, ctheta, cpsi;         ///< Calibration values of phi, theta, psi
 
-
-bool write_log(void);
-bool read_log(void);
-bool flash_data(void);
-struct log_t log_msg;
-uint16_t index_logging;
+//moved to logging.h
+//bool write_log(void);
+//bool read_log(void);
+//bool flash_data(void);
+//struct log_t log_msg;
+//uint16_t index_logging;
 
 int16_t cphi, ctheta, cpsi;           ///< Calibration values of phi, theta, psi
 int16_t cp, cq, cr;                ///< Calibration valies of p, q and r

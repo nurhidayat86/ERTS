@@ -63,7 +63,7 @@ enum control_mode_t {
   MODE_RAW,
   MODE_HEIGHT,
   ESCAPE,
-  MODE_LOG
+//  MODE_LOG
 };
 
 struct msg_joystick_t{

@@ -181,11 +181,8 @@ int main(void)
 			// write to FLASH EVERY 100 ms
 			if (counter_log++%2 == 0)
 			{
-				if (status == true)
-				{
-					flash_data();
-					status = write_log();	
-				}
+				status = flash_data() ;
+				if((status = write_log()) == false) {printf("failed to write log");}
 
 				// #ifdef ENCODE
 				// 	encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
@@ -222,7 +219,7 @@ int main(void)
 	{
 		if ((status = read_log())==true)
 		{
-			printf("Reading Log Data Finished");
+			printf("Writing log file");
 			control_mode = MODE_SAFE;
 		}	
 	}
