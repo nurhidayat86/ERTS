@@ -30,11 +30,12 @@ void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_d
 	}
 
 	// Setting the checksum
-	output_data[i+3] = checksum1;
-	output_data[i+4] = checksum2;
+	// output_data[i+3] = checksum1;
+	// output_data[i+4] = checksum2;
+	output_data[i+3] = checksum2;
 
 	// Set the output size
-	*output_size = len + HDR_FTR_SIZE;
+	*output_size = len + HDR_FTR_SIZE - 1;
 }
 
 void msg_parse(struct msg_p *msg, uint8_t c) {
@@ -81,22 +82,22 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			break;
 
 		case GOT_PAYLOAD:
-			if (c != msg->ck1) {
-				msg->crc_fails++;
-				msg->status = UNITINIT;
-				//#ifdef PC_DEBUG
-				printf("crc fail %d \n", msg->crc_fails);
-				//#endif
-			}
-			else {
-				msg->status++;
-				#ifdef PC_DEBUG
-				printf("crc success %d \n", msg->ck1);
-				#endif
-			}
-			break;
+		// 	if (c != msg->ck1) {
+		// 		msg->crc_fails++;
+		// 		msg->status = UNITINIT;
+		// 		//#ifdef PC_DEBUG
+		// 		printf("crc fail %d \n", msg->crc_fails);
+		// 		//#endif
+		// 	}
+		// 	else {
+		// 		msg->status++;
+		// 		#ifdef PC_DEBUG
+		// 		printf("crc success %d \n", msg->ck1);
+		// 		#endif
+		// 	}
+		// 	break;
 
-		case GOT_CRC1:
+		// case GOT_CRC1:
 			if (c != msg->ck2) {
 				msg->crc_fails++;
 				msg->status = UNITINIT;

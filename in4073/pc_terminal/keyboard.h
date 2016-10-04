@@ -9,8 +9,8 @@
 #define MAX_ATTITUDE_COM 8192
 #define MIN_ATTITUDE_COM -MAX_ATTITUDE_COM
 
-#define KEY_INC 128
+#define KEY_INC 64
 
-void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg);
+void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tuning_t* tuning_msg, struct msg_joystick_t* joystick_msg);
 
 #endif /* _KEYBOARD_H_ */

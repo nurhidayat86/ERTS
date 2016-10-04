@@ -14,7 +14,7 @@ void init_joystick(int* fd)
 	int version = 0x000800;
 	char name[NAME_LENGTH] = "Unknown";
 
-	if ((*fd = open("/dev/input/js1", O_RDONLY)) < 0) 
+	if ((*fd = open("/dev/input/js0", O_RDONLY)) < 0) 
 	{
 		perror("joystick");
 		exit(1);
@@ -52,15 +52,15 @@ void JoystickCommand(int fd, struct js_event js, struct msg_joystick_t* joystick
 	//}
 }
 
-		// send the joystick message to the drone
-		// if(joystick_msg.update)
-		// {
-		// 	encode_packet((uint8_t *) &joystick_msg, sizeof(struct msg_joystick_t), MSG_JOYSTICK, output_data, &output_size);
-		
-		// 	//printf("Axes: %s Output data:", &axes);
-		// 	for (i=0; i<output_size; i++) {
-		// 	rs232_putchar((char) output_data[i]);
-		// 	//printf("0x%X ", output_data[i]);
-		// 	}
-		// 	joystick_msg.update=FALSE;
-		// }
+// send the joystick message to the drone
+// if(joystick_msg.update)
+// {
+// 	encode_packet((uint8_t *) &joystick_msg, sizeof(struct msg_joystick_t), MSG_JOYSTICK, output_data, &output_size);
+
+// 	//printf("Axes: %s Output data:", &axes);
+// 	for (i=0; i<output_size; i++) {
+// 	rs232_putchar((char) output_data[i]);
+// 	//printf("0x%X ", output_data[i]);
+// 	}
+// 	joystick_msg.update=FALSE;
+// }
