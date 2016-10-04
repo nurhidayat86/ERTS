@@ -188,7 +188,7 @@ uint8_t decode_log(uint8_t c, struct msg_p_log *msg_log_p) {
 
 		case GOT_ID:
 			msg_log_p->payload[msg_log_p->payload_idx] = c;
-			msg_log_p->CRC1+=c;
+			msg_log_p->CRC1+= c;
 			msg_log_p->CRC2+=msg_log_p->CRC1;
 			msg_log_p->payload_idx+=1;
 			if(msg_log_p->payload_idx == msg_log_p->payload_len) msg_log_p->status = GOT_PAYLOAD;

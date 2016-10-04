@@ -23,7 +23,7 @@ uint8_t encodedlog_size;
 #define	INDEX_LOG 0x18
 #define	T_STAMP 0x21
 #define MODE 0x22
-#define THRUST 0x24
+#define THRUST 0x7E
 #define ROLL 0x26
 #define PITCH 0x28
 #define YAW 0x30
@@ -52,6 +52,8 @@ uint8_t encodedlog_size;
 #define PROCESS 0x45
 #define INIT 0x47
 #define COMPLETE 0x49
+
+#define LOG_DELAY 1
 
 struct msg_p_log {
 	uint8_t status;

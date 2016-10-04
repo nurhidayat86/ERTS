@@ -33,26 +33,24 @@
 #define MOTOR_3_PIN			29
 
  // additional
-enum control_mode_t control_mode;
+volatile enum control_mode_t control_mode;
 struct msg_telemetry_t *msg_tele;
+
+uint8_t mmode;           			///< mode message from pc
 uint16_t mthrust;           		///< thrust message from pc
 int16_t mroll, mpitch, myaw;        ///< attitude message from pc
 int16_t cphi, ctheta, cpsi;         ///< Calibration values of phi, theta, psi
 
-//moved to logging.h
-//bool write_log(void);
-//bool read_log(void);
-//bool flash_data(void);
-//struct log_t log_msg;
-//uint16_t index_logging;
+// bool write_log(void);
+// bool read_log(void);
+// bool flash_data(void);
+// struct log_t log_msg;
+// uint16_t index_logging;
 
 int16_t cphi, ctheta, cpsi;           ///< Calibration values of phi, theta, psi
 int16_t cp, cq, cr;                ///< Calibration valies of p, q and r
 uint8_t P, P1, P2;                ///< Calibration valies of p, q and r
-
-// Fractions
-#define CONTROL_FRAC 2          ///< The control gains fraction in powers of 2
-
+       
 int16_t ae[4];
 void set_control_mode(enum control_mode_t mode);
 void set_control_gains(uint8_t yaw_d);

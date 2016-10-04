@@ -87,28 +87,28 @@ void initialize_pointer()
 
 void flash_np()
 {
-  np_MSG_index_log = 99999999;
-  np_MSG_time_stamp = 99999999;
-  np_MSG_mode = 99999999;
-  np_MSG_thrust = 99999999;
-  np_MSG_roll = 99999999;
-  np_MSG_pitch = 99999999;
-  np_MSG_yaw = 99999999;
-  np_MSG_ae_0 = 99999999;
-  np_MSG_ae_1 = 99999999;
-  np_MSG_ae_2 = 99999999;
-  np_MSG_ae_3 = 99999999;
-  np_MSG_phi = 99999999;
-  np_MSG_theta = 99999999;
-  np_MSG_psi = 99999999;
-  np_MSG_sp = 99999999;
-  np_MSG_sq = 99999999;
-  np_MSG_sr = 99999999;
+  np_MSG_index_log = 99;
+  np_MSG_time_stamp = 99;
+  np_MSG_mode = 99;
+  np_MSG_thrust = 99;
+  np_MSG_roll = 99;
+  np_MSG_pitch = 99;
+  np_MSG_yaw = 99;
+  np_MSG_ae_0 = 99;
+  np_MSG_ae_1 = 99;
+  np_MSG_ae_2 = 99;
+  np_MSG_ae_3 = 99;
+  np_MSG_phi = 99;
+  np_MSG_theta = 99;
+  np_MSG_psi = 99;
+  np_MSG_sp = 99;
+  np_MSG_sq = 99;
+  np_MSG_sr = 99;
   //int16_t *MSG_sax, *MSG_say, *MSG_saz = malloc(sizeof(int16_t));
-  np_MSG_bat_volt = 99999999;
-  np_MSG_temperature = 99999999;
-  np_MSG_pressure = 99999999;
-  np_MSG_ack = 99999999;
+  np_MSG_bat_volt = 99;
+  np_MSG_temperature = 99;
+  np_MSG_pressure = 99;
+  np_MSG_ack = 99;
 }
 //individual_var
 // uint16_t msg_log_p-index_log;

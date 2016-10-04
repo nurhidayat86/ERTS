@@ -7,7 +7,7 @@
 
 #include "keyboard.h"
 
-void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tuning_t* tuning_msg)
+void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tuning_t* tuning_msg, struct msg_joystick_t* joystick_msg)
 {
 	if(keyboard_msg->mode != MODE_SAFE && keyboard_msg->mode != MODE_PANIC){
 		switch(c) {
@@ -60,22 +60,23 @@ void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tun
 				}
 				break;
 
-			case '0':
+			// we can only go to these two modes from the other "dynamic mode"  
+			case '0':	// go back to safe mode
 				keyboard_msg->mode = MODE_SAFE;
 				break;
 
-			case '1':
+			case '1':	// go to panic mode 
 				keyboard_msg->mode = MODE_PANIC;
 				break;
 
-			case 'u':
+			case 'u':	// increase the yaw gain
 				if (tuning_msg->P < 6) {
 					tuning_msg->P+=1;
 				}
 				tuning_msg->update = TRUE;
 				break;
 
-			case 'j':
+			case 'j': // decrease the yaw gain
 				if (tuning_msg->P > 0) {
 					tuning_msg->P-=1;
 				}
@@ -87,7 +88,9 @@ void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tun
 		}
 	}
 	
-	if(keyboard_msg->mode == MODE_SAFE)
+	// we can go to any other mode if we are in the safe mode
+	// abort/exit only can be reach by doing the safe mode first
+	if(keyboard_msg->mode == MODE_SAFE && joystick_msg->thrust == 0)
 	{
 		switch(c) {
 			case '0':

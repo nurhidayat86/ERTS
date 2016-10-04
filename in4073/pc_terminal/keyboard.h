@@ -11,6 +11,6 @@
 
 #define KEY_INC 64
 
-void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tuning_t* tuning_msg);
+void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tuning_t* tuning_msg, struct msg_joystick_t* joystick_msg);
 
 #endif /* _KEYBOARD_H_ */

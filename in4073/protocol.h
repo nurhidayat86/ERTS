@@ -9,7 +9,7 @@
 #define	FALSE 0
 #define	TRUE 1
 #define PERIODIC_COM 250
-#define PERIODIC_LINK_US 1000*1000
+#define PERIODIC_LINK_US 2000*1000
 
 #define HDR 0x99
 #define MAX_PAYLOAD 200
@@ -17,21 +17,21 @@
 #define JOYSTICK_TYPE 0x10;
 #define KEYBOARD_TYPE 0x20;
 
-// #define ENCODE
+#define ENCODE
 
 //log messages 45 bytes w/o acceleration
-struct log_t {
-  uint32_t time_stamp;
-  uint8_t mode;
-  uint16_t thrust;
-  int16_t roll, pitch, yaw; 
-  int16_t ae[4];
-  int16_t phi, theta, psi; 
-  int16_t sp, sq, sr; 
-  //int16_t sax, say, saz;
-  uint16_t bat_volt;
-  int32_t temperature, pressure;
-}__attribute__((packed, aligned(1)));
+// struct log_t {
+//   uint32_t time_stamp;
+//   uint8_t mode;
+//   uint16_t thrust;
+//   int16_t roll, pitch, yaw; 
+//   int16_t ae[4];
+//   int16_t phi, theta, psi; 
+//   int16_t sp, sq, sr; 
+//   //int16_t sax, say, saz;
+//   uint16_t bat_volt;
+//   int32_t temperature, pressure;
+// }__attribute__((packed, aligned(1)));
 
 enum msg_status {
 	UNITINIT,
@@ -63,7 +63,7 @@ enum control_mode_t {
   MODE_RAW,
   MODE_HEIGHT,
   ESCAPE,
-//  MODE_LOG
+  MODE_LOG
 };
 
 struct msg_joystick_t{

@@ -14,9 +14,11 @@
  */
 
 #include "in4073.h"
-//#include "control.h" 
+#include "logging.h"
+#include "logging_protocol.h"
 
 bool loop;
+
 static void process_bytes(uint8_t byte) {
 	
 	static struct msg_p msg;
@@ -24,7 +26,7 @@ static void process_bytes(uint8_t byte) {
 	struct msg_tuning_t *msg_tune;	
 	// static struct msg_combine_t msg_com_val;
 	// static struct msg_tuning_t msg_tune_val;	
-	static uint8_t mmode;
+	// static uint8_t mmode;
 	// static uint16_t mthrust;
 	// static int16_t mroll;
 	// static int16_t mpitch;
@@ -158,7 +160,7 @@ int main(void)
 	{
 		//end = get_time_us();
 		//if ((end - start) > PERIODIC_LINK_US) printf("link is missing");  
-		if (counter_link > 2) printf("link is missing");  
+		if (counter_link > PERIODIC_LINK_US) printf("link is missing \n");  
 
 		if (rx_queue.count) 
 		{
@@ -181,8 +183,13 @@ int main(void)
 			// write to FLASH EVERY 100 ms
 			if (counter_log++%2 == 0)
 			{
-				status = flash_data() ;
-				if((status = write_log()) == false) {printf("failed to write log");}
+				if (status == true)
+				{
+					// flash_data();
+					// status = write_log();
+					status = flash_data() ;
+	 				if((status = write_log()) == false) {printf("failed to write log");}	
+				}
 
 				// #ifdef ENCODE
 				// 	encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
@@ -191,7 +198,7 @@ int main(void)
 					// 	printf("%d %d %d %d %d \n", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 					//  send_telemetry();
 					// printf("%d %d %d %d %d| ", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-					printf("%d %d %d %d %d| ", control_mode, mthrust, mroll, mpitch, myaw);
+					printf("%d %d %d %d %d %d| ", mmode, control_mode, mthrust, mroll, mpitch, myaw);
 					printf("%d %d %d %d| ", ae[0],ae[1],ae[2],ae[3]);
 					//printf("%d %d %d| ", phi-cphi, theta-ctheta, psi-cpsi);
 					printf("%d %d %d| ", phi, theta, -psi);
@@ -199,7 +206,6 @@ int main(void)
 					//printf("%d %d %d| ", sp, -sq, -sr);					
 					printf("%d %d \n", bat_volt, P);
 				//#endif
-	
 			} 
 			
 			// send telemetry on 50 ms			
@@ -219,6 +225,7 @@ int main(void)
 	{
 		if ((status = read_log())==true)
 		{
+			printf("Reading Log Data Finished");
 			printf("Writing log file");
 			control_mode = MODE_SAFE;
 		}	
