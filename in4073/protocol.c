@@ -19,7 +19,7 @@ void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_d
 	output_data[2] = msg_id;
 	checksum1 += msg_id;
 	checksum2 += checksum1;
-
+	
 	// Encoding the data
 	while (i<len)
 	{

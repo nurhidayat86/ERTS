@@ -6,6 +6,37 @@
  */
 #include "command.h"
 #include "keyboard.h"
+#include "serial.h"
+
+
+void InitCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* keyboard_msg, struct msg_joystick_t* joystick_msg, struct msg_tuning_t* tuning_msg)
+{
+	joystick_msg->mode = 0;
+	joystick_msg->thrust = 0;
+	joystick_msg->roll = 0;
+	joystick_msg->pitch = 0;
+	joystick_msg->yaw = 0;
+	joystick_msg->update = FALSE;
+
+	keyboard_msg->mode = 0;
+	keyboard_msg->thrust = 0;
+	keyboard_msg->roll = 0;
+	keyboard_msg->pitch = 0;
+	keyboard_msg->yaw = 0;
+	keyboard_msg->update = FALSE;
+
+	combine_msg->mode = 0;
+	combine_msg->thrust = 0;
+	combine_msg->roll = 0;
+	combine_msg->pitch = 0;
+	combine_msg->yaw = 0;
+	combine_msg->update = FALSE;
+
+	tuning_msg->P = 0;
+	tuning_msg->P1 = 0;
+	tuning_msg->P2 = 0;
+	tuning_msg->update = FALSE;
+}
 
 void CombineCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* keyboard_msg, struct msg_joystick_t* joystick_msg)
 {
@@ -55,4 +86,33 @@ void CombineCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* ke
 	combine_msg->update=FALSE;
 	joystick_msg->update=FALSE;
 	keyboard_msg->update=FALSE;	
+}
+
+void SendCommand(struct msg_combine_t* combine_msg)
+{
+	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
+	uint8_t output_size;
+	uint8_t i = 0;
+
+	encode_packet((uint8_t *) combine_msg, sizeof(struct msg_combine_t), MSG_COMBINE, output_data, &output_size);
+	
+	// send the message
+	for (i=0; i<output_size; i++) {	
+		rs232_putchar((char) output_data[i]);
+		// printf("0x%X ", (uint8_t) output_data[i]);
+	}
+	// printf("\n");
+}
+
+void SendCommandTuning(struct msg_tuning_t* tuning_msg)
+{
+	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
+	uint8_t output_size;
+	uint8_t i = 0;
+
+	encode_packet((uint8_t *) tuning_msg, sizeof(struct msg_tuning_t), MSG_TUNE, output_data, &output_size);
+	// send the message
+	for (i=0; i<output_size; i++) {	
+		rs232_putchar((char) output_data[i]);
+	}
 }

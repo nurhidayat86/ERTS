@@ -24,7 +24,6 @@ void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tun
 				break;
 
 			case 'w': // yaw up (right)
-				//printf("w");
 				if (keyboard_msg->yaw < MAX_ATTITUDE_COM) {
 					keyboard_msg->yaw+=KEY_INC;
 				}

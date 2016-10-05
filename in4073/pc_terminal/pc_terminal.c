@@ -46,92 +46,50 @@ void mon_delay_ms(unsigned int ms)
     assert(nanosleep(&req,&rem) == 0);
 }
 
-void send_command(struct msg_combine_t* combine_msg)
-{
-	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
-	uint8_t output_size;
-	uint8_t i = 0;
-
-	encode_packet((uint8_t *) combine_msg, sizeof(struct msg_combine_t), MSG_COMBINE, output_data, &output_size);
-	// printf("encode message \n");
-	// printf("\n");
-	// printf("%d |", (int16_t)(joystick_msg.thrust + keyboard_msg.thrust));
-	// send the message
-	for (i=0; i<output_size; i++) {	
-		rs232_putchar((char) output_data[i]);
-		//printf("0x%X ", output_data[i]);
-	}
-	//printf("message sent \n");
-	//printf("\n");
-}
-
-void send_command_tuning(struct msg_tuning_t* tuning_msg)
-{
-	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
-	uint8_t output_size;
-	uint8_t i = 0;
-
-	encode_packet((uint8_t *) tuning_msg, sizeof(struct msg_tuning_t), MSG_TUNE, output_data, &output_size);
-	// printf("encode message \n");
-	// printf("\n");
-	// printf("%d |", (int16_t)(joystick_msg.thrust + keyboard_msg.thrust));
-	// send the message
-	for (i=0; i<output_size; i++) {	
-		rs232_putchar((char) output_data[i]);
-		//printf("0x%X ", output_data[i]);
-	}
-	//printf("message sent \n");
-	//printf("\n");
-}
-
 int main(int argc, char **argv)
 {
+	// periodic command timer 
 	uint32_t start, end, panic_start = 0;
-
-	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
-	uint8_t output_size;
-	uint8_t i = 0;
-	uint16_t log_counter = 0;
 	
+	// profile timer
+	#ifdef PC_PROFILE 
+	uint32_t start_profile, end_profile = 0;
+	uint32_t proc_send = 0;
+	uint32_t proc_joy = 0;
+	uint32_t proc_key = 0;
+	uint32_t proc_comb = 0;
+	uint32_t proc_read = 0;
+	#endif
+
+	// encode variable
+	// uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
+	// uint8_t output_size;
+	// uint8_t i = 0;
+
+	// uint16_t log_counter = 0;
+	// struct log_t *msg_log; 
+	uint32_t counter = 0;	
+
+	#ifdef ENCODE_PC_RECEIVE
 	struct msg_p msg;
 	struct msg_telemetry_t *msg_tele;
+	#endif
 
-	struct log_t *msg_log; 	
-
+	// message struck
 	struct msg_joystick_t joystick_msg;
-	joystick_msg.mode = 0;
-	joystick_msg.thrust = 0;
-	joystick_msg.roll = 0;
-	joystick_msg.pitch = 0;
-	joystick_msg.yaw = 0;
-	joystick_msg.update = FALSE;
-
 	struct msg_keyboard_t keyboard_msg;
-	keyboard_msg.mode = 0;
-	keyboard_msg.thrust = 0;
-	keyboard_msg.roll = 0;
-	keyboard_msg.pitch = 0;
-	keyboard_msg.yaw = 0;
-	keyboard_msg.update = FALSE;
-
 	struct msg_combine_t combine_msg;
-	combine_msg.mode = 0;
-	combine_msg.thrust = 0;
-	combine_msg.roll = 0;
-	combine_msg.pitch = 0;
-	combine_msg.yaw = 0;
-	combine_msg.update = FALSE;
-
 	struct msg_tuning_t tuning_msg;
-	tuning_msg.P = 0;
-	tuning_msg.P1 = 0;
-	tuning_msg.P2 = 0;
-	tuning_msg.update = FALSE;
+	
+	// initialize the message by zeroing all value
+	InitCommand(&combine_msg, &keyboard_msg, &joystick_msg, &tuning_msg);
 
+	// logging variable
 	FILE *kp;
 	uint8_t decode_status;
  	static struct msg_p_log msg_log_p;
-	
+	bool log_start = TRUE;
+
 	// joystick initialization
 	int fd = 0;
 	struct js_event js;
@@ -139,8 +97,6 @@ int main(int argc, char **argv)
 	int16_t axis[4];
 	int16_t button[8];
 	bool warning = FALSE;
-			
-	uint32_t counter = 0;
 		
 	// communication initialization	
 	char c;
@@ -156,14 +112,14 @@ int main(int argc, char **argv)
 	while ((c = rs232_getchar_nb()) != -1)
 		fputc(c,stderr);
 
-	// read joystick input
+	// check joystick command when start up the system
 	while((!joystick_msg.update) || (joystick_msg.thrust != 0) || joystick_msg.roll != 0 || joystick_msg.pitch != 0 || joystick_msg.yaw != 0)
 	{
 		while (read(fd, &js, sizeof(struct js_event)) == sizeof(struct js_event)){
 			button[js.number] = js.value;
 			axis[js.number] = js.value;
 		
-			// scale it down to 9 bit signed integer (-255 to 255)
+			// scale it down to 9 bit signed integer (-255 to 255), make it less sensitive
 			joystick_msg.roll = axis[0]>>7; 
 			joystick_msg.pitch = axis[1]>>7;
 			joystick_msg.yaw = axis[2]>>7;
@@ -179,30 +135,34 @@ int main(int argc, char **argv)
 
 		if(warning) 
 		{
-			printf("warning %d %d %d %d \n", joystick_msg.thrust, joystick_msg.roll, joystick_msg.pitch, joystick_msg.yaw);
+			printf("WARNING! thrust %d roll %d pitch %d yaw %d \n", joystick_msg.thrust, joystick_msg.roll, joystick_msg.pitch, joystick_msg.yaw);
 			warning = FALSE;	
 		}
 
 	}
+
 	/* send & receive
 	 */	
 	while(combine_msg.mode != MODE_LOG)
 	{
-		
+		#ifdef PC_PROFILE 
+			start_profile = mon_time_ms();
+		#endif
 		// peridocally send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time
 		end = mon_time_ms();
-		if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > 2000) && (combine_msg.mode != MODE_LOG))
+		if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG))
 		{
 			// send gain tuning message
+			// the attitude command wont be sent if the gain tuning updated
 			if(tuning_msg.update)
 			{
-				send_command_tuning(&tuning_msg);
+				SendCommandTuning(&tuning_msg);
 				tuning_msg.update = FALSE;
 			}
 			else // send thrust and attitude command
 			{
-				send_command(&combine_msg);			
+				SendCommand(&combine_msg);			
 			}
 			// check if panic_mode happened
 			if(combine_msg.mode == MODE_PANIC) 
@@ -217,11 +177,19 @@ int main(int argc, char **argv)
 			}
 			start = mon_time_ms();
 
-			if(combine_msg.mode == ESCAPE) combine_msg.mode = MODE_LOG;
+			if(combine_msg.mode == ESCAPE) combine_msg.mode = MODE_LOG;	
 		}
+		#ifdef PC_PROFILE
+			end_profile = mon_time_ms();
+			proc_send = end_profile - start_profile;
+			printf("s %d ", proc_send);
+		#endif
 
 		// JoystickCommand(fd, js, &joystick_msg);
 		// Read the joystick event
+		#ifdef PC_PROFILE 
+			start_profile = mon_time_ms();
+		#endif
 		while (read(fd, &js, sizeof(struct js_event)) == sizeof(struct js_event)){
 			button[js.number] = js.value;
 			axis[js.number] = js.value;
@@ -237,59 +205,72 @@ int main(int argc, char **argv)
 			// assign the fire button
 			// if(button[0]) joystick_msg.mode = MODE_SAFE;
 			joystick_msg.update = TRUE;
-			// printf("update joystick \n");
-			
+			// printf("update joystick \n");				
 		}
+		#ifdef PC_PROFILE
+			end_profile = mon_time_ms();
+			proc_joy = end_profile - start_profile;
+			printf("j %d ", proc_joy);
+		#endif
 
-		// Read the keyboard
+		#ifdef PC_PROFILE 
+			start_profile = mon_time_ms();
+		#endif
+		// read the keyboard
+		// it also is used to update the tuning gain
 		if ((c = term_getchar_nb()) != -1){
-			//printf("\n %d \n",c);
 			KeyboardCommand(c, &keyboard_msg, &tuning_msg, &joystick_msg);
 			keyboard_msg.update = TRUE;
-			//printf("update keyboard \n");
 		}
+		#ifdef PC_PROFILE
+			end_profile = mon_time_ms();
+			proc_key = end_profile - start_profile;
+			printf("k %d ", proc_key);
+		#endif
 
+		#ifdef PC_PROFILE 
+			start_profile = mon_time_ms();
+		#endif
 		// combine keyboard and joystick
 		combine_msg.update = (keyboard_msg.update || joystick_msg.update);
 		if(combine_msg.update){
 			CombineCommand(&combine_msg, &keyboard_msg, &joystick_msg);
 			// printf("update combine \n");
 		}
+		#ifdef PC_PROFILE
+			end_profile = mon_time_ms();
+			proc_comb = end_profile - start_profile;
+			printf("c %d ", proc_comb);
+		#endif
 
+		#ifdef PC_PROFILE 
+			start_profile = mon_time_ms();
+		#endif
 		// receive data from board
 		if ((c = rs232_getchar_nb()) != -1){			
 			// print the message sent by the board to the terminal
 			// printf("get message from board \n");
 			// if ((uint8_t)c == 0x99) printf("\n");
+			//if(counter++%14==0) printf("\n");
 			// printf("0x%X ", (uint8_t)c);
-			
+			// c = (uint8_t)c;
+			// printf("0x%X 	", (char) c);
 			#ifdef ENCODE_PC_RECEIVE
-				msg_parse(&msg, (uint8_t)c);
-				//printf("0x%X \n", (uint8_t)c);
+				msg_parse(&msg, c);
 				if(msg.status == GOT_PACKET) {
 					// We got a valid packet
-					printf("got packet\n");
+					printf("got packet ");
 					switch(msg.msg_id) {
 						case MSG_TELEMETRY: 
 						{
 							msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-							// printf("%d %d %d %d %d \n", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-							printf("%d %d \n", msg.crc_fails, msg_tele->mode);
+							printf("%d %d %d %d %d %d \n", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+							// printf("%d %d \n", msg.crc_fails, msg_tele->mode);
 							// printf("%d %d %d %d \n", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
 							// printf("%d %d %d |",phi,ae[1],ae[2],ae[3]);
 							break;
 						}
 
-						case MSG_LOG: 
-						{
-							// msg_log = (struct msg_log_t *)&msg.payload[0];
-							// printf("%d %d\n", msg_log->time_stamp, msg_log->mode);
-							// printf("%d %d %d %d %d %d\n", msg_log->time_stamp, msg_log->mode, msg_log->thrust, msg_log->roll, msg_log->pitch, msg_log->yaw);
-							// printf("%d %d %d %d \n", msg_log->ae[0],msg_log->ae[1],msg_log->ae[2],msg_log->ae[3]);	
-							// printf("%d %d %d %d \n", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
-							// log_counter++;
-							break;
-						}
 						default:
 							break;
 					};
@@ -299,20 +280,23 @@ int main(int argc, char **argv)
 				}
 				//else{printf("0x%X \n", (uint8_t)c);}
 			#else
-				printf("%c", (uint8_t)c);
-			#endif			
+				#ifndef PC_PROFILE
+					printf("%c", (uint8_t)c);
+				#endif // PC_PROFILE
+			#endif		
 		}
+		#ifdef PC_PROFILE
+			end_profile = mon_time_ms();
+			proc_read = end_profile - start_profile;	
+			printf("r %d\n", proc_read);
+		#endif
 	}
 
 	while(true)
 	{
-		if ((c = rs232_getchar_nb()) != -1){			
-			// print the message sent by the board to the terminal
-			// printf("get message from board \n");
-			// if ((uint8_t)c == 0x99) printf("\n");
-			// printf("0x%X ", (uint8_t)c);
-			
-			#ifdef ENCODE
+		if ((c = rs232_getchar_nb()) != -1){				
+			//#ifdef ENCODE
+			#ifdef ENCODE_PC_RECEIVE
 				decode_status = decode_log((uint8_t) c, &msg_log_p);
 				if(msg_log_p.status == GOT_PACKAGE)
 				{
@@ -525,7 +509,17 @@ int main(int argc, char **argv)
 					msg_log_p.status = UNITINIT;
 				}	
 			#else
+				// if(log_start)
+				// {
+				// 	kp = fopen("logging.csv","w+");
+				// 	log_start = FALSE;
+				// }
+
 				printf("%c", (uint8_t)c);
+				// fprintf(kp, "%c", (uint8_t)c);
+				
+				// if((uint8_t)c == 0x0A) fclose(kp);
+
 			#endif			
 		}
 	}
