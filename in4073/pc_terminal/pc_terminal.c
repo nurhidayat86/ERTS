@@ -73,7 +73,12 @@ int main(int argc, char **argv)
 	#ifdef ENCODE_PC_RECEIVE
 	struct msg_p msg;
 	struct msg_telemetry_t *msg_tele;
+		#ifdef DRONE_PROFILE
+		struct msg_profile_t *msg_profile;
+		#endif
 	#endif
+
+	struct msg_profile_t *msg_profile;
 
 	// message struck
 	struct msg_joystick_t joystick_msg;
@@ -151,7 +156,8 @@ int main(int argc, char **argv)
 		// peridocally send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time
 		end = mon_time_ms();
-		if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG))
+		//if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG))
+		if((combine_msg.update == TRUE) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG))
 		{
 			// send gain tuning message
 			// the attitude command wont be sent if the gain tuning updated
@@ -162,10 +168,16 @@ int main(int argc, char **argv)
 			}
 			else // send thrust and attitude command
 			{
-				SendCommand(&combine_msg);			
+				SendCommand(&combine_msg);
+				combine_msg.update = FALSE;			
 			}
 			// check if panic_mode happened
+			
+			#ifdef ENCODE_PC_RECEIVE
+			if(combine_msg.mode == MODE_PANIC || (msg.crc_fails > 4)) 
+			#else
 			if(combine_msg.mode == MODE_PANIC) 
+			#endif
 			{
 				// start panic start, reset the mode to the panic mode
 				panic_start = mon_time_ms();
@@ -247,41 +259,45 @@ int main(int argc, char **argv)
 			start_profile = mon_time_ms();
 		#endif
 		// receive data from board
-		if ((c = rs232_getchar_nb()) != -1){			
-			// print the message sent by the board to the terminal
-			// printf("get message from board \n");
-			// if ((uint8_t)c == 0x99) printf("\n");
-			//if(counter++%14==0) printf("\n");
+		// if ((c = rs232_getchar_nb()) != -1){
+		if (read(fd_RS232, &c, 1)){	
 			// printf("0x%X ", (uint8_t)c);
-			// c = (uint8_t)c;
-			// printf("0x%X 	", (char) c);
 			#ifdef ENCODE_PC_RECEIVE
-				msg_parse(&msg, c);
+				msg_parse(&msg, (uint8_t)c);
 				if(msg.status == GOT_PACKET) {
 					// We got a valid packet
-					printf("got packet ");
 					switch(msg.msg_id) {
 						case MSG_TELEMETRY: 
 						{
 							msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-							printf("%d %d %d %d %d %d \n", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-							// printf("%d %d \n", msg.crc_fails, msg_tele->mode);
-							// printf("%d %d %d %d \n", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
-							// printf("%d %d %d |",phi,ae[1],ae[2],ae[3]);
+							printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+							printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
+							printf("%d %d %d| ",msg_tele->phi, msg_tele->theta, msg_tele->psi);
+							printf("%d %d %d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
+							printf("%d\n ",msg_tele->bat_volt);
+	
+							break;
+						}
+
+						case MSG_PROFILE: 
+						{
+							msg_profile = (struct msg_profile_t *)&msg.payload[0];
+							printf("%d %d %d %d %d %d\n", msg_profile->proc_read, msg_profile->proc_adc, msg_profile->proc_send, msg_profile->proc_log, msg_profile->proc_dmp, msg_profile->proc_control);
 							break;
 						}
 
 						default:
 							break;
 					};
-
 					// Start to receive a new packet
 					msg.status = UNITINIT;
+					msg.crc_fails = 0;
 				}
-				//else{printf("0x%X \n", (uint8_t)c);}
 			#else
 				#ifndef PC_PROFILE
 					printf("%c", (uint8_t)c);
+					//if ((uint8_t)c == 0x99) printf("\n");
+					//printf("0x%X 	", (uint8_t)c);
 				#endif // PC_PROFILE
 			#endif		
 		}
@@ -294,7 +310,8 @@ int main(int argc, char **argv)
 
 	while(true)
 	{
-		if ((c = rs232_getchar_nb()) != -1){				
+		// if ((c = rs232_getchar_nb()) != -1){		
+		if (read(fd_RS232, &c, 1)){
 			//#ifdef ENCODE
 			#ifdef ENCODE_PC_RECEIVE
 				decode_status = decode_log((uint8_t) c, &msg_log_p);

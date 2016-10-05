@@ -73,7 +73,10 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 		case GOT_ID:
 			msg->payload[msg->payload_idx] = c;
 			msg->payload_idx++;
-			msg->ck1 += c;
+			if (c == 0xff)
+				msg->ck1 += 255;
+			else
+				msg->ck1 += c;
 			msg->ck2 += msg->ck1;
 			if (msg->payload_idx == msg->payload_len) msg->status++;
 			#ifdef PC_DEBUG

@@ -24,6 +24,7 @@ static void process_bytes(uint8_t byte) {
 	static struct msg_p msg;
 	struct msg_combine_t *msg_com;	
 	struct msg_tuning_t *msg_tune;	
+	// static bool disable_mode = FALSE;
 	// static struct msg_combine_t msg_com_val;
 	// static struct msg_tuning_t msg_tune_val;	
 	// static uint8_t mmode;
@@ -39,12 +40,6 @@ static void process_bytes(uint8_t byte) {
 		switch(msg.msg_id) {
 			case MSG_COMBINE: 
 			{
-				// msg_com_val.mode = msg.payload[1];
-				// msg_com_val.thrust = (msg.payload[2] | (uint16_t)msg.payload[3]<<8);
-				// msg_com_val.roll = (msg.payload[4] | (uint16_t)msg.payload[5]<<8);
-				// msg_com_val.pitch = (msg.payload[6] | (uint16_t)msg.payload[7]<<8);
-				// msg_com_val.yaw = (msg.payload[8] | (uint16_t)msg.payload[9]<<8);
-				
 				msg_com = (struct msg_combine_t *)&msg.payload[0];
 				mmode = msg_com->mode;
 				mthrust = msg_com->thrust;
@@ -53,21 +48,24 @@ static void process_bytes(uint8_t byte) {
 				myaw = msg_com->yaw;
 				
 				msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-				// msg_tele->mode = 2;
-				// printf("%d \n", msg.crc_fails);
-				// printf("%d %d %d %d %d \n", msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-				// //printf("%d %d %d %d\n", ae[0], ae[1], ae[2], ae[3]);
-				// msg_tele->engine[0] = ae[0];
-				// msg_tele->engine[1] = ae[1];
-				// msg_tele->engine[2] = ae[2];
-				// msg_tele->engine[3] = ae[3];
+				msg_tele->engine[0] = ae[0];
+				msg_tele->engine[1] = ae[1];
+				msg_tele->engine[2] = ae[2];
+				msg_tele->engine[3] = ae[3];
 				// msg_tele->update = TRUE;
-				
-				//if(msg_com->mode == ESCAPE)
-				// if(msg_com_val.mode == ESCAPE)
+				msg_tele->phi = phi;
+				msg_tele->theta = theta;
+				msg_tele->psi = -psi;
+
+				msg_tele->sp = sp-cp;
+				msg_tele->sq = -(sq-cq); 
+				msg_tele->sr = -(sr-cr);
+
+				msg_tele->bat_volt = bat_volt;
+
 				if(mmode == ESCAPE)
 				{loop = false;}
-		
+				// disable_mode = FALSE;
 				break;
 			}
 
@@ -75,8 +73,7 @@ static void process_bytes(uint8_t byte) {
 			{
 				msg_tune = (struct msg_tuning_t *)&msg.payload[0];
 				P = msg_tune->P;
-				// msg_tune_val.P = msg.payload[1];
-				// P = msg_tune_val.P;
+				// disable_mode = TRUE;
 				break;
 			}
 
@@ -89,31 +86,18 @@ static void process_bytes(uint8_t byte) {
 	}
 
 	// receive the mode
-	// set_control_mode(msg_com->mode);
+	// put semaphore 
+	// if(!disable_mode) set_control_mode(msg_com->mode);
 	set_control_mode(mmode);
 	
 	// set control command 
 	// set_control_command(msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 	// set_control_command(msg_com->thrust, msg_com->roll, msg_com->pitch, msg_com->yaw);
-	// set_control_command(msg_com_val.thrust, msg_com_val.roll, msg_com_val.pitch, msg_com_val.yaw);
 	set_control_command(mthrust, mroll, mpitch, myaw);
 
 	// set yaw gain
 	// set_control_gains(msg_tune->P); //msg_tune->P		
-	// set_control_gains(msg_tune_val.P);
 	set_control_gains(P);
-}
-
-void send_telemetry(void)
-{
-	// encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
-	// for (i=0; i<output_size; i++) {uart_put(output_data[i]);}				
-	// printf("%10ld | ", get_time_us());
-	// printf("%d %d %d %d %d |", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-	printf("%d %d %d %d | ", ae[0],ae[1],ae[2],ae[3]);
-	printf("%d %d %d | ", phi, theta, psi);
-	printf("%d %d %d \n", sp, sq, sr);
-	//printf("%4d | %4ld | %6ld \n", bat_volt, temperature, pressure);
 }
 
 /*------------------------------------------------------------------
@@ -145,14 +129,14 @@ int main(void)
 	msg_tele->roll = 0;
  	msg_tele->pitch = 0;
  	msg_tele->yaw = 0;
-
+					
  	cphi = ctheta = cpsi = 0;        ///< Calibration values of phi, theta, psi
 	cp = cq = cr = 0;                ///< Calibration valies of p, q and r
 
 	bool status = true;
 	uint32_t counter = 0;
 	uint32_t counter_log = 0;
-	uint32_t counter_link = 0;
+	//uint32_t counter_link = 0;
 	
 	// profiling
 	#ifdef DRONE_PROFILE
@@ -164,13 +148,21 @@ int main(void)
 	uint32_t  proc_log = 0;
 	uint32_t  proc_dmp = 0;
 	uint32_t proc_control = 0;
+	uint32_t counter_prof = 0;
+	
+	msg_profile->proc_read = 0;
+	msg_profile->proc_adc = 0;
+	msg_profile->proc_send = 0;
+	msg_profile->proc_log = 0;
+	msg_profile->proc_dmp = 0;
+	msg_profile->proc_control = 0;
 	#endif
 	
 	loop = true;
 	
 	while (loop)
 	{
-		if (counter_link > PERIODIC_LINK_S) printf("link is missing \n");  
+		//if (counter_link > PERIODIC_LINK_S) printf("link is missing \n");  
 
 		#ifdef DRONE_PROFILE
 		start = get_time_us();
@@ -179,7 +171,7 @@ int main(void)
 		if (rx_queue.count) 
 		{
 			process_bytes( dequeue(&rx_queue) ) ;
-			counter_link = 0;
+			//counter_link = 0;
 		}
 		
 		#ifdef DRONE_PROFILE
@@ -192,8 +184,20 @@ int main(void)
 			if (counter++%20 == 0) 
 			{
 				nrf_gpio_pin_toggle(BLUE);
-				counter_link++;		
+				//counter_link++;		
 			}
+
+			#ifdef DRONE_PROFILE
+			if (counter_prof++%20 == 0) 
+			{
+					#ifdef ENCODE_PC_RECEIVE
+						encode_packet((uint8_t *) msg_profile, sizeof(struct msg_profile_t), MSG_PROFILE, output_data, &output_size);
+						for (i=0; i<output_size; i++) {uart_put(output_data[i]);}
+					#else 
+						printf("%ld %ld %ld %ld %ld %ld\n", proc_read, proc_adc, proc_send, proc_log, proc_dmp, proc_control);
+					#endif
+			}
+			#endif
 			
 			#ifdef DRONE_PROFILE
 			start = get_time_us();
@@ -205,7 +209,6 @@ int main(void)
 			proc_adc = end - start;
 			#endif
 
-			// write to FLASH EVERY 100 ms
 			if (counter_log++%2 == 0)
 			{
 				#ifdef DRONE_PROFILE
@@ -215,9 +218,6 @@ int main(void)
 					encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
 					for (i=0; i<output_size; i++) {uart_put(output_data[i]);}
 				#else
-					// printf("%d %d %d %d %d \n", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-					// send_telemetry();
-					// printf("%d %d %d %d %d| ", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 					printf("%d %d %d %d %d %d| ", mmode, control_mode, mthrust, mroll, mpitch, myaw);
 					printf("%d %d %d %d| ", ae[0],ae[1],ae[2],ae[3]);
 					// printf("%d %d %d| ", phi-cphi, theta-ctheta, psi-cpsi);
@@ -230,12 +230,9 @@ int main(void)
 				end = get_time_us();
 				proc_send = end - start;
 				#endif
-
-				#ifdef DRONE_PROFILE
-				printf("%ld %ld %ld %ld %ld %ld \n", proc_read, proc_adc, proc_send, proc_log, proc_dmp, proc_control);
-				#endif
 			}
 
+			// write to FLASH EVERY 50 ms
 			#ifdef DRONE_PROFILE
 			start = get_time_us();
 			#endif
@@ -274,6 +271,15 @@ int main(void)
 			
 			clear_sensor_int_flag();
 		}
+
+		#ifdef DRONE_PROFILE
+		msg_profile->proc_read = (uint16_t)proc_read;
+		msg_profile->proc_adc = (uint16_t)proc_adc;
+		msg_profile->proc_send = (uint16_t)proc_send;
+		msg_profile->proc_log = (uint16_t)proc_log;
+		msg_profile->proc_dmp = (uint16_t)proc_dmp;
+		msg_profile->proc_control = (uint16_t)proc_control;
+		#endif				
 	}
 
 	while(control_mode == ESCAPE)

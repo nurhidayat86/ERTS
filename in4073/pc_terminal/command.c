@@ -83,7 +83,8 @@ void CombineCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* ke
 	}
 	
 	// update the flag, it indicates the message has been updated
-	combine_msg->update=FALSE;
+	// combine_msg->update=FALSE;
+	combine_msg->update=TRUE;
 	joystick_msg->update=FALSE;
 	keyboard_msg->update=FALSE;	
 }

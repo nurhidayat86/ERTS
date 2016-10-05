@@ -77,7 +77,6 @@ int	rs232_getchar_nb()
 	}
 }
 
-
 int 	rs232_getchar()
 {
 	int 	c;
@@ -90,33 +89,28 @@ int 	rs232_getchar()
 int 	rs232_putchar(char c)
 {
 	int result;
-	
-	// static struct msg_p msg;
-
-	// msg_parse(&msg, c);
-	// if(msg.status == GOT_PACKET) {
-	// 		// We got a valid packet
-	// 		printf("Got a message %d\n", msg.msg_id);
-
-	// 		switch(msg.msg_id) {
-	// 			case MSG_JOYSTICK: {
-	// 				struct msg_joystick_t *msg_js = (struct msg_joystick_t *)&msg.payload[0];
-	// 				printf("Payload %d %d %d %d\n", msg_js->roll, msg_js->pitch, msg_js->yaw, msg_js->thrust);
-	// 				break;
-	// 			}
-
-	// 			default:
-	// 				break;
-	// 		};
-
-	// 		// Start to receive a new packet
-	// 		msg.status = UNITINIT;
-	// 	}
-
 	do {
 		result = (int) write(fd_RS232, &c, 1);
 	} while (result == 0);
 
 	assert(result == 1);
 	return result;
+}
+
+uint8_t	rs232_getchar_nb_u8()
+{
+	int 		result;
+	uint8_t 	c;
+	// char 	c;
+
+	result = read(fd_RS232, &c, 1);
+
+	if (result == 0)
+		return 0;
+
+	else
+	{
+		//assert(result == 1);
+		return c;
+	}
 }

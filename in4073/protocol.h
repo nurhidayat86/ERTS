@@ -8,7 +8,7 @@
 
 #define	FALSE 0
 #define	TRUE 1
-#define PERIODIC_COM 250
+#define PERIODIC_COM 10
 #define PANIC_TIME_MS 2000
 #define PERIODIC_LINK_S PANIC_TIME_MS/1000
 
@@ -19,7 +19,7 @@
 #define ENCODE
 // #define DRONE_PROFILE
 // #define PC_PROFILE
-// #define ENCODE_PC_RECEIVE
+#define ENCODE_PC_RECEIVE
 // #define PC_DEBUG
 
 //log messages 45 bytes w/o acceleration
@@ -52,7 +52,8 @@ enum msg_id{
 	MSG_COMBINE,
 	MSG_TELEMETRY,
 	MSG_LOG,
-	MSG_TUNE
+	MSG_TUNE,
+	MSG_PROFILE
 };
 
 // Control
@@ -112,8 +113,31 @@ struct msg_telemetry_t{
 	int16_t roll;
  	int16_t pitch;
  	int16_t yaw;
- 	// int16_t engine[4];
+ 	int16_t engine[4];
+ 	int16_t phi, theta, psi; 
+  	int16_t sp, sq, sr; 
+  	//int16_t sax, say, saz;
+  	uint16_t bat_volt;
 }__attribute__((packed));
+
+// struct msg_profile_t{
+// 	uint32_t proc_read;
+// 	uint32_t proc_adc;
+// 	uint32_t proc_send;
+// 	uint32_t proc_log;
+// 	uint32_t proc_dmp;
+// 	uint32_t proc_control;
+// }__attribute__((packed));
+
+struct msg_profile_t{
+	uint16_t proc_read;
+	uint16_t proc_adc;
+	uint16_t proc_send;
+	uint16_t proc_log;
+	uint16_t proc_dmp;
+	uint16_t proc_control;
+}__attribute__((packed));
+
 
 struct msg_p {
 	enum msg_status status;

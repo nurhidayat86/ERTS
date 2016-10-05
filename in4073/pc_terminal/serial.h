@@ -16,6 +16,8 @@
 #include <assert.h>
 #include <time.h>
 
+#include <stdint.h>
+
 int serial_device;
 int fd_RS232;
 
@@ -24,5 +26,6 @@ void rs232_close(void);
 int	rs232_getchar_nb();
 int rs232_getchar();
 int rs232_putchar(char c);
+uint8_t	rs232_getchar_nb_u8();
 
 #endif  /* #ifndef _SERIAL_H_ */

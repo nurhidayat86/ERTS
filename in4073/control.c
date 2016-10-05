@@ -27,7 +27,7 @@
 #define MAX_CMD 1024              ///< Maximum thrust, roll, pitch and yaw command
 #define MIN_CMD -MAX_CMD          ///< Minimum roll, pitch, yaw command
 #define PANIC_TIME 2000*1000         ///< Time to keep thrust in panic mode (us)
-#define PANIC_THRUST 0.4*MAX_THRUST_COM  ///< The amount of thrust in panic mode
+#define PANIC_THRUST 0.2*MAX_THRUST_COM  ///< The amount of thrust in panic mode
 #define MAX_YAW_RATE 45*131       ///< The maximum yaw rate from js (131 LSB / (degrees/s)) = 5895
 #define MAX_ANGLE 0               ///< The maximum angle from js
 
@@ -231,34 +231,30 @@ void run_filters_and_control(void)
             //cmd_yaw = ((sp_yaw - sr - cr) * gyaw_d) >> CONTROL_FRAC;
             // do the yaw control if the thrust is high enough
             if(cmd_thrust > THRUST_MIN){
-                cmd_yaw = ((sp_yaw + (sr - cr))* gyaw_d) >> CONTROL_FRAC;
+                cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d) >> CONTROL_FRAC;
                 // do the dynamic move if the provided static thrust can keep all the motor rotate 
-                if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) \
-                    && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) \
-                    && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )
-                    
+                if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )  
                 {
                     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
                 }
+                else
+                {motor_mixing(cmd_thrust, 0, 0, 0);}
             }
-            // if not, just assign the thrust
-            else
-            {motor_mixing(cmd_thrust, 0, 0, 0);}
+
             break;
 
-        /* Yaw rate controlled mode */
         case MODE_FULL:
-            //cmd_yaw = ((sp_yaw - sr - cr) * gyaw_d) >> CONTROL_FRAC;
-            if(cmd_thrust > THRUST_MIN){
-            // rate = y and z have the opposite sign 
-            // attitude angle = z has the opposite sign 
+            // if(cmd_thrust > THRUST_MIN){
+            // // rate = y and z have the opposite sign 
+            // // attitude angle = z has the opposite sign 
+            // // P1 angle, P2 rate
 
-            // cmd_roll = (sp_roll - (phi - cphi));
-            // cmd_pitch = (sp_pitch + (theta - ctheta));
+            // cmd_roll = (sp_roll - (phi - cphi))*P1;
+            // cmd_pitch = (sp_pitch - (theta - ctheta))*P1;
 
-            // cmd_yaw = ((sp_yaw + (sr - cr))* gyaw_d) >> CONTROL_FRAC;
+            // // cmd_yaw = ((sp_yaw + (sr - cr)>>4)* gyaw_d) >> CONTROL_FRAC;
             // motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
-            }
+            // }
             break;
 
 
