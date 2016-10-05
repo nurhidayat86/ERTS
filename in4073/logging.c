@@ -15,7 +15,7 @@ bool write_log() {
 
 bool read_log() {
 	
-	#ifdef ENCODE
+	#ifdef ENCODE_PC_RECEIVE
 	uint8_t j;
 	#endif
 	uint16_t i;
@@ -24,7 +24,8 @@ bool read_log() {
 	printf("%d \n", index_logging);
 	for (i=0; i<index_logging; i++) 
 	{
-		#ifdef ENCODE
+		#ifdef ENCODE_PC_RECEIVE
+		//#ifdef ENCODE
 			if(flash_read_bytes((uint32_t) i*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t)) == true)
 			{
 				encode_log((uint8_t *)&i,INDEX_LOG);for (j=0; j<encodedlog_size; j++){uart_put(encodedlog[j]); nrf_delay_ms(LOG_DELAY);}
@@ -67,14 +68,20 @@ bool read_log() {
 			
 		#else
 			status = flash_read_bytes((uint32_t) i*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t));
-			printf("%ld %d | %d | %d %d %d %d | ", MSG_time_stamp, i, MSG_mode, MSG_thrust, MSG_roll, MSG_pitch, MSG_yaw);
-			printf("%d %d %d %d | ", MSG_ae[0], MSG_ae[1], MSG_ae[2], MSG_ae[3] );
-			printf("%d %d %d | ", MSG_phi, MSG_theta, MSG_psi);
-			printf("%d %d %d | ", MSG_sp, MSG_sq, MSG_sr); 
-			printf("%d %ld %ld\n", MSG_bat_volt, MSG_temperature, MSG_pressure); 
+			// printf("%ld %d | %d | %d %d %d %d | ", MSG_time_stamp, i, MSG_mode, MSG_thrust, MSG_roll, MSG_pitch, MSG_yaw);
+			// printf("%d %d %d %d | ", MSG_ae[0], MSG_ae[1], MSG_ae[2], MSG_ae[3] );
+			// printf("%d %d %d | ", MSG_phi, MSG_theta, MSG_psi);
+			// printf("%d %d %d | ", MSG_sp, MSG_sq, MSG_sr); 
+			// printf("%d %ld %ld\n", MSG_bat_volt, MSG_temperature, MSG_pressure); 
+			printf("%ld %d | %d | %d %d %d %d | ", log_msg.time_stamp, i, log_msg.mode, log_msg.thrust, log_msg.roll, log_msg.pitch, log_msg.yaw);
+			printf("%d %d %d %d | ", log_msg.ae[0], log_msg.ae[1], log_msg.ae[2], log_msg.ae[3] );
+			printf("%d %d %d | ", log_msg.phi, log_msg.theta, log_msg.psi);
+			printf("%d %d %d | ", log_msg.sp, log_msg.sq, log_msg.sr); 
+			printf("%d %ld %ld\n", log_msg.bat_volt, log_msg.temperature, log_msg.pressure);
 			nrf_delay_ms(10);
 		#endif		
 	}
+	uart_put(0x0A);
 	return status;
 }
 
@@ -83,29 +90,29 @@ bool flash_data() {
 	log_msg.mode = control_mode;
 	log_msg.thrust = mthrust;
 	
-	// log_msg.roll = mroll;
-	// log_msg.pitch = mpitch;
-	// log_msg.yaw = msg_tele->yaw;
+	log_msg.roll = mroll;
+	log_msg.pitch = mpitch;
+	log_msg.yaw = myaw;
 	
-	// log_msg.ae[0] = ae[0];
-	// log_msg.ae[1] = ae[1];
-	// log_msg.ae[2] = ae[2];
-	// log_msg.ae[3] = ae[3];
+	log_msg.ae[0] = ae[0];
+	log_msg.ae[1] = ae[1];
+	log_msg.ae[2] = ae[2];
+	log_msg.ae[3] = ae[3];
 	
-	// log_msg.phi = phi;
-	// log_msg.theta = theta;
-	// log_msg.psi = psi;
-	// log_msg.sp = sp;
-	// log_msg.sq = sq;
-	// log_msg.sr = sr;
+	log_msg.phi = phi;
+	log_msg.theta = theta;
+	log_msg.psi = psi;
+	log_msg.sp = sp;
+	log_msg.sq = sq;
+	log_msg.sr = sr;
 
 	// log_msg.sax = sax;
 	// log_msg.say = say;
 	// log_msg.saz = saz;
 	
-	// log_msg.bat_volt = bat_volt;
-	// log_msg.temperature = temperature;
-	// log_msg.pressure = pressure;
+	log_msg.bat_volt = bat_volt;
+	log_msg.temperature = temperature;
+	log_msg.pressure = pressure;
 	
 	// log_msg.roll = msg_tele->roll;
 	// log_msg.pitch = msg_tele->pitch;

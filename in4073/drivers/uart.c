@@ -30,7 +30,7 @@ int _write(int file, const char * p_char, int len)
 	for (i = 0; i < len; i++)
 	{
      		uart_put(*p_char++);
-    	}
+    }
 
     	return len;
 }

@@ -132,42 +132,60 @@ int main(void)
 	spi_flash_init();
 //	ble_init();
 	
-	// uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
-	// uint8_t output_size;
-	// uint8_t i = 0;
-	
+	#ifdef ENCODE_PC_RECEIVE
+	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
+	uint8_t output_size;
+	uint8_t i = 0;
+	#endif
+
     // command_init();
-	msg_tele->update = FALSE;
+	// msg_tele->update = FALSE;
 	msg_tele->mode = 0;
 	msg_tele->thrust = 0;
 	msg_tele->roll = 0;
  	msg_tele->pitch = 0;
  	msg_tele->yaw = 0;
 
- 	cphi = ctheta = cpsi = 0;           ///< Calibration values of phi, theta, psi
+ 	cphi = ctheta = cpsi = 0;        ///< Calibration values of phi, theta, psi
 	cp = cq = cr = 0;                ///< Calibration valies of p, q and r
 
 	bool status = true;
 	uint32_t counter = 0;
 	uint32_t counter_log = 0;
 	uint32_t counter_link = 0;
-	// uint32_t start = 0;
-	// uint32_t end = 0;
-
+	
+	// profiling
+	#ifdef DRONE_PROFILE
+	uint32_t start = 0;
+	uint32_t end = 0;
+	uint32_t proc_read = 0;
+	uint32_t  proc_adc = 0;
+	uint32_t  proc_send = 0;
+	uint32_t  proc_log = 0;
+	uint32_t  proc_dmp = 0;
+	uint32_t proc_control = 0;
+	#endif
+	
 	loop = true;
 	
 	while (loop)
 	{
-		//end = get_time_us();
-		//if ((end - start) > PERIODIC_LINK_US) printf("link is missing");  
-		if (counter_link > PERIODIC_LINK_US) printf("link is missing \n");  
+		if (counter_link > PERIODIC_LINK_S) printf("link is missing \n");  
+
+		#ifdef DRONE_PROFILE
+		start = get_time_us();
+		#endif
 
 		if (rx_queue.count) 
 		{
 			process_bytes( dequeue(&rx_queue) ) ;
-			//start = get_time_us();
 			counter_link = 0;
 		}
+		
+		#ifdef DRONE_PROFILE
+		end = get_time_us();
+		proc_read = end - start;
+		#endif
 
 		if (check_timer_flag())
 		{
@@ -177,46 +195,83 @@ int main(void)
 				counter_link++;		
 			}
 			
+			#ifdef DRONE_PROFILE
+			start = get_time_us();
+			#endif
 			adc_request_sample();
 			read_baro();
-			
+			#ifdef DRONE_PROFILE
+			end = get_time_us();
+			proc_adc = end - start;
+			#endif
+
 			// write to FLASH EVERY 100 ms
 			if (counter_log++%2 == 0)
 			{
-				if (status == true)
-				{
-					// flash_data();
-					// status = write_log();
-					status = flash_data() ;
-	 				if((status = write_log()) == false) {printf("failed to write log");}	
-				}
-
-				// #ifdef ENCODE
-				// 	encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
-				// 	for (i=0; i<output_size; i++) {uart_put(output_data[i]);}
-				// #else
-					// 	printf("%d %d %d %d %d \n", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-					//  send_telemetry();
+				#ifdef DRONE_PROFILE
+				start = get_time_us();
+				#endif
+				#ifdef ENCODE_PC_RECEIVE
+					encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
+					for (i=0; i<output_size; i++) {uart_put(output_data[i]);}
+				#else
+					// printf("%d %d %d %d %d \n", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+					// send_telemetry();
 					// printf("%d %d %d %d %d| ", control_mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 					printf("%d %d %d %d %d %d| ", mmode, control_mode, mthrust, mroll, mpitch, myaw);
 					printf("%d %d %d %d| ", ae[0],ae[1],ae[2],ae[3]);
-					//printf("%d %d %d| ", phi-cphi, theta-ctheta, psi-cpsi);
+					// printf("%d %d %d| ", phi-cphi, theta-ctheta, psi-cpsi);
 					printf("%d %d %d| ", phi, theta, -psi);
 					printf("%d %d %d| ", sp-cp, -(sq-cq), -(sr-cr));
-					//printf("%d %d %d| ", sp, -sq, -sr);					
+					// printf("%d %d %d| ", sp, -sq, -sr);					
 					printf("%d %d \n", bat_volt, P);
-				//#endif
-			} 
-			
-			// send telemetry on 50 ms			
+				#endif
+				#ifdef DRONE_PROFILE
+				end = get_time_us();
+				proc_send = end - start;
+				#endif
+
+				#ifdef DRONE_PROFILE
+				printf("%ld %ld %ld %ld %ld %ld \n", proc_read, proc_adc, proc_send, proc_log, proc_dmp, proc_control);
+				#endif
+			}
+
+			#ifdef DRONE_PROFILE
+			start = get_time_us();
+			#endif
+			if (status == true)
+			{
+				status = flash_data() ;
+ 				if((status = write_log()) == false) {printf("failed to write log");}	
+			}
+			#ifdef DRONE_PROFILE
+			end = get_time_us();
+			proc_log = end - start;
+			#endif
 			
 			clear_timer_flag();
 		}
 
 		if (check_sensor_int_flag())
 		{
+			#ifdef DRONE_PROFILE
+			start = get_time_us();
+			#endif
 			get_dmp_data();
+			#ifdef DRONE_PROFILE
+			end = get_time_us();
+			proc_dmp = end - start;
+			#endif
+			
+			#ifdef DRONE_PROFILE
+			start = get_time_us();
+			#endif
 			run_filters_and_control();
+			#ifdef DRONE_PROFILE
+			end = get_time_us();
+			proc_control = end - start;
+			#endif
+			
 			clear_sensor_int_flag();
 		}
 	}
@@ -225,8 +280,7 @@ int main(void)
 	{
 		if ((status = read_log())==true)
 		{
-			printf("Reading Log Data Finished");
-			printf("Writing log file");
+			printf("Finished reading log flash");
 			control_mode = MODE_SAFE;
 		}	
 	}

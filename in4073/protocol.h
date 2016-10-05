@@ -9,15 +9,18 @@
 #define	FALSE 0
 #define	TRUE 1
 #define PERIODIC_COM 250
-#define PERIODIC_LINK_US 2000*1000
+#define PANIC_TIME_MS 2000
+#define PERIODIC_LINK_S PANIC_TIME_MS/1000
 
 #define HDR 0x99
 #define MAX_PAYLOAD 200
 #define HDR_FTR_SIZE 5
-#define JOYSTICK_TYPE 0x10;
-#define KEYBOARD_TYPE 0x20;
 
 #define ENCODE
+// #define DRONE_PROFILE
+// #define PC_PROFILE
+// #define ENCODE_PC_RECEIVE
+// #define PC_DEBUG
 
 //log messages 45 bytes w/o acceleration
 // struct log_t {

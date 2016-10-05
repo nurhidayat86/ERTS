@@ -63,6 +63,7 @@ int	rs232_getchar_nb()
 {
 	int 		result;
 	unsigned char 	c;
+	// char 	c;
 
 	result = read(fd_RS232, &c, 1);
 

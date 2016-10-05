@@ -14,9 +14,10 @@
  #include "protocol.h"
 //#include "control.h"
 
-#define THRUST_MIN 200*8
 
 #define PRESCALE 3
+#define THRUST_MIN 200*8
+
 #define MAX_THRUST_COM 8192
 #define MIN_THRUST_COM 0
 #define MAX_ATTITUDE_COM 8192
@@ -193,7 +194,9 @@ void run_filters_and_control(void)
 
             // motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
             
+            // do the manual mode if the thrust is high enough
             if(cmd_thrust > THRUST_MIN){
+                // do the dynamic move if the provided static thrust can keep all the motor rotate 
                 if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) \
                     && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) \
                     && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )
@@ -202,13 +205,12 @@ void run_filters_and_control(void)
                     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
                 }
             }
+            // if not, just assign the thrust
             else
             {motor_mixing(cmd_thrust, 0, 0, 0);}
             break;
 
-            break;
-
-            /* Calibration mode (not thrust at all) */
+        /* Calibration mode (not thrust at all) */
         case MODE_CALIBRATION:
             ae[0] = ae[1] = ae[2] = ae[3] = 0;
 
@@ -227,12 +229,19 @@ void run_filters_and_control(void)
         /* Yaw rate controlled mode */
         case MODE_YAW:
             //cmd_yaw = ((sp_yaw - sr - cr) * gyaw_d) >> CONTROL_FRAC;
+            // do the yaw control if the thrust is high enough
             if(cmd_thrust > THRUST_MIN){
                 cmd_yaw = ((sp_yaw + (sr - cr))* gyaw_d) >> CONTROL_FRAC;
-                if(cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)){
+                // do the dynamic move if the provided static thrust can keep all the motor rotate 
+                if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) \
+                    && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) \
+                    && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )
+                    
+                {
                     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
                 }
             }
+            // if not, just assign the thrust
             else
             {motor_mixing(cmd_thrust, 0, 0, 0);}
             break;
