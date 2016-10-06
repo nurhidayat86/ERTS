@@ -113,14 +113,14 @@ int main(void)
 	imu_init(true, 100);
 	baro_init();
 	spi_flash_init();
-	uint32_t start_all = 0, end_all = 0, time_all = 0;
+
 	//int8_t dmp_status =0;
 //	ble_init();
 	
 	#ifdef ENCODE_PC_RECEIVE
 	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
 	uint8_t output_size;
-	uint8_t j,i = 0;
+	uint8_t i = 0;
 	#endif
 
     // command_init();
@@ -150,6 +150,7 @@ int main(void)
 	uint32_t  proc_dmp = 0;
 	uint32_t proc_control = 0;
 	uint32_t counter_prof = 0;
+	uint32_t start_all = 0, end_all = 0, time_all = 0;
 	
 	msg_profile.proc_read = 0;
 	msg_profile.proc_adc = 0;

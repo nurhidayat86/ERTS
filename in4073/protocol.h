@@ -17,9 +17,9 @@
 #define HDR_FTR_SIZE 5
 
 #define ENCODE
-#define DRONE_PROFILE
-// #define PC_PROFILE
-//#define ENCODE_PC_RECEIVE
+//#define DRONE_PROFILE
+#define PC_PROFILE
+#define ENCODE_PC_RECEIVE
 // #define PC_DEBUG
 
 //log messages 45 bytes w/o acceleration

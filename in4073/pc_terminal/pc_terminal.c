@@ -37,6 +37,18 @@ unsigned int mon_time_ms(void)
     return ms;
 }
 
+uint32_t mon_time_us(void)
+{
+    unsigned int    us;
+    struct timeval  tv;
+    struct timezone tz;
+
+    gettimeofday(&tv, &tz);
+   
+    us = tv.tv_usec;
+    return us;
+}
+
 void mon_delay_ms(unsigned int ms)
 {
     struct timespec req, rem;
@@ -151,7 +163,7 @@ int main(int argc, char **argv)
 	while(combine_msg.mode != MODE_LOG)
 	{
 		#ifdef PC_PROFILE 
-			start_profile = mon_time_ms();
+			start_profile = mon_time_us();
 		#endif
 		// peridocally send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time
@@ -192,15 +204,15 @@ int main(int argc, char **argv)
 			if(combine_msg.mode == ESCAPE) combine_msg.mode = MODE_LOG;	
 		}
 		#ifdef PC_PROFILE
-			end_profile = mon_time_ms();
+			end_profile = mon_time_us();
 			proc_send = end_profile - start_profile;
-			printf("s %d ", proc_send);
+			//printf("s %d ", proc_send);
 		#endif
 
 		// JoystickCommand(fd, js, &joystick_msg);
 		// Read the joystick event
 		#ifdef PC_PROFILE 
-			start_profile = mon_time_ms();
+			start_profile = mon_time_us();
 		#endif
 		while (read(fd, &js, sizeof(struct js_event)) == sizeof(struct js_event)){
 			button[js.number] = js.value;
@@ -220,13 +232,13 @@ int main(int argc, char **argv)
 			// printf("update joystick \n");				
 		}
 		#ifdef PC_PROFILE
-			end_profile = mon_time_ms();
+			end_profile = mon_time_us();
 			proc_joy = end_profile - start_profile;
-			printf("j %d ", proc_joy);
+			//printf("j %d ", proc_joy);
 		#endif
 
 		#ifdef PC_PROFILE 
-			start_profile = mon_time_ms();
+			start_profile = mon_time_us();
 		#endif
 		// read the keyboard
 		// it also is used to update the tuning gain
@@ -235,13 +247,13 @@ int main(int argc, char **argv)
 			keyboard_msg.update = TRUE;
 		}
 		#ifdef PC_PROFILE
-			end_profile = mon_time_ms();
+			end_profile = mon_time_us();
 			proc_key = end_profile - start_profile;
-			printf("k %d ", proc_key);
+			//printf("k %d ", proc_key);
 		#endif
 
 		#ifdef PC_PROFILE 
-			start_profile = mon_time_ms();
+			start_profile = mon_time_us();
 		#endif
 		// combine keyboard and joystick
 		combine_msg.update = (keyboard_msg.update || joystick_msg.update);
@@ -250,41 +262,55 @@ int main(int argc, char **argv)
 			// printf("update combine \n");
 		}
 		#ifdef PC_PROFILE
-			end_profile = mon_time_ms();
+			end_profile = mon_time_us();
 			proc_comb = end_profile - start_profile;
-			printf("c %d ", proc_comb);
+			//printf("c %d ", proc_comb);
 		#endif
 
 		#ifdef PC_PROFILE 
-			start_profile = mon_time_ms();
+			start_profile = mon_time_us();
 		#endif
 		// receive data from board
 		// if ((c = rs232_getchar_nb()) != -1){
-		if (read(fd_RS232, &c, 1)){	
+		if (read(fd_RS232, &c, 1)){
+			//mon_delay_ms(20);
 			// printf("0x%X ", (uint8_t)c);
-			#ifdef ENCODE_PC_RECEIVE
+				#ifdef PC_PROFILE
+					end_profile = mon_time_us();
+					proc_read = end_profile - start_profile;	
+					//printf("r %d\n", proc_read);
+					#endif
+				#ifdef ENCODE_PC_RECEIVE
 				msg_parse(&msg, (uint8_t)c);
 				if(msg.status == GOT_PACKET) {
 					// We got a valid packet
 					switch(msg.msg_id) {
 						case MSG_TELEMETRY: 
 						{
+							// #ifdef PC_PROFILE
+							// end_profile = mon_time_us();
+							// proc_read = end_profile - start_profile;	
+							// //printf("r %d\n", proc_read);
+							// #endif
 							msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
 							printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 							printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
 							printf("%d %d %d| ",msg_tele->phi, msg_tele->theta, msg_tele->psi);
 							printf("%d %d %d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
 							printf("%d\n ",msg_tele->bat_volt);
-	
+							printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
+
+							//mon_delay_ms(2);
 							break;
 						}
 
-						case MSG_PROFILE: 
-						{
-							msg_profile = (struct msg_profile_t *)&msg.payload[0];
-							printf("\n%ld  %d %d %d %d %d %d %d %d\n", msg_profile->time_all, msg_profile->proc_decode, msg_profile->proc_read, msg_profile->proc_adc, msg_profile->proc_send, msg_profile->proc_log, msg_profile->proc_dmp, msg_profile->proc_control, msg_profile->proc_filter_control);
-							break;
-						}
+						// case MSG_PROFILE: 
+						// {
+						// 	msg_profile = (struct msg_profile_t *)&msg.payload[0];
+						// 	printf("\n%ld %d %d %d %d %d %d %d\n", msg_profile->time_all, msg_profile->proc_read, msg_profile->proc_adc, msg_profile->proc_send, msg_profile->proc_log, msg_profile->proc_dmp, msg_profile->proc_control);
+						// 	//mon_delay_ms(2);
+						// 	break;
+						// }
 
 						default:
 							break;
@@ -320,11 +346,11 @@ int main(int argc, char **argv)
 				#endif // PC_PROFILE
 			#endif		
 		}
-		#ifdef PC_PROFILE
-			end_profile = mon_time_ms();
-			proc_read = end_profile - start_profile;	
-			printf("r %d\n", proc_read);
-		#endif
+		// #ifdef PC_PROFILE
+		// 	end_profile = mon_time_ms();
+		// 	proc_read = end_profile - start_profile;	
+		// 	//printf("r %d\n", proc_read);
+		// #endif
 	}
 
 	while(true)
