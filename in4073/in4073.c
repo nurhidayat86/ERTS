@@ -32,7 +32,7 @@ static void process_bytes(uint8_t byte) {
 	// static int16_t mroll;
 	// static int16_t mpitch;
 	// static int16_t myaw;
-			
+	
 	msg_parse(&msg, byte);
 	if(msg.status == GOT_PACKET) {
 		nrf_gpio_pin_toggle(RED);
@@ -84,7 +84,6 @@ static void process_bytes(uint8_t byte) {
 		// Start to receive a new packet
 		msg.status = UNITINIT;
 	}
-
 	// receive the mode
 	// put semaphore 
 	// if(!disable_mode) set_control_mode(msg_com->mode);
@@ -114,12 +113,14 @@ int main(void)
 	imu_init(true, 100);
 	baro_init();
 	spi_flash_init();
+	uint32_t start_all = 0, end_all = 0, time_all = 0;
+	//int8_t dmp_status =0;
 //	ble_init();
 	
 	#ifdef ENCODE_PC_RECEIVE
 	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
 	uint8_t output_size;
-	uint8_t i = 0;
+	uint8_t j,i = 0;
 	#endif
 
     // command_init();
@@ -150,12 +151,12 @@ int main(void)
 	uint32_t proc_control = 0;
 	uint32_t counter_prof = 0;
 	
-	msg_profile->proc_read = 0;
-	msg_profile->proc_adc = 0;
-	msg_profile->proc_send = 0;
-	msg_profile->proc_log = 0;
-	msg_profile->proc_dmp = 0;
-	msg_profile->proc_control = 0;
+	msg_profile.proc_read = 0;
+	msg_profile.proc_adc = 0;
+	msg_profile.proc_send = 0;
+	msg_profile.proc_log = 0;
+	msg_profile.proc_dmp = 0;
+	msg_profile.proc_control = 0;
 	#endif
 	
 	loop = true;
@@ -163,11 +164,6 @@ int main(void)
 	while (loop)
 	{
 		//if (counter_link > PERIODIC_LINK_S) printf("link is missing \n");  
-
-		#ifdef DRONE_PROFILE
-		start = get_time_us();
-		#endif
-
 		if (rx_queue.count) 
 		{
 			process_bytes( dequeue(&rx_queue) ) ;
@@ -190,12 +186,12 @@ int main(void)
 			#ifdef DRONE_PROFILE
 			if (counter_prof++%20 == 0) 
 			{
-					#ifdef ENCODE_PC_RECEIVE
-						encode_packet((uint8_t *) msg_profile, sizeof(struct msg_profile_t), MSG_PROFILE, output_data, &output_size);
-						for (i=0; i<output_size; i++) {uart_put(output_data[i]);}
-					#else 
-						printf("%ld %ld %ld %ld %ld %ld\n", proc_read, proc_adc, proc_send, proc_log, proc_dmp, proc_control);
-					#endif
+				#ifdef ENCODE_PC_RECEIVE
+					encode_packet((uint8_t *) &msg_profile, sizeof(struct msg_profile_t), MSG_PROFILE, output_data, &output_size);
+					for (i=0; i<output_size; i++) {uart_put(output_data[i]);}
+				#else 
+					printf("%ld %ld %ld %ld %ld %ld %ld\n", proc_read, proc_adc, proc_send, proc_log, proc_dmp, proc_control, time_all);
+				#endif
 			}
 			#endif
 			
@@ -203,7 +199,7 @@ int main(void)
 			start = get_time_us();
 			#endif
 			adc_request_sample();
-			read_baro();
+			//read_baro();
 			#ifdef DRONE_PROFILE
 			end = get_time_us();
 			proc_adc = end - start;
@@ -255,6 +251,28 @@ int main(void)
 			start = get_time_us();
 			#endif
 			get_dmp_data();
+			// dmp_status = get_dmp_data();
+			// if(dmp_status == -1)
+			// {
+			// 	#ifdef DRONE_PROFILE
+			// 	encode_ack(NOK);
+			// 	for(j=0;j<encodedlog_size;j++)
+			// 	{
+			// 		uart_put(encodedlog[j]);
+			// 	}
+			// 	#endif
+			// }
+			// else
+			// {
+			// 	#ifdef DRONE_PROFILE
+			// 	encode_ack(OK);
+			// 	for(j=0;j<encodedlog_size;j++)
+			// 	{
+			// 		uart_put(encodedlog[j]);
+			// 	}
+			// 	#endif
+
+			// }
 			#ifdef DRONE_PROFILE
 			end = get_time_us();
 			proc_dmp = end - start;
@@ -273,12 +291,20 @@ int main(void)
 		}
 
 		#ifdef DRONE_PROFILE
-		msg_profile->proc_read = (uint16_t)proc_read;
-		msg_profile->proc_adc = (uint16_t)proc_adc;
-		msg_profile->proc_send = (uint16_t)proc_send;
-		msg_profile->proc_log = (uint16_t)proc_log;
-		msg_profile->proc_dmp = (uint16_t)proc_dmp;
-		msg_profile->proc_control = (uint16_t)proc_control;
+		start = get_time_us();
+		end_all = get_time_us();
+		time_all = end_all - start_all;
+		start_all = get_time_us();
+		#endif
+
+		#ifdef DRONE_PROFILE
+		msg_profile.proc_read = (uint16_t)proc_read;
+		msg_profile.proc_adc = (uint16_t)proc_adc;
+		msg_profile.proc_send = (uint16_t)proc_send;
+		msg_profile.proc_log = (uint16_t)proc_log;
+		msg_profile.proc_dmp = (uint16_t)proc_dmp;
+		msg_profile.proc_control = (uint16_t)proc_control;
+		msg_profile.time_all = time_all;
 		#endif				
 	}
 

@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 		#endif
 	#endif
 
-	struct msg_profile_t *msg_profile;
+	//struct msg_profile_t *msg_profile;
 
 	// message struck
 	struct msg_joystick_t joystick_msg;
@@ -156,8 +156,8 @@ int main(int argc, char **argv)
 		// peridocally send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time
 		end = mon_time_ms();
-		//if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG))
-		if((combine_msg.update == TRUE) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG))
+		if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG))
+		// if((combine_msg.update == TRUE) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG))
 		{
 			// send gain tuning message
 			// the attitude command wont be sent if the gain tuning updated
@@ -169,7 +169,7 @@ int main(int argc, char **argv)
 			else // send thrust and attitude command
 			{
 				SendCommand(&combine_msg);
-				combine_msg.update = FALSE;			
+				// combine_msg.update = FALSE;			
 			}
 			// check if panic_mode happened
 			
@@ -282,7 +282,7 @@ int main(int argc, char **argv)
 						case MSG_PROFILE: 
 						{
 							msg_profile = (struct msg_profile_t *)&msg.payload[0];
-							printf("%d %d %d %d %d %d\n", msg_profile->proc_read, msg_profile->proc_adc, msg_profile->proc_send, msg_profile->proc_log, msg_profile->proc_dmp, msg_profile->proc_control);
+							printf("\n%ld  %d %d %d %d %d %d %d %d\n", msg_profile->time_all, msg_profile->proc_decode, msg_profile->proc_read, msg_profile->proc_adc, msg_profile->proc_send, msg_profile->proc_log, msg_profile->proc_dmp, msg_profile->proc_control, msg_profile->proc_filter_control);
 							break;
 						}
 
@@ -292,6 +292,25 @@ int main(int argc, char **argv)
 					// Start to receive a new packet
 					msg.status = UNITINIT;
 					msg.crc_fails = 0;
+				}
+				decode_status = decode_log((uint8_t) c, &msg_log_p);
+				if(msg_log_p.status == GOT_PACKAGE)
+				{
+					switch(msg_log_p.msg_ID)
+					{
+						case ACK:
+							MSG_ack = (uint8_t *)&msg_log_p.payload[0];
+							np_MSG_ack = *MSG_ack;
+							if (np_MSG_ack == NOK)
+							{
+								printf("error reading fifo error\n");
+							}
+							break;
+
+						default:
+							break;
+					}
+					msg_log_p.status = UNITINIT;
 				}
 			#else
 				#ifndef PC_PROFILE

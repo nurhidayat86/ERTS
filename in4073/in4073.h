@@ -35,7 +35,7 @@
  // additional
 enum control_mode_t control_mode;
 struct msg_telemetry_t *msg_tele;
-struct msg_profile_t *msg_profile;
+struct msg_profile_t msg_profile;
 
 uint8_t mmode;           			///< mode message from pc
 uint16_t mthrust;           		///< thrust message from pc
@@ -95,8 +95,9 @@ int16_t sp, sq, sr; ///< 131 LSB / (degrees / s)
 int16_t sax, say, saz;
 uint8_t sensor_fifo_count;
 void imu_init(bool dmp, uint16_t interrupt_frequency); // if dmp is true, the interrupt frequency is 100Hz - otherwise 32Hz-8kHz
-void get_dmp_data(void);
+//int8_t get_dmp_data(void);
 void get_raw_sensor_data(void);
+void get_dmp_data(void);
 
 // Barometer
 int32_t pressure;

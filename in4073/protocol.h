@@ -17,9 +17,9 @@
 #define HDR_FTR_SIZE 5
 
 #define ENCODE
-// #define DRONE_PROFILE
+#define DRONE_PROFILE
 // #define PC_PROFILE
-#define ENCODE_PC_RECEIVE
+//#define ENCODE_PC_RECEIVE
 // #define PC_DEBUG
 
 //log messages 45 bytes w/o acceleration
@@ -136,6 +136,7 @@ struct msg_profile_t{
 	uint16_t proc_log;
 	uint16_t proc_dmp;
 	uint16_t proc_control;
+	uint32_t time_all;
 }__attribute__((packed));
 
 

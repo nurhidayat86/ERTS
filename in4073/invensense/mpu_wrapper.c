@@ -29,6 +29,27 @@ void update_euler_from_quaternions(int32_t *quat)
 }
 
 // reading & conversion takes 3.2 ms!!! hurray (still lots of time till 10)
+// int8_t get_dmp_data(void)
+// {
+// 	int8_t read_stat;
+// 	int16_t gyro[3], accel[3], sensors;
+// 	int32_t quat[4];
+
+// 	if (!(read_stat = dmp_read_fifo(gyro, accel, quat, NULL, &sensors, &sensor_fifo_count)))
+// 	{
+// 		update_euler_from_quaternions(quat);
+// 		sax = accel[0];
+// 		say = accel[1];
+// 		saz = accel[2];
+// 		sp = gyro[0];
+// 		sq = gyro[1];
+// 		sr = gyro[2];
+// 		return read_stat;
+// 	}
+// 	else
+// 		return read_stat;
+// }
+
 void get_dmp_data(void)
 {
 	int8_t read_stat;
@@ -45,9 +66,8 @@ void get_dmp_data(void)
 		sq = gyro[1];
 		sr = gyro[2];
 	}
-	//else printf("Error reading sensor fifo: %d\n", read_stat);
+	else printf("Error reading sensor fifo: %d\n", read_stat);
 }
-
 
 void get_raw_sensor_data(void){
 		
