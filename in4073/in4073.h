@@ -37,7 +37,7 @@ enum control_mode_t control_mode;
 struct msg_telemetry_t *msg_tele;
 struct msg_profile_t msg_profile;
 
-uint8_t mmode;           			///< mode message from pc
+enum control_mode_t mmode;           			///< mode message from pc
 uint16_t mthrust;           		///< thrust message from pc
 int16_t mroll, mpitch, myaw;        ///< attitude message from pc
 

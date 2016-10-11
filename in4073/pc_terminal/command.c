@@ -38,12 +38,12 @@ void InitCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* keybo
 	tuning_msg->update = FALSE;
 }
 
-void CombineCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* keyboard_msg, struct msg_joystick_t* joystick_msg)
+void CombineCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* keyboard_msg, struct msg_joystick_t* joystick_msg, struct msg_tuning_t* tuning_msg)
 {
 	if(keyboard_msg->update)
 	{combine_msg->mode = joystick_msg->mode = keyboard_msg->mode;}
-	//else
-	//{combine_msg->mode = joystick_msg->mode;}
+	else
+	{combine_msg->mode = keyboard_msg->mode = joystick_msg->mode;}
 
 	// combine the message if the mode are neither safe mode nor panic mode 
 	if(combine_msg->mode != MODE_SAFE && combine_msg->mode != MODE_PANIC){
@@ -80,6 +80,10 @@ void CombineCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* ke
 		combine_msg->roll = keyboard_msg->roll = 0;
 		combine_msg->pitch = keyboard_msg->pitch = 0;
 		combine_msg->yaw = keyboard_msg->yaw = 0;
+
+		tuning_msg->P = 0;
+		tuning_msg->P1 = 0;
+		tuning_msg->P2 = 0;
 	}
 	
 	// update the flag, it indicates the message has been updated

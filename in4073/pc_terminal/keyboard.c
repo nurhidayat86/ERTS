@@ -69,19 +69,53 @@ void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tun
 				break;
 
 			case 'u':	// increase the yaw gain
-				if (tuning_msg->P < 6) {
-					tuning_msg->P+=1;
+				if(keyboard_msg->mode == MODE_YAW || keyboard_msg->mode == MODE_FULL)
+				{
+					if (tuning_msg->P < 6) {tuning_msg->P+=1;}
+					tuning_msg->update = TRUE;
 				}
-				tuning_msg->update = TRUE;
 				break;
 
 			case 'j': // decrease the yaw gain
-				if (tuning_msg->P > 0) {
-					tuning_msg->P-=1;
+				if(keyboard_msg->mode == MODE_YAW || keyboard_msg->mode == MODE_FULL)
+				{	
+					if (tuning_msg->P > 0) {tuning_msg->P-=1;}
+					tuning_msg->update = TRUE;
 				}
-				tuning_msg->update = TRUE;
 				break;
-							
+			
+			case 'i':	// increase the P1 gain
+				if(keyboard_msg->mode == MODE_FULL)
+				{	
+					if (tuning_msg->P1 < 6) {tuning_msg->P1+=1;}
+					tuning_msg->update = TRUE;
+				}
+				break;
+
+			case 'k': // decrease the P1 gain
+				if(keyboard_msg->mode == MODE_FULL)
+				{	
+					if (tuning_msg->P1 > 0) {tuning_msg->P1-=1;}
+					tuning_msg->update = TRUE;
+				}
+				break;
+	
+			case 'o':	// increase the P2 gain
+				if(keyboard_msg->mode == MODE_FULL)
+				{	
+					if (tuning_msg->P2 < 6) {tuning_msg->P2+=1;}
+					tuning_msg->update = TRUE;
+				}
+				break;
+
+			case 'l': // decrease the P2 gain
+				if(keyboard_msg->mode == MODE_FULL)
+				{
+					if (tuning_msg->P2 > 0) {tuning_msg->P2-=1;}
+					tuning_msg->update = TRUE;
+				}
+				break;
+
 			default:
 				break;
 		}
@@ -118,6 +152,7 @@ void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tun
 				break;	
 			case 27: 
 				keyboard_msg->mode = ESCAPE;
+				break;
 
 			default:
 				break;

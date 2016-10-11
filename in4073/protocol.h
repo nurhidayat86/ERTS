@@ -8,7 +8,7 @@
 
 #define	FALSE 0
 #define	TRUE 1
-#define PERIODIC_COM 10
+#define PERIODIC_COM 20
 #define PANIC_TIME_MS 2000
 #define PERIODIC_LINK_S PANIC_TIME_MS/1000
 
@@ -17,24 +17,10 @@
 #define HDR_FTR_SIZE 5
 
 #define ENCODE
-//#define DRONE_PROFILE
-#define PC_PROFILE
+// #define DRONE_PROFILE
+// #define PC_PROFILE
 #define ENCODE_PC_RECEIVE
 // #define PC_DEBUG
-
-//log messages 45 bytes w/o acceleration
-// struct log_t {
-//   uint32_t time_stamp;
-//   uint8_t mode;
-//   uint16_t thrust;
-//   int16_t roll, pitch, yaw; 
-//   int16_t ae[4];
-//   int16_t phi, theta, psi; 
-//   int16_t sp, sq, sr; 
-//   //int16_t sax, say, saz;
-//   uint16_t bat_volt;
-//   int32_t temperature, pressure;
-// }__attribute__((packed, aligned(1)));
 
 enum msg_status {
 	UNITINIT,
@@ -116,8 +102,11 @@ struct msg_telemetry_t{
  	int16_t engine[4];
  	int16_t phi, theta, psi; 
   	int16_t sp, sq, sr; 
-  	//int16_t sax, say, saz;
+  	int16_t sax, say, saz;
   	uint16_t bat_volt;
+  	uint8_t P;
+  	uint8_t P1;
+  	uint8_t P2;
 }__attribute__((packed));
 
 // struct msg_profile_t{
@@ -136,9 +125,25 @@ struct msg_profile_t{
 	uint16_t proc_log;
 	uint16_t proc_dmp;
 	uint16_t proc_control;
-	uint32_t time_all;
+	uint16_t time_all;
 }__attribute__((packed));
 
+struct msg_log_t {
+  uint16_t index_log;
+  uint32_t time_stamp;
+  uint8_t mode;
+  uint16_t thrust;
+  int16_t roll, pitch, yaw; 
+  int16_t ae[4];
+  int16_t phi, theta, psi; 
+  int16_t sp, sq, sr; 
+  int16_t sax, say, saz;
+  uint16_t bat_volt;
+  uint8_t P;
+  uint8_t P1;
+  uint8_t P2;
+  int32_t temperature, pressure;
+}__attribute__((packed));
 
 struct msg_p {
 	enum msg_status status;
