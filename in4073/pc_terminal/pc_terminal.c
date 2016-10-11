@@ -236,7 +236,13 @@ int main(int argc, char **argv)
 			start = mon_time_ms();
 
 			// change the mode to log mode, if we abort the mission
-			if(combine_msg.mode == ESCAPE) combine_msg.mode = MODE_LOG;	
+			if(combine_msg.mode == ESCAPE) 
+				{
+					combine_msg.mode = MODE_LOG;
+					kp = fopen("logging.csv","w+");
+					fprintf(kp,"index_log, time_stamp, mode, thrust, roll, pitch, yaw, ae[0], ae[1], ae[2], ae[3], phi, theta, psi, sp, sq, sr, bat_volt, P, P1, P2, temperature, pressure\n");
+
+				}
 		}
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
@@ -413,10 +419,15 @@ int main(int argc, char **argv)
 						{
 							msg_logging = (struct msg_log_t *)&msg.payload[0];
 							printf("%d %d | %d | %d %d %d %d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
+							fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
 							printf("%d %d %d %d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
+							fprintf(kp, "%d, %d, %d, %d, ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
 							printf("%d %d %d | ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
-							printf("%d %d %d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
+							fprintf(kp,"%d, %d, %d, ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
+							printf("%d %d %d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
+							fprintf(kp,"%d, %d, %d, ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
 							printf("%d %d %d %d |%d %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
+							fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
 							break;
 						}
 
@@ -433,7 +444,7 @@ int main(int argc, char **argv)
 			#endif			
 		}
 	}
-	
+	fclose(kp);
 	term_puts("\n<exit>\n");
 	term_exitio();
 	rs232_close();
