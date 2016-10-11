@@ -77,14 +77,13 @@ void *heartbeat(void* x_void_ptr)
 
 int main(int argc, char **argv)
 {
-	
 	/* this variable is our reference to the second thread */
     pthread_t heartbeat_thread;
     uint8_t thread_status;
  	int x = 0;
 
     // status = pthread_create(&inc_x_thread, NULL, inc_x, &x);
-	thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
+	// thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
 	
 	// periodic command timer 
 	uint32_t start, end, panic_start = 0;
@@ -240,7 +239,7 @@ int main(int argc, char **argv)
 				{
 					combine_msg.mode = MODE_LOG;
 					kp = fopen("logging.csv","w+");
-					fprintf(kp,"index_log, time_stamp, mode, thrust, roll, pitch, yaw, ae[0], ae[1], ae[2], ae[3], phi, theta, psi, sp, sq, sr, bat_volt, P, P1, P2, temperature, pressure\n");
+					fprintf(kp,"index_log, time_stamp, mode, thrust, roll, pitch, yaw, ae[0], ae[1], ae[2], ae[3], phi, theta, psi, sp, sq, sr, sax, say, saz, bat_volt, P, P1, P2, temperature, pressure\n");
 
 				}
 		}
@@ -331,14 +330,14 @@ int main(int argc, char **argv)
 				switch(msg.msg_id) {
 					case MSG_TELEMETRY: 
 					{
-						heartbeat_flag = true;
-						hb_timer = mon_time_ms();
+						//heartbeat_flag = true;
+						//hb_timer = mon_time_ms();
 						msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
 						printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 						printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
 						printf("%d %d %d| ",msg_tele->phi, msg_tele->theta, msg_tele->psi);
 						printf("%d %d %d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
-						// printf("%d %d %d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
+						printf("%d %d %d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
 						printf("%d %d %d %d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
 						// printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
 						break;
@@ -391,7 +390,7 @@ int main(int argc, char **argv)
 		// if(msg_tele->bat_volt<1100){printf("The BATTERY is LOW")}
 		// if(msg_tele->bat_volt<1050){combine_msg.mode = MODE_PANIC;}
 	}
-
+	
 	// printf("mode %d ", combine_msg.mode);
 	
 	while(true) // start logging 
@@ -404,6 +403,10 @@ int main(int argc, char **argv)
 					switch(msg.msg_id) {
 						case MSG_TELEMETRY: 
 						{
+							// send again the escape command
+							combine_msg.mode = ESCAPE;
+							SendCommand(&combine_msg);
+
 							msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
 							printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 							printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
@@ -426,6 +429,8 @@ int main(int argc, char **argv)
 							fprintf(kp,"%d, %d, %d, ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
 							printf("%d %d %d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
 							fprintf(kp,"%d, %d, %d, ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
+							printf("%d %d %d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
+							fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
 							printf("%d %d %d %d |%d %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
 							fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
 							break;

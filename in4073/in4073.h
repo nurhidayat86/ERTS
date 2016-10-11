@@ -37,6 +37,17 @@ enum control_mode_t control_mode;
 struct msg_telemetry_t *msg_tele;
 struct msg_profile_t msg_profile;
 
+uint16_t c1phi;
+uint16_t c1theta;
+uint16_t c2phi;
+uint16_t c2theta;
+int16_t estimated_p;
+int16_t estimated_q;
+int16_t estimated_phi;
+int16_t estimated_theta;
+int16_t bp;
+int16_t bq;
+
 enum control_mode_t mmode;           			///< mode message from pc
 uint16_t mthrust;           		///< thrust message from pc
 int16_t mroll, mpitch, myaw;        ///< attitude message from pc

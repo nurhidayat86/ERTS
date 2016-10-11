@@ -85,9 +85,14 @@ bool flash_data() {
 	log_msg.ae[2] = ae[2];
 	log_msg.ae[3] = ae[3];
 	
-	log_msg.phi = phi-cphi;
-	log_msg.theta = theta-ctheta;
+	
+	// log_msg.phi = phi-cphi;
+	// log_msg.theta = theta-ctheta;
+	
+	log_msg.phi = estimated_phi;
+	log_msg.theta = estimated_theta;
 	log_msg.psi = -(psi-cpsi);
+	
 	log_msg.sp = sp-cp;
 	log_msg.sq = (sq-cq);
 	log_msg.sr = -(sr-cr);

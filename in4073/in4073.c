@@ -15,6 +15,7 @@
 
 #include "in4073.h"
 #include "logging.h"
+#include "kalman.h"
 // #include "logging_protocol.h"
 
 bool loop;
@@ -44,6 +45,7 @@ static void process_bytes(uint8_t byte) {
 				// myaw = msg_com->yaw;
 				
 				mmode = msg_tele->mode;
+				// control_mode = msg_tele->mode;
 				//com_msg.mode = msg_tele->mode;
 				// msg_com->mode = mmode;
 
@@ -79,6 +81,7 @@ static void process_bytes(uint8_t byte) {
 	// put semaphore 
 	// if(!disable_mode) set_control_mode(msg_tele->mode);
 	set_control_mode(mmode);		// set the mode
+	// set_control_mode(control_mode);		// set the mode
 
 	// set_control_command(msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 	set_control_command(mthrust, mroll, mpitch, myaw);
@@ -99,12 +102,34 @@ int main(void)
 	timers_init();
 	adc_init();
 	twi_init();
-	imu_init(true, 100);
+	//imu_init(true, 100);
+	imu_init(false, 512);
 
 	baro_init();
 	spi_flash_init();
 	//	ble_init();
 
+	unsigned short gfsr[0];
+	unsigned char afsr[0];
+	unsigned short srfsr[0];
+
+	mpu_get_gyro_fsr(gfsr);
+    mpu_get_accel_fsr(afsr);
+    mpu_get_sample_rate(srfsr);  
+
+    printf("%d %d %d", gfsr[0], afsr[0], srfsr[0]);
+
+    uint16_t c1phi = 10;
+	uint16_t c1theta = 10;
+	uint16_t c2phi = c1phi<<10;
+	uint16_t c2theta = c1theta<10;
+	int16_t estimated_p = 0;
+	int16_t estimated_q = 0;
+	int16_t estimated_phi = 0;
+	int16_t estimated_theta = 0;
+	int16_t bp = 0;
+	int16_t bq = 0;
+	
 	#ifdef ENCODE_PC_RECEIVE
 	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
 	uint8_t output_size;
@@ -149,25 +174,25 @@ int main(void)
 	msg_profile.proc_control = 0;
 	#endif
 	
-	loop = true;
-	control_mode = ESCAPE;
-	printf("mode %d\n", control_mode);
-	while(control_mode == ESCAPE) // wait until the PC safe to start up 
-	{
-		// printf("count %d\n", rx_queue.count);
-		// printf("mode %d\n", control_mode);
-		control_mode = ESCAPE;
-		printf("mode %d\n", control_mode);
-		if (rx_queue.count) {
-			process_bytes( dequeue(&rx_queue) ) ;
-			break;
-		}
-		// if (rx_queue.count) 
-		// {
-		// 	control_mode = MODE_SAFE;
-		// 	// printf("mode %d\n", control_mode);
-		// }	
-	} 
+	// loop = true;
+	// control_mode = ESCAPE;
+	// printf(" mode %d\n", control_mode);
+	// while(control_mode == ESCAPE) // wait until the PC safe to start up 
+	// {
+	// 	// printf("count %d\n", rx_queue.count);
+	// 	// printf("mode %d\n", control_mode);
+	// 	control_mode = ESCAPE;
+	// 	printf("mode %d\n", control_mode);
+	// 	if (rx_queue.count) {
+	// 		process_bytes( dequeue(&rx_queue) ) ;
+	// 		break;
+	// 	}
+	// 	// if (rx_queue.count) 
+	// 	// {
+	// 	// 	control_mode = MODE_SAFE;
+	// 	// 	// printf("mode %d\n", control_mode);
+	// 	// }	
+	// } 
 	
 	// while (loop)
 	while(control_mode != ESCAPE)
@@ -224,10 +249,14 @@ int main(void)
 					msg_tele->engine[2] = ae[2];
 					msg_tele->engine[3] = ae[3];
 
-					msg_tele->phi = phi-cphi;
-					msg_tele->theta = theta-ctheta;
-					msg_tele->psi = -(psi-cpsi);
+					// msg_tele->phi = phi-cphi;
+					// msg_tele->theta = theta-ctheta;
+					// msg_tele->psi = -(psi-cpsi);
 
+					msg_tele->phi = estimated_phi;
+					msg_tele->theta = estimated_theta;
+					msg_tele->psi = -(psi-cpsi);
+	
 					msg_tele->sp = sp-cp;
 					msg_tele->sq = -(sq-cq); 
 					msg_tele->sr = -(sr-cr);
@@ -270,11 +299,11 @@ int main(void)
 			#ifdef DRONE_PROFILE
 			start = get_time_us();
 			#endif
-			if (status == true)
-			{
-				status = flash_data() ;
- 				if((status = write_log()) == false) {printf("failed to write log");}	
-			}
+			// if (status == true)
+			// {
+			// 	status = flash_data() ;
+ 			// 	if((status = write_log()) == false) {printf("failed to write log");}	
+			// }
 			#ifdef DRONE_PROFILE
 			end = get_time_us();
 			proc_log = end - start;
@@ -288,7 +317,15 @@ int main(void)
 			#ifdef DRONE_PROFILE
 			start = get_time_us();
 			#endif
-			get_dmp_data();
+			//get_dmp_data();
+			get_raw_sensor_data();
+			kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &estimated_phi, &estimated_theta, &bp, &bq);
+			if (status == true)
+			{
+				status = flash_data() ;
+ 				if((status = write_log()) == false) {printf("failed to write log");}	
+			}
+						
 			#ifdef DRONE_PROFILE
 			end = get_time_us();
 			proc_dmp = end - start;
