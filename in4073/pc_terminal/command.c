@@ -11,21 +11,21 @@
 
 void InitCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* keyboard_msg, struct msg_joystick_t* joystick_msg, struct msg_tuning_t* tuning_msg)
 {
-	joystick_msg->mode = 0;
+	joystick_msg->mode = MODE_SAFE;
 	joystick_msg->thrust = 0;
 	joystick_msg->roll = 0;
 	joystick_msg->pitch = 0;
 	joystick_msg->yaw = 0;
 	joystick_msg->update = FALSE;
 
-	keyboard_msg->mode = 0;
+	keyboard_msg->mode = MODE_SAFE;
 	keyboard_msg->thrust = 0;
 	keyboard_msg->roll = 0;
 	keyboard_msg->pitch = 0;
 	keyboard_msg->yaw = 0;
 	keyboard_msg->update = FALSE;
 
-	combine_msg->mode = 0;
+	combine_msg->mode = MODE_SAFE;
 	combine_msg->thrust = 0;
 	combine_msg->roll = 0;
 	combine_msg->pitch = 0;

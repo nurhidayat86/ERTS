@@ -150,22 +150,29 @@ int main(void)
 	#endif
 	
 	loop = true;
-	// control_mode = ESCAPE;
-	// printf("mode %d\n", control_mode);
-	// while(control_mode == ESCAPE) // wait until the PC safe to start up 
-	// {
-	// 	//printf("mode %d\n", control_mode);
-	// 	if (rx_queue.count) 
-	// 	{
-	// 		control_mode = MODE_SAFE;
-	// 		// printf("mode %d\n", control_mode);
-	// 	}	
-	// } 
+	control_mode = ESCAPE;
+	printf("mode %d\n", control_mode);
+	while(control_mode == ESCAPE) // wait until the PC safe to start up 
+	{
+		// printf("count %d\n", rx_queue.count);
+		// printf("mode %d\n", control_mode);
+		control_mode = ESCAPE;
+		printf("mode %d\n", control_mode);
+		if (rx_queue.count) {
+			process_bytes( dequeue(&rx_queue) ) ;
+			break;
+		}
+		// if (rx_queue.count) 
+		// {
+		// 	control_mode = MODE_SAFE;
+		// 	// printf("mode %d\n", control_mode);
+		// }	
+	} 
 	
 	// while (loop)
 	while(control_mode != ESCAPE)
 	{
-		//if (counter_link > PERIODIC_LINK_S) printf("link is missing \n");  
+		// if (counter_link > PERIODIC_LINK_S) printf("link is missing \n");  
 		#ifdef DRONE_PROFILE
 		start = get_time_us();
 		#endif
