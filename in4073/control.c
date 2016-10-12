@@ -45,6 +45,8 @@ static int16_t cmd_roll, cmd_pitch, cmd_yaw = 0;  ///< The roll, pitch, yaw comm
 static uint16_t sp_thrust = 0;                    ///< The thrust setpoint
 static int16_t sp_roll, sp_pitch, sp_yaw = 0;     ///< The roll, pitch, yaw setpoint
 
+static uint16_t panic_thrust = 0;                  ///< Time at which panic mode is entered
+
 //static int16_t cmd_roll_rate, cmd_pitch_rate = 0;     ///< The roll, pitch, yaw setpoint
 //static int16_t cphi, ctheta, cpsi = 0;            ///< Calibration values of phi, theta, psi
 //static int16_t cp, cq, cr = 0;                    ///< Calibration valies of p, q and r
@@ -202,11 +204,13 @@ void run_filters_and_control(void)
 
         /* Panic mode (PANIC_THRUST of thrust for PANIC_TIME seconds, then safe mode) */
         case MODE_PANIC:
-            motor_mixing(PANIC_THRUST, 0, 0, 0);
-
+            //motor_mixing(PANIC_THRUST, 0, 0, 0);
+            panic_thrust = (panic_thrust*7)>>3;
+            motor_mixing(panic_thrust, 0, 0, 0);
             // Check if time exceeded
             if((get_time_us() - panic_start) > PANIC_TIME) {
                 set_control_mode(MODE_SAFE);
+                panic_thrust = PANIC_THRUST;
             }
             break;
 

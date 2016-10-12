@@ -10,7 +10,7 @@
 #define	TRUE 1
 #define PERIODIC_COM 20
 #define PANIC_TIME_MS 2000
-#define PERIODIC_LINK_S PANIC_TIME_MS/1000
+#define PERIODIC_LINK 1
 
 #define HDR 0x99
 #define MAX_PAYLOAD 200
@@ -109,15 +109,6 @@ struct msg_telemetry_t{
   	uint8_t P1;
   	uint8_t P2;
 }__attribute__((packed));
-
-// struct msg_profile_t{
-// 	uint32_t proc_read;
-// 	uint32_t proc_adc;
-// 	uint32_t proc_send;
-// 	uint32_t proc_log;
-// 	uint32_t proc_dmp;
-// 	uint32_t proc_control;
-// }__attribute__((packed));
 
 struct msg_profile_t{
 	uint16_t proc_read;

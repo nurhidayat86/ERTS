@@ -117,7 +117,7 @@ void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tun
 				break;
 
 			// additional
-			case 'm': // decrease the P2 gain
+			case 'm': // start flexible logging 
 				if (tuning_msg->log_flag == FALSE) 
 				{
 					tuning_msg->log_flag = TRUE;
@@ -129,6 +129,19 @@ void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tun
 				}
 				tuning_msg->update = TRUE;
 				//printf("masuk update");
+			break;
+
+			case 'n': // toggle the stop sending bool
+				if (stop_sending == FALSE) 
+				{
+					stop_sending = TRUE;
+					// printf("stop true %d\n", stop_sending);
+				}
+				else if (stop_sending == TRUE) {
+					stop_sending = FALSE;
+					// printf("stop false%d\n", stop_sending);
+				}
+				// printf("toggle\n");				
 			break;
 
 			default:

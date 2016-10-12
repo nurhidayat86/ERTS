@@ -1,37 +1,41 @@
 /*------------------------------------------------------------
  * Simple pc terminal in C
- *
+ * 
  * Arjan J.C. van Gemund (+ mods by Ioannis Protonotarios)
  *
  * read more: http://mirror.datenwolf.net/serial/
  *------------------------------------------------------------
  */
 
-#include "../protocol.h"
-#include "term.h"
-#include "serial.h"
-#include "keyboard.h"
+#include <pthread.h>
+#include "term.h"			// adjusted to ERTS
+#include "serial.h"			// adjusted to ERTS
 #include "joystick_interface.h"
+<<<<<<< HEAD
 #include "command.h"
 #include <pthread.h>
 
 // #include "../logging_protocol.h"
 // #include "log_terminal.h"
+=======
+#include "../packet.h"
+#include "../crc_calc.h"
 
-/*----------------------------------------------------------------
- * main -- execute terminal
- *----------------------------------------------------------------
- */
+#define REFRESH_TIME 	500
+>>>>>>> 8eed6d0d69d7b32638dd6c211d4b5367e01d8791
 
-#include <time.h>
-#include <assert.h>
 
+pthread_mutex_t lock_send;
+int end_communication = 0;
+
+<<<<<<< HEAD
 #define REFRESH_TIME 200
 pthread_mutex_t lock_send;
 bool heartbeat_flag;
 struct msg_combine_t combine_msg;
 void *heartbeat(void* x_void_ptr);
-uint32_t hb_timer;
+uint32_t hb_timer, print_warning_start;
+bool stop_sending = FALSE;
 
 unsigned int mon_time_ms(void)
 {
@@ -65,18 +69,83 @@ void *heartbeat(void* x_void_ptr)
         {
 	        pthread_mutex_lock( &lock_send );
 	        if(!heartbeat_flag) combine_msg.mode = MODE_PANIC;
-	        // printf("heartbeat failed ");
+	        if(mon_time_ms() - print_warning_start > 1000) 
+	        {
+	        	printf("Communication link is lost, try to reconnect\n ");
+	        	print_warning_start = mon_time_ms();	
+	        }
+	        // usleep(REFRESH_TIME*1000); // 200ms
+        	heartbeat_flag = false;
 	        pthread_mutex_unlock( &lock_send );
 		}
-        // usleep(REFRESH_TIME*1000); // 200ms
-        heartbeat_flag = false;
+        
+=======
+
+void *heartbeat(void* x_void_ptr)
+{
+    // int idboard = *( (int*)(board) );
+    // in idboard = *(  (int*)(fd_RS232) ); 
+    int c;
+
+    while(!end_communication)
+    {
+		int *x_ptr = (int *)x_void_ptr;
+		while(++(*x_ptr) < 100);
+		
+		packet_t p;
+		p.sflag = 0x99;
+        p.msgtype = 0x83;
+        p.value = 0x01;
+
+        crc_calc(&p);
+
+        pthread_mutex_lock( &lock_send );
+
+        send_packet(fd_RS232, p);
+
+		// c = 'h';
+		// rs232_putchar(c);
+
+		// result = (int) write(fd_RS232, &p, 3);
+
+
+        pthread_mutex_unlock( &lock_send );
+
+        usleep(REFRESH_TIME*1000); //50ms
+>>>>>>> 8eed6d0d69d7b32638dd6c211d4b5367e01d8791
     }
     /* the function must return something - NULL will do */
     return NULL;
 }
 
+
+/*------------------------------------------------------------
+ * console I/O
+ *------------------------------------------------------------
+ *
+ * adjusted to ERTS
+ *
+ */
+
+
+/*------------------------------------------------------------
+ * Serial I/O 
+ * 8 bits, 1 stopbit, no parity, 
+ * 115,200 baud
+ *------------------------------------------------------------
+ *
+ * adjusted to ERTS
+ *
+ */
+
+
+/*----------------------------------------------------------------
+ * main -- execute terminal
+ *----------------------------------------------------------------
+ */
 int main(int argc, char **argv)
 {
+<<<<<<< HEAD
 	// periodic command timer 
 	uint32_t start, end, panic_start, start_batt = 0;
 	
@@ -113,26 +182,56 @@ int main(int argc, char **argv)
 	uint8_t decode_status;
  	// static struct msg_p_log msg_log_p;
 	bool log_start = TRUE;
+=======
+	/*
+	 * output
+	 * msg
+	 * msg_joystick
+	 * msg_keyboard
+	 * msg_combine
+	 *
+	 */
+>>>>>>> 8eed6d0d69d7b32638dd6c211d4b5367e01d8791
 
-	// joystick initialization
+	/*----------------------------------------------------------------
+	 * ERTS -- joystick handling
+	 *----------------------------------------------------------------
+	 */
 	int fd = 0;
 	struct js_event js;
 	init_joystick(&fd);
-	int16_t axis[4];
-	int16_t button[8];
-	bool warning = FALSE;
-		
-	// communication initialization	
+	
+	int iomode = 0;
+	
+	int status = 0;
+	
+	int x = 0;
+	
+	/* this variable is our reference to the second thread */
+    pthread_t heartbeat_thread;
+
 	char c;
+	packet_t p;
+
+	
 	term_puts("\nTerminal program - Embedded Real-Time Systems\n");
 
 	term_initio();
 	rs232_open();
+	
+	pthread_mutex_init(&lock_send, NULL);
+	
+	// status = pthread_create(&inc_x_thread, NULL, inc_x, &x);
+	status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
+
+
+
 
 	term_puts("Type ^C to exit\n");
 
 	/* discard any incoming text
 	 */
+<<<<<<< HEAD
 	//while ((c = rs232_getchar_nb()) != -1)
 	//	fputc(c,stderr);
 
@@ -169,9 +268,56 @@ int main(int argc, char **argv)
 			printf("WARNING! thrust %d roll %d pitch %d yaw %d \n", joystick_msg.thrust, joystick_msg.roll, joystick_msg.pitch, joystick_msg.yaw);
 			warning = FALSE;	
 		}
+=======
+	while ((c = rs232_getchar_nb()) != -1)
+		fputc(c,stderr);
+	
+	/* send & receive
+	 */
+	for (;;) 
+	{
+	/*----------------------------------------------------------------
+	 * ERTS -- joystick handling
+	 *----------------------------------------------------------------
+	 */
+		// int16_t axis[4];
+		// int16_t button[8];
+		int16_t axis[4];
+		int16_t button[8];
+		int nummer;
+		int waarde;
+		int x = 0;
+		
+		if (iomode == 1) {
+		
+			while (read(fd, &js, sizeof(struct js_event)) == sizeof(struct js_event)){
+				printf("Event: type %d, time %d, number %d, value %d\n",
+						js.type, js.time, js.number, js.value);
+				if (js.type==1 && js.number==11) iomode =0;
+				nummer = js.number;
+				waarde = js.value;
+				button[nummer] = waarde;
+				// axis[nummer] = waarde;
+				
+				// c = button[nummer];
+				// rs232_putchar(c);
+				
+				/*
+				//mapping to output
+				joystick_msg.roll = axis[0]>>5; //>>7;
+				joystick_msg.pitch = axis[1]>>5; //>>7;
+				joystick_msg.yaw = axis[2]>>5; //>>7;
+				joystick_msg.thrust = (JOY_THRUST_OFF - axis[3])>>6; //>>8;
+				//joystick_msg.thrust = axis[3]>>5; //>>8;			
+				//joystick_msg.mode = (button[0] << 7) | (button[1] << 6) | (button[2] << 5) | (button[3] << 4) | (button[4] << 3) | (button[5] << 2) | (button[6] << 1) | (button[7]);
+				//joystick_msg.mode = button[3];
 
-	}
+				joystick_msg.update = true;
+>>>>>>> 8eed6d0d69d7b32638dd6c211d4b5367e01d8791
 
+				*/
+
+<<<<<<< HEAD
 	/* this variable is our reference to the second thread */
     pthread_t heartbeat_thread;
     uint8_t thread_status;
@@ -180,9 +326,7 @@ int main(int argc, char **argv)
  	//========================================================================================//
  	// ================================ACTIVATE THE HEARTBEAT=================================//
  	//========================================================================================//
-
-    // status = pthread_create(&inc_x_thread, NULL, inc_x, &x);
-	// thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
+	thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
 
 	/* send & receive */	
 	while(combine_msg.mode != MODE_LOG)		// while loop for the mission phase
@@ -190,11 +334,12 @@ int main(int argc, char **argv)
 		#ifdef PC_PROFILE 
 			start_profile = mon_time_us();
 		#endif
-		// peridocally send the command to the board
+		// periodically send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time interval
 		end = mon_time_ms();
-		if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG))
+		if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG) && (!stop_sending))
 		{
+			// printf("sending %d\n", stop_sending);
 			// send gain tuning message
 			// the attitude command wont be sent if the gain tuning updated
 			if(tuning_msg.update)
@@ -347,7 +492,6 @@ int main(int argc, char **argv)
 					{
 						msg_profile = (struct msg_profile_t *)&msg.payload[0];
 						printf("\n%d %d %d %d %d %d %d\n", msg_profile->proc_read, msg_profile->proc_adc, msg_profile->proc_send, msg_profile->proc_log, msg_profile->proc_dmp, msg_profile->proc_control,  msg_profile->time_all);
-						//mon_delay_ms(2);
 						break;
 					}
 					#endif
@@ -446,16 +590,78 @@ int main(int argc, char **argv)
 			#else
 				printf("%c", (uint8_t)c);
 			#endif			
+=======
+				//	printf ("Joystick button: %c, Joystick axis: %c \n", button[js.value], axis[js.value]);
+			
+			}
+		usleep(1000);
+				
 		}
+
+	
+	
+		if (iomode == 0) {
+
+			if ((c = term_getchar_nb()) != -1) {
+				// rs232_putchar(c);
+				p.sflag = 0x99;
+				p.msgtype = c;
+				p.value = 0x00;
+
+				crc_calc(&p);
+
+				send_packet(fd_RS232, p);
+
+				// printf("term_getchar: %c\n",c);
+				if (c == 'j') {
+					iomode = 1;
+				}
+			}
+	/*----------------------------------------------------------------
+	 * ERTS -- combining keyboard and joystick input
+	 *----------------------------------------------------------------
+	 */
+		
+		
+		
+		
+		
+		
+		
+			if ((c = rs232_getchar_nb()) != -1) 
+				term_putchar(c);
+
+	/*----------------------------------------------------------------
+	 * ERTS -- receiving data from board
+	 *----------------------------------------------------------------
+	 */
+		
+		
+		
+		
+		
+>>>>>>> 8eed6d0d69d7b32638dd6c211d4b5367e01d8791
+		}
+		
 	}
+<<<<<<< HEAD
 	fclose(kp);
 	term_puts("\n<exit>\n");
+=======
+
+	end_communication = 1;
+	
+>>>>>>> 8eed6d0d69d7b32638dd6c211d4b5367e01d8791
 	term_exitio();
 	rs232_close();
-
+	term_puts("\n<exit>\n");
+  	
 	return 0;
 }
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 8eed6d0d69d7b32638dd6c211d4b5367e01d8791
