@@ -88,6 +88,7 @@ struct msg_tuning_t{
 	uint8_t P;
 	uint8_t P1;
 	uint8_t P2;
+	uint8_t log_flag;
 }__attribute__((packed));
 
 // need a bigger struct size

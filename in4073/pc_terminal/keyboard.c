@@ -116,6 +116,21 @@ void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tun
 				}
 				break;
 
+			// additional
+			case 'm': // decrease the P2 gain
+				if (tuning_msg->log_flag == FALSE) 
+				{
+					tuning_msg->log_flag = TRUE;
+					//printf("masuk ke false");
+				}
+				else if (tuning_msg->log_flag == TRUE) {
+					tuning_msg->log_flag = FALSE;
+					//printf("masuk ke true");
+				}
+				tuning_msg->update = TRUE;
+				//printf("masuk update");
+			break;
+
 			default:
 				break;
 		}

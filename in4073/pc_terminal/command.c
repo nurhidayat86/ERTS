@@ -36,6 +36,7 @@ void InitCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* keybo
 	tuning_msg->P1 = 0;
 	tuning_msg->P2 = 0;
 	tuning_msg->update = FALSE;
+	tuning_msg->log_flag = false;
 }
 
 void CombineCommand(struct msg_combine_t* combine_msg, struct msg_keyboard_t* keyboard_msg, struct msg_joystick_t* joystick_msg, struct msg_tuning_t* tuning_msg)

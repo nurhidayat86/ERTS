@@ -19,14 +19,10 @@
 // #include "logging_protocol.h"
 
 bool loop;
-
 static void process_bytes(uint8_t byte) {
 	
 	static struct msg_p msg;		// struct to parse the message
-	// static struct msg_combine_t *msg_com;	// struct to capture the combined command from PC
-	// static struct msg_combine_t com_msg;	// struct to capture the combined command from PC
 	struct msg_tuning_t *msg_tune;	// struct to capture the gain tuning message
-	//static bool disable_mode = false;
 	msg_parse(&msg, byte);
 	if(msg.status == GOT_PACKET) { 	// got the packet
 		nrf_gpio_pin_toggle(RED);	// toggle the RED led to indicate the command from PC received
@@ -34,30 +30,12 @@ static void process_bytes(uint8_t byte) {
 			case MSG_COMBINE: 		// the message is command message
 			{
 				// capture the payload of the message
-				// msg_com = (struct msg_combine_t *)&msg.payload[0];
 				msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-				
-				// assign to coresponding element of struct
-				// mmode = msg_com->mode;
-				// mthrust = msg_com->thrust;
-				// mroll = msg_com->roll;
-				// mpitch = msg_com->pitch;
-				// myaw = msg_com->yaw;
-				
 				mmode = msg_tele->mode;
-				// control_mode = msg_tele->mode;
-				//com_msg.mode = msg_tele->mode;
-				// msg_com->mode = mmode;
-
-				if(mmode == ESCAPE)
-				{loop = false;}
-
 				mthrust = msg_tele->thrust;
 				mroll = msg_tele->roll;
 				mpitch = msg_tele->pitch;
 				myaw = msg_tele->yaw;
-				
-				//disable_mode = false;
 				break;
 			}
 
@@ -67,8 +45,7 @@ static void process_bytes(uint8_t byte) {
 				P = msg_tune->P;
 				P1 = msg_tune->P1;
 				P2 = msg_tune->P2;
-				
-				//disable_mode = true;
+				//log_flag = msg_tune->log_flag;
 				break;
 			}
 
@@ -78,17 +55,9 @@ static void process_bytes(uint8_t byte) {
 		};
 		msg.status = UNITINIT; // Start to receive a new packet	
 	}
-	// put semaphore 
-	// if(!disable_mode) set_control_mode(msg_tele->mode);
-	set_control_mode(mmode);		// set the mode
-	// set_control_mode(control_mode);		// set the mode
-
-	// set_control_command(msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-	set_control_command(mthrust, mroll, mpitch, myaw);
-
-	// set yaw gain
-	// set_control_gains(msg_tune->P); //msg_tune->P		
-	set_control_gains(P);
+	set_control_mode(mmode);							// set the mode
+	set_control_command(mthrust, mroll, mpitch, myaw);	// set the control command
+	set_control_gains(P);								// set yaw gain
 }
 
 /*------------------------------------------------------------------
@@ -102,9 +71,7 @@ int main(void)
 	timers_init();
 	adc_init();
 	twi_init();
-	//imu_init(true, 100);
-	imu_init(false, 512);
-
+	imu_init(true, 100);
 	baro_init();
 	spi_flash_init();
 	//	ble_init();
@@ -118,6 +85,8 @@ int main(void)
     mpu_get_sample_rate(srfsr);  
 
     printf("%d %d %d", gfsr[0], afsr[0], srfsr[0]);
+
+    //uint8_t log_flag = FALSE;
 
     uint16_t c1phi = 10;
 	uint16_t c1theta = 10;
@@ -174,6 +143,8 @@ int main(void)
 	msg_profile.proc_control = 0;
 	#endif
 	
+
+	//=============================== CREATE THE START UP MODE HERE ===================================//
 	// loop = true;
 	// control_mode = ESCAPE;
 	// printf(" mode %d\n", control_mode);
@@ -181,8 +152,8 @@ int main(void)
 	// {
 	// 	// printf("count %d\n", rx_queue.count);
 	// 	// printf("mode %d\n", control_mode);
-	// 	control_mode = ESCAPE;
-	// 	printf("mode %d\n", control_mode);
+	// 	// control_mode = ESCAPE;
+	// 	// printf("mode %d\n", control_mode);
 	// 	if (rx_queue.count) {
 	// 		process_bytes( dequeue(&rx_queue) ) ;
 	// 		break;
@@ -249,17 +220,24 @@ int main(void)
 					msg_tele->engine[2] = ae[2];
 					msg_tele->engine[3] = ae[3];
 
-					// msg_tele->phi = phi-cphi;
-					// msg_tele->theta = theta-ctheta;
-					// msg_tele->psi = -(psi-cpsi);
-
-					msg_tele->phi = estimated_phi;
-					msg_tele->theta = estimated_theta;
-					msg_tele->psi = -(psi-cpsi);
-	
-					msg_tele->sp = sp-cp;
-					msg_tele->sq = -(sq-cq); 
-					msg_tele->sr = -(sr-cr);
+					if(control_mode == MODE_RAW)
+					{
+						msg_tele->phi = estimated_phi;
+						msg_tele->theta = estimated_theta;
+						msg_tele->psi = 0;
+						msg_tele->sp = estimated_p;
+						msg_tele->sq = estimated_q; 
+						msg_tele->sr = -(sr-cr); // need result from butterworth
+					}
+					else
+					{
+						msg_tele->phi = phi-cphi;
+						msg_tele->theta = theta-ctheta;
+						msg_tele->psi = -(psi-cpsi);
+						msg_tele->sp = sp-cp;
+						msg_tele->sq = -(sq-cq); 
+						msg_tele->sr = -(sr-cr);				
+					}
 
 					msg_tele->sax = sax;
 					msg_tele->say = say; 
@@ -273,6 +251,7 @@ int main(void)
 
 					if(control_mode != MODE_HEIGHT)
 					{
+						//nrf_gpio_pin_toggle(YELLOW);
 						encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
 						for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
 					}	
@@ -314,14 +293,24 @@ int main(void)
 
 		if (check_sensor_int_flag())
 		{
+			nrf_gpio_pin_toggle(GREEN);
 			#ifdef DRONE_PROFILE
 			start = get_time_us();
 			#endif
-			//get_dmp_data();
-			get_raw_sensor_data();
-			kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &estimated_phi, &estimated_theta, &bp, &bq);
-			if (status == true)
+			
+			if(control_mode == MODE_RAW)
 			{
+				get_raw_sensor_data();
+				kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &estimated_phi, &estimated_theta, &bp, &bq);
+			}
+			else
+			{
+				get_dmp_data();
+			}
+
+			if ((status == true)) //&& (log_flag))
+			{
+				nrf_gpio_pin_toggle(YELLOW);
 				status = flash_data() ;
  				if((status = write_log()) == false) {printf("failed to write log");}	
 			}
@@ -362,6 +351,7 @@ int main(void)
 		#ifdef DRONE_PROFILE
 		if ( get_time_us() - start_send > 100000) 
 		{
+			
 			#ifdef ENCODE_PC_RECEIVE
 				encode_packet((uint8_t *) &msg_profile, sizeof(struct msg_profile_t), MSG_PROFILE, output_data, &output_size);
 				for (i=0; i<output_size; i++) {uart_put(output_data[i]);}
@@ -374,17 +364,8 @@ int main(void)
 				
 	}
 
-	// control_mode = ESCAPE;
-	// while(control_mode == ESCAPE)
-	// while(control_mode != MODE_SAFE)	
 	while(true)
 	{
-		// if ((status = read_logs())==true)
-		// {
-		// 	printf("Finished reading log flash");
-		// 	control_mode = MODE_SAFE;
-
-		// }
 		read_logs();
 		printf("Finished");
 		break;	

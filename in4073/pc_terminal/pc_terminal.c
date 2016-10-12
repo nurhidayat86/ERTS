@@ -77,16 +77,8 @@ void *heartbeat(void* x_void_ptr)
 
 int main(int argc, char **argv)
 {
-	/* this variable is our reference to the second thread */
-    pthread_t heartbeat_thread;
-    uint8_t thread_status;
- 	int x = 0;
-
-    // status = pthread_create(&inc_x_thread, NULL, inc_x, &x);
-	// thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
-	
 	// periodic command timer 
-	uint32_t start, end, panic_start = 0;
+	uint32_t start, end, panic_start, start_batt = 0;
 	
 	// profile timer
 	#ifdef PC_PROFILE 
@@ -98,15 +90,6 @@ int main(int argc, char **argv)
 	uint32_t proc_read = 0;
 	#endif
 
-	// encode variable
-	// uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
-	// uint8_t output_size;
-	// uint8_t i = 0;
-
-	// uint16_t log_counter = 0;
-	// struct log_t *msg_log; 
-	// uint32_t counter = 0;	
-
 	#ifdef ENCODE_PC_RECEIVE
 	struct msg_p msg;
 	struct msg_telemetry_t *msg_tele;
@@ -115,8 +98,6 @@ int main(int argc, char **argv)
 		struct msg_profile_t *msg_profile;
 		#endif
 	#endif
-
-	//struct msg_profile_t *msg_profile;
 
 	// message struck
 	struct msg_joystick_t joystick_msg;
@@ -178,6 +159,7 @@ int main(int argc, char **argv)
 			
 			// scale it down from U16 to U12 (4096) we might need to compress it a little bit more
 			joystick_msg.thrust = (JOY_THRUST_OFF - axis[3])>>4;
+			if(joystick_msg.thrust > 30) joystick_msg.thrust = (((joystick_msg.thrust)*11)>>4)+1280;
 			joystick_msg.update = TRUE;
 			warning = TRUE;	
 		}
@@ -189,6 +171,18 @@ int main(int argc, char **argv)
 		}
 
 	}
+
+	/* this variable is our reference to the second thread */
+    pthread_t heartbeat_thread;
+    uint8_t thread_status;
+ 	int x = 0;
+
+ 	//========================================================================================//
+ 	// ================================ACTIVATE THE HEARTBEAT=================================//
+ 	//========================================================================================//
+
+    // status = pthread_create(&inc_x_thread, NULL, inc_x, &x);
+	// thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
 
 	/* send & receive */	
 	while(combine_msg.mode != MODE_LOG)		// while loop for the mission phase
@@ -233,15 +227,6 @@ int main(int argc, char **argv)
 				tuning_msg.P2 = 0;
 			}
 			start = mon_time_ms();
-
-			// change the mode to log mode, if we abort the mission
-			if(combine_msg.mode == ESCAPE) 
-				{
-					combine_msg.mode = MODE_LOG;
-					kp = fopen("logging.csv","w+");
-					fprintf(kp,"index_log, time_stamp, mode, thrust, roll, pitch, yaw, ae[0], ae[1], ae[2], ae[3], phi, theta, psi, sp, sq, sr, sax, say, saz, bat_volt, P, P1, P2, temperature, pressure\n");
-
-				}
 		}
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
@@ -272,8 +257,13 @@ int main(int argc, char **argv)
 			
 			// scale it down from U16 to U12 (4096) we might need to compress it a little bit more
 			joystick_msg.thrust = (JOY_THRUST_OFF - axis[3])>>4;
-			
-			if(button[0]) joystick_msg.mode = MODE_SAFE;	// assign the fire button
+			if(joystick_msg.thrust > 30) joystick_msg.thrust = (((joystick_msg.thrust)*11)>>4)+1280;
+			// assign the fire button
+			if(button[0]) 
+			{
+				if((joystick_msg.mode != MODE_SAFE) && (joystick_msg.mode != MODE_PANIC)) joystick_msg.mode = MODE_PANIC;
+				else if (joystick_msg.mode == MODE_SAFE) joystick_msg.mode = ESCAPE;
+			}	
 			joystick_msg.update = TRUE;
 		}
 		#ifdef PC_PROFILE
@@ -330,8 +320,10 @@ int main(int argc, char **argv)
 				switch(msg.msg_id) {
 					case MSG_TELEMETRY: 
 					{
-						//heartbeat_flag = true;
-						//hb_timer = mon_time_ms();
+						// update the heartbeat flag, indicates the communication is still running
+						heartbeat_flag = true;
+						hb_timer = mon_time_ms();
+						
 						msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
 						printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 						printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
@@ -340,6 +332,13 @@ int main(int argc, char **argv)
 						printf("%d %d %d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
 						printf("%d %d %d %d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
 						// printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
+						
+						if((msg_tele->bat_volt<1100) && ((mon_time_ms() - start_batt) > 1000)) 
+						{
+							// printf("\n == The BATTERY is LOW == \n \n");
+							// if(msg_tele->bat_volt<1050){combine_msg.mode = MODE_PANIC;}
+							start_batt = mon_time_ms();
+						}	
 						break;
 					}
 
@@ -353,32 +352,33 @@ int main(int argc, char **argv)
 					}
 					#endif
 
+					case MSG_LOG:
+					{
+						msg_logging = (struct msg_log_t *)&msg.payload[0];
+						kp = fopen("logging.csv","w+");
+						fprintf(kp,"index_log, time_stamp, mode, thrust, roll, pitch, yaw, ae[0], ae[1], ae[2], ae[3], phi, theta, psi, sp, sq, sr, sax, say, saz, bat_volt, P, P1, P2, temperature, pressure\n");
+						printf("%d %d | %d | %d %d %d %d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
+						fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
+						printf("%d %d %d %d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
+						fprintf(kp, "%d, %d, %d, %d, ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
+						printf("%d %d %d | ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
+						fprintf(kp,"%d, %d, %d, ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
+						printf("%d %d %d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
+						fprintf(kp,"%d, %d, %d, ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
+						printf("%d %d %d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
+						fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
+						printf("%d %d %d %d |%d %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
+						fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
+						combine_msg.mode = MODE_LOG;	// change the mode to mode log, so we do not need to send message anymore	
+						break;
+					}
+
 					default:
 						break;
 				};
 				msg.status = UNITINIT;	// Start to receive a new packet
 				msg.crc_fails = 0;		// reset the crc fail number
 			}
-
-			// decode_status = decode_log((uint8_t) c, &msg_log_p);
-			// if(msg_log_p.status == GOT_PACKAGE)
-			// {
-			// 	switch(msg_log_p.msg_ID)
-			// 	{
-			// 		case ACK:
-			// 			MSG_ack = (uint8_t *)&msg_log_p.payload[0];
-			// 			np_MSG_ack = *MSG_ack;
-			// 			if (np_MSG_ack == NOK)
-			// 			{
-			// 				printf("error reading fifo error\n");
-			// 			}
-			// 			break;
-
-			// 		default:
-			// 			break;
-			// 	}
-			// 	msg_log_p.status = UNITINIT;
-			// }
 
 			#else
 				#ifndef PC_PROFILE
@@ -387,8 +387,7 @@ int main(int argc, char **argv)
 			#endif		
 		}
 
-		// if(msg_tele->bat_volt<1100){printf("The BATTERY is LOW")}
-		// if(msg_tele->bat_volt<1050){combine_msg.mode = MODE_PANIC;}
+		
 	}
 	
 	// printf("mode %d ", combine_msg.mode);

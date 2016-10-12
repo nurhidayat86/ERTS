@@ -54,7 +54,8 @@ int16_t mroll, mpitch, myaw;        ///< attitude message from pc
 
 int16_t cphi, ctheta, cpsi;         ///< Calibration values of phi, theta, psi
 int16_t cp, cq, cr;                ///< Calibration valies of p, q and r
-uint8_t P, P1, P2;                ///< Calibration valies of p, q and r
+uint8_t P, P1, P2; 
+//uint8_t log_flag;               
        
 int16_t ae[4];
 void set_control_mode(enum control_mode_t mode);

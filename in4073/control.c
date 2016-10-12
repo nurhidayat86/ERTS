@@ -16,8 +16,8 @@
 
 
 #define PRESCALE 3
-#define THRUST_MIN 200*8
-#define AE_MIN 200*8
+#define THRUST_MIN 200<<3
+#define AE_MIN 200<<3
 
 #define MAX_THRUST_COM 8192
 #define MIN_THRUST_COM 0
@@ -118,7 +118,7 @@ void set_control_mode(enum control_mode_t mode) {
         case MODE_CALIBRATION:
             cphi = phi;
             ctheta = theta;
-            cpsi = psi;
+            //cpsi = psi;
             cp = sp;
             cq = sq;
             cr = sr;
@@ -126,6 +126,10 @@ void set_control_mode(enum control_mode_t mode) {
 
         /* Full Control Mode */
         case MODE_FULL:
+            break;
+        
+        /* Raw Mode */
+        case MODE_RAW:
             break;
 
         default:
@@ -172,6 +176,14 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
             sp_pitch = pitch;
             sp_yaw = yaw;
             break;
+
+        case MODE_RAW:
+            cmd_thrust = thrust;
+            sp_roll = roll;
+            sp_pitch = pitch;
+            sp_yaw = yaw;
+            break;
+
 
         default:
             break;
@@ -225,7 +237,7 @@ void run_filters_and_control(void)
             // Also calibrate here (until leave mode)
             cphi = phi;
             ctheta = theta;
-            cpsi = psi;
+            // cpsi = psi;
             cp = sp;
             cq = sq;
             cr = sr;
@@ -263,6 +275,7 @@ void run_filters_and_control(void)
             // cmd_roll = P2*(cmd_roll_rate - (sp - cp));
             // cmd_pitch = P2*(cmd_pitch_rate + (sq - cq));
             
+            // shift the 
             cmd_roll = (sp_roll - ((phi - cphi)>>CONTROL_FRAC))*P1 - (sp - cp)*P2;
             cmd_pitch = (sp_pitch - ((theta - ctheta)>>CONTROL_FRAC))*P1 + (sq - cq)*P2;
             
@@ -282,6 +295,15 @@ void run_filters_and_control(void)
 
             break;
 
+        case MODE_RAW:
+            // cmd_roll = (sp_roll - ((estimated_phi)>>CONTROL_FRAC))*P1 - estimated_p*P2;
+            // cmd_pitch = (sp_pitch - ((estimated_theta)>>CONTROL_FRAC))*P1 - estimated_q*P2;
+            // cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
+            // motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);               
+            break;
+
+        case MODE_HEIGHT:
+            break;
 
         /* Just in case an invalid mode is selected go to SAFE */
         default:
