@@ -31,7 +31,8 @@ pthread_mutex_t lock_send;
 bool heartbeat_flag;
 struct msg_combine_t combine_msg;
 void *heartbeat(void* x_void_ptr);
-uint32_t hb_timer;
+uint32_t hb_timer, print_warning_start;
+bool stop_sending = FALSE;
 
 unsigned int mon_time_ms(void)
 {
@@ -65,11 +66,16 @@ void *heartbeat(void* x_void_ptr)
         {
 	        pthread_mutex_lock( &lock_send );
 	        if(!heartbeat_flag) combine_msg.mode = MODE_PANIC;
-	        // printf("heartbeat failed ");
+	        if(mon_time_ms() - print_warning_start > 1000) 
+	        {
+	        	printf("Communication link is lost, try to reconnect\n ");
+	        	print_warning_start = mon_time_ms();	
+	        }
+	        // usleep(REFRESH_TIME*1000); // 200ms
+        	heartbeat_flag = false;
 	        pthread_mutex_unlock( &lock_send );
 		}
-        // usleep(REFRESH_TIME*1000); // 200ms
-        heartbeat_flag = false;
+        
     }
     /* the function must return something - NULL will do */
     return NULL;
@@ -180,9 +186,7 @@ int main(int argc, char **argv)
  	//========================================================================================//
  	// ================================ACTIVATE THE HEARTBEAT=================================//
  	//========================================================================================//
-
-    // status = pthread_create(&inc_x_thread, NULL, inc_x, &x);
-	// thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
+	thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
 
 	/* send & receive */	
 	while(combine_msg.mode != MODE_LOG)		// while loop for the mission phase
@@ -190,11 +194,12 @@ int main(int argc, char **argv)
 		#ifdef PC_PROFILE 
 			start_profile = mon_time_us();
 		#endif
-		// peridocally send the command to the board
+		// periodically send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time interval
 		end = mon_time_ms();
-		if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG))
+		if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG) && (!stop_sending))
 		{
+			// printf("sending %d\n", stop_sending);
 			// send gain tuning message
 			// the attitude command wont be sent if the gain tuning updated
 			if(tuning_msg.update)
@@ -347,7 +352,6 @@ int main(int argc, char **argv)
 					{
 						msg_profile = (struct msg_profile_t *)&msg.payload[0];
 						printf("\n%d %d %d %d %d %d %d\n", msg_profile->proc_read, msg_profile->proc_adc, msg_profile->proc_send, msg_profile->proc_log, msg_profile->proc_dmp, msg_profile->proc_control,  msg_profile->time_all);
-						//mon_delay_ms(2);
 						break;
 					}
 					#endif

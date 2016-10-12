@@ -119,7 +119,7 @@ int main(void)
 	bool status = true;
 	uint32_t counter = 0;
 	uint32_t counter_log = 0;
-	//uint32_t counter_link = 0;
+	uint32_t counter_link = 0;
 	
 	// profiling
 	#ifdef DRONE_PROFILE
@@ -145,30 +145,25 @@ int main(void)
 	
 
 	//=============================== CREATE THE START UP MODE HERE ===================================//
-	// loop = true;
-	// control_mode = ESCAPE;
-	// printf(" mode %d\n", control_mode);
-	// while(control_mode == ESCAPE) // wait until the PC safe to start up 
-	// {
-	// 	// printf("count %d\n", rx_queue.count);
-	// 	// printf("mode %d\n", control_mode);
-	// 	// control_mode = ESCAPE;
-	// 	// printf("mode %d\n", control_mode);
-	// 	if (rx_queue.count) {
-	// 		process_bytes( dequeue(&rx_queue) ) ;
-	// 		break;
-	// 	}
-	// 	// if (rx_queue.count) 
-	// 	// {
-	// 	// 	control_mode = MODE_SAFE;
-	// 	// 	// printf("mode %d\n", control_mode);
-	// 	// }	
-	// } 
+	loop = true;
+	control_mode = ESCAPE;
+	printf(" mode %d\n", control_mode);
+	while(control_mode == ESCAPE) // wait until the PC safe to start up 
+	{
+		printf("mode %d\n", control_mode);
+		if (rx_queue.count) 
+		{
+			process_bytes( dequeue(&rx_queue) ) ;
+			break;
+		}
+	} 
 	
 	// while (loop)
 	while(control_mode != ESCAPE)
 	{
-		// if (counter_link > PERIODIC_LINK_S) printf("link is missing \n");  
+		// lost the link 1 periodic timer flag
+		if ((counter_link > PERIODIC_LINK) && (control_mode != MODE_PANIC)) control_mode = MODE_PANIC;  
+		
 		#ifdef DRONE_PROFILE
 		start = get_time_us();
 		#endif
@@ -176,7 +171,7 @@ int main(void)
 		if (rx_queue.count) 
 		{
 			process_bytes( dequeue(&rx_queue) ) ;
-			// counter_link = 0;
+			counter_link = 0;
 		}
 		
 		#ifdef DRONE_PROFILE
@@ -186,10 +181,10 @@ int main(void)
 
 		if (check_timer_flag())
 		{
-			if (counter++%20 == 0) 
+			if (counter++%10 == 0) 
 			{
 				nrf_gpio_pin_toggle(BLUE);
-				// counter_link++;		
+				counter_link++;		
 			}
 
 			#ifdef DRONE_PROFILE
@@ -249,6 +244,8 @@ int main(void)
 					msg_tele->P1 = P1;
 					msg_tele->P2 = P2;
 
+					// simulate the communication lost by preventing the drone the send the telemetry message 
+					// (by going to the height mode for time being)
 					if(control_mode != MODE_HEIGHT)
 					{
 						//nrf_gpio_pin_toggle(YELLOW);
