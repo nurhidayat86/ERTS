@@ -110,10 +110,11 @@ int main(int argc, char **argv)
 	struct msg_keyboard_t keyboard_msg;
 	//struct msg_combine_t combine_msg;
 	struct msg_tuning_t tuning_msg;
+	struct msg_combine_all_t combine_msg_all;
 	
 	// initialize the message by zeroing all value
-	InitCommand(&combine_msg, &keyboard_msg, &joystick_msg, &tuning_msg);
-
+	// InitCommand(&combine_msg, &keyboard_msg, &joystick_msg, &tuning_msg);
+	InitCommand(&combine_msg_all, &combine_msg, &keyboard_msg, &joystick_msg, &tuning_msg);
 	// logging variable
 	FILE *kp;
 	uint8_t decode_status;
@@ -202,17 +203,19 @@ int main(int argc, char **argv)
 			// printf("sending %d\n", stop_sending);
 			// send gain tuning message
 			// the attitude command wont be sent if the gain tuning updated
-			if(tuning_msg.update)
-			{
-				SendCommandTuning(&tuning_msg);
-				tuning_msg.update = FALSE;
-			}
-			else // send thrust and attitude command
-			{
-				SendCommand(&combine_msg);
-				// combine_msg.update = FALSE;			
-			}
+			// if(tuning_msg.update)
+			// {
+			// 	SendCommandTuning(&tuning_msg);
+			// 	tuning_msg.update = FALSE;
+			// }
+			// else // send thrust and attitude command
+			// {
+			// 	SendCommand(&combine_msg);
+			// 	// combine_msg.update = FALSE;			
+			// }
 			
+			SendCommandAll(&combine_msg_all);
+
 			// check if panic_mode happened
 			#ifdef ENCODE_PC_RECEIVE
 			if(combine_msg.mode == MODE_PANIC || (msg.crc_fails > 4)) 
@@ -299,7 +302,7 @@ int main(int argc, char **argv)
 		#endif
 		combine_msg.update = (keyboard_msg.update || joystick_msg.update);
 		if(combine_msg.update){
-			CombineCommand(&combine_msg, &keyboard_msg, &joystick_msg, &tuning_msg);
+			CombineCommand(&combine_msg_all, &combine_msg, &keyboard_msg, &joystick_msg, &tuning_msg);
 		}
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();

@@ -19,7 +19,7 @@
 #define ENCODE
 // #define DRONE_PROFILE
 // #define PC_PROFILE
-#define ENCODE_PC_RECEIVE
+// #define ENCODE_PC_RECEIVE
 // #define PC_DEBUG
 
 enum msg_status {
@@ -39,7 +39,8 @@ enum msg_id{
 	MSG_TELEMETRY,
 	MSG_LOG,
 	MSG_TUNE,
-	MSG_PROFILE
+	MSG_PROFILE,
+	MSG_COMBINE_ALL
 };
 
 // Control
@@ -89,6 +90,30 @@ struct msg_tuning_t{
 	uint8_t P1;
 	uint8_t P2;
 	uint8_t log_flag;
+}__attribute__((packed));
+
+struct msg_combine_all_t{
+ 	bool update;
+	uint8_t mode;
+	uint16_t thrust;
+	int16_t roll;
+ 	int16_t pitch;
+ 	int16_t yaw;
+	uint8_t P;
+	uint8_t P1;
+	uint8_t P2;
+	uint8_t log_flag;
+}__attribute__((packed));
+
+struct msg_combine_all_compact{
+ 	uint8_t mode;
+	uint8_t thrust;
+	int8_t roll;
+ 	int8_t pitch;
+ 	int8_t yaw;
+ 	uint8_t P;
+	uint8_t P1;
+	uint8_t P2;
 }__attribute__((packed));
 
 // need a bigger struct size

@@ -24,37 +24,97 @@ uint8_t log_flag = FALSE;
 static void process_bytes(uint8_t byte) {
 	
 	static struct msg_p msg;		// struct to parse the message
+	struct msg_combine_t *msg_com; 
 	struct msg_tuning_t *msg_tune;	// struct to capture the gain tuning message
+	struct msg_combine_all_t *msg_com_all; 
 	msg_parse(&msg, byte);
 	if(msg.status == GOT_PACKET) { 	// got the packet
 		nrf_gpio_pin_toggle(RED);	// toggle the RED led to indicate the command from PC received
 		switch(msg.msg_id) {		// capture the message based on the message id
 			case MSG_COMBINE: 		// the message is command message
 			{
+				
+				// mmode = msg.payload[1];
+				// mthrust = (((uint16_t)msg.payload[3])<<8) | ((uint16_t)msg.payload[2]);
+				// mroll = (int16_t)((((uint16_t)msg.payload[5])<<8) | ((uint16_t)msg.payload[4]));
+				// mpitch = (int16_t)((((uint16_t)msg.payload[7])<<8) | ((uint16_t)msg.payload[6]));
+				// myaw = (int16_t)((((uint16_t)msg.payload[9])<<8) | ((uint16_t)msg.payload[8]));
+				
+				// mthrust = 1;
+				// mroll = 2;
+				// mpitch = 3;
+				// myaw	= 4;
+
 				// capture the payload of the message
-				msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-				mmode = msg_tele->mode;
-				mthrust = msg_tele->thrust;
-				mroll = msg_tele->roll;
-				mpitch = msg_tele->pitch;
-				myaw = msg_tele->yaw;
+				// msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
+				
+				msg_com = (struct msg_combine_t *)&msg.payload[0];
+				mmode = msg_com->mode;
+				mthrust = msg_com->thrust;
+				mroll = msg_com->roll;
+				mpitch = msg_com->pitch;
+				myaw = msg_com->yaw;
 				break;
 			}
+
+			// case MSG_TUNE: 
+			// {
+			// 	msg_tune = (struct msg_tuning_t *)&msg.payload[0];
+				
+			// 	P = msg_tune->P;
+			// 	P1 = msg_tune->P1;
+			// 	P2 = msg_tune->P2;
+			// 	log_flag = msg_tune->log_flag;
+				
+			// 	// P = msg.payload[1];
+			// 	// P1 = msg.payload[2];
+			// 	// P2 = msg.payload[3];
+			// 	// log_flag = msg.payload[4];
+				
+			// 	// if(P>6){P=6};				
+			// 	// if(P1>6){P1=6};				
+			// 	// if(P2>6){P2=6};
+			//	break;
+			// }
 
 			case MSG_TUNE: 
+            {
+                msg_tune = (struct msg_tuning_t *)&msg.payload[0];
+                if (abs(P - msg_tune->P) < 4) {
+                    P = msg_tune->P;
+                }
+                if (abs(P1 - msg_tune->P1) < 4) {
+                    P1 = msg_tune->P1;
+                }
+                if (abs(P2 - msg_tune->P2) < 4) {
+                    P2 = msg_tune->P2;
+                }
+                log_flag = msg_tune->log_flag;
+
+                P = P & (0x7);
+                P1 = P1 & (0x7);
+                P2 = P2 & (0x7);
+                break;
+            }
+
+            case MSG_COMBINE_ALL: 		// the message is command message
 			{
-				msg_tune = (struct msg_tuning_t *)&msg.payload[0];
-				
-				P = msg_tune->P;
-				P1 = msg_tune->P1;
-				P2 = msg_tune->P2;
-				log_flag = msg_tune->log_flag;
-				// if(P>6){P=6};				
-				// if(P1>6){P1=6};				
-				// if(P2>6){P2=6};				
+				msg_com_all = (struct msg_combine_all_t *)&msg.payload[0];
+				mmode = msg_com_all->mode;
+				mthrust = msg_com_all->thrust;
+				mroll = msg_com_all->roll;
+				mpitch = msg_com_all->pitch;
+				myaw = msg_com_all->yaw;
+
+				P = msg_com_all->P;
+				P1 = msg_com_all->P1;
+				P2 = msg_com_all->P2;
+				log_flag = msg_com_all->log_flag;
 				break;
 			}
 
+
+			
 			default:
 				break;
 
@@ -246,18 +306,22 @@ int main(void)
 
 					msg_tele->bat_volt = bat_volt;
 
+					// msg_tele->P = P & (0x07);
+					// msg_tele->P1 = P1 & (0x07);
+					// msg_tele->P2 = P2 & (0x07);
+
 					msg_tele->P = P;
 					msg_tele->P1 = P1;
 					msg_tele->P2 = P2;
 
 					// simulate the communication lost by preventing the drone the send the telemetry message 
 					// (by going to the height mode for time being)
-					if(control_mode != MODE_HEIGHT)
-					{
+					// if(control_mode != MODE_HEIGHT)
+					// {
 						//nrf_gpio_pin_toggle(YELLOW);
 						encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
 						for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
-					}	
+					// }	
 					
 				#else
 					printf("%d %d %d %d %d %d| ", mmode, control_mode, mthrust, mroll, mpitch, myaw);
