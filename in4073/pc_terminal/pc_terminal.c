@@ -27,8 +27,10 @@
 #include <assert.h>
 
 #define REFRESH_TIME 200
+pthread_t mythread1;
 pthread_mutex_t lock_send;
 bool heartbeat_flag;
+uint8_t status_joy = 0x54;
 struct msg_combine_t combine_msg;
 void *heartbeat(void* x_void_ptr);
 uint32_t hb_timer;
@@ -59,11 +61,21 @@ uint32_t mon_time_us(void)
 
 void *heartbeat(void* x_void_ptr)
 {
+	uint8_t counter;
     while(combine_msg.mode != MODE_LOG)
     {
-        if(mon_time_ms() - hb_timer > 500)
+        if(mon_time_ms() - hb_timer > 50)
         {
 	        pthread_mutex_lock( &lock_send );
+	        do{
+	        	rs232_putchar(status_joy);
+	        	counter=0;
+	        	do
+	        	{
+	        		read(fd_RS232, &c, 1);
+	        		counter++;
+	        	}while(counter<=3)
+	        }while ((c!=0x55) ||(c!=0x54));
 	        if(!heartbeat_flag) combine_msg.mode = MODE_PANIC;
 	        // printf("heartbeat failed ");
 	        pthread_mutex_unlock( &lock_send );
@@ -77,6 +89,9 @@ void *heartbeat(void* x_void_ptr)
 
 int main(int argc, char **argv)
 {
+	//thread
+	pthread_mutex_init(&lock_send, NULL);
+	
 	// periodic command timer 
 	uint32_t start, end, panic_start, start_batt = 0;
 	
@@ -167,24 +182,29 @@ int main(int argc, char **argv)
 		if(warning)		// print a warning to terminal
 		{
 			printf("WARNING! thrust %d roll %d pitch %d yaw %d \n", joystick_msg.thrust, joystick_msg.roll, joystick_msg.pitch, joystick_msg.yaw);
-			warning = FALSE;	
+			warning = FALSE;
+			status_joy = 0x54;
 		}
+		else
+			status_joy = 0x55;
 
 	}
 
 	/* this variable is our reference to the second thread */
     pthread_t heartbeat_thread;
-    uint8_t thread_status;
- 	int x = 0;
+  //   uint8_t thread_status;
+ 	// int x = 0;
 
  	//========================================================================================//
  	// ================================ACTIVATE THE HEARTBEAT=================================//
  	//========================================================================================//
-
+ 	(void) pthread_create(&heartbeat_thread, NULL, heartbeat, NULL);
+ 	(void) pthread_join(heartbeat, NULL);
+ 	pthread_mutex_destroy(&lock_send);
     // status = pthread_create(&inc_x_thread, NULL, inc_x, &x);
 	// thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
 
-	/* send & receive */	
+	/* send & receive */
 	while(combine_msg.mode != MODE_LOG)		// while loop for the mission phase
 	{
 		#ifdef PC_PROFILE 
