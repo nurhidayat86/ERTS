@@ -18,6 +18,7 @@
 #define PRESCALE 3
 #define THRUST_MIN 200<<3
 #define AE_MIN 200<<3
+#define THRUST_MIN_FULL 300<<3
 
 #define MAX_THRUST_COM 8192
 #define MIN_THRUST_COM 0
@@ -53,6 +54,8 @@ static uint16_t panic_thrust = 0;                  ///< Time at which panic mode
 //static uint16_t groll_p, groll_i, groll_d = 0;    ///< The roll control gains (2^CONTROL_FRAC)
 //static uint16_t gpitch_p, gpitch_i, gpitch_d = 0; ///< The pitch control gains (2^CONTROL_FRAC)
 static uint8_t gyaw_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
+static uint8_t g_angle_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
+static uint8_t g_rate_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
 
 /* Set the motor commands */
 void update_motors(void)
@@ -143,8 +146,10 @@ void set_control_mode(enum control_mode_t mode) {
 }
 
 /* Set the control gains */
-void set_control_gains(uint8_t yaw_d) {
+void set_control_gains(uint8_t yaw_d, uint8_t g_angle, uint8_t g_rate) {
     gyaw_d = yaw_d;
+    g_angle_d = g_angle;
+    g_rate_d = g_rate;
 }
 
 /* Set the control commands (from joystick or keyboard) */
@@ -205,7 +210,8 @@ void run_filters_and_control(void)
         /* Panic mode (PANIC_THRUST of thrust for PANIC_TIME seconds, then safe mode) */
         case MODE_PANIC:
             //motor_mixing(PANIC_THRUST, 0, 0, 0);
-            panic_thrust = (panic_thrust*7)>>3;
+            if(panic_thrust > 20) panic_thrust = panic_thrust-10;
+            else {panic_thrust = 0;}
             motor_mixing(panic_thrust, 0, 0, 0);
             // Check if time exceeded
             if((get_time_us() - panic_start) > PANIC_TIME) {
@@ -280,11 +286,23 @@ void run_filters_and_control(void)
             // cmd_pitch = P2*(cmd_pitch_rate + (sq - cq));
             
             // shift the 
-            cmd_roll = (sp_roll - ((phi - cphi)>>CONTROL_FRAC))*P1 - (sp - cp)*P2;
-            cmd_pitch = (sp_pitch - ((theta - ctheta)>>CONTROL_FRAC))*P1 + (sq - cq)*P2;
             
-            cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
-            motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+            if(cmd_thrust > THRUST_MIN_FULL)
+            {
+                // cmd_roll = (sp_roll - ((phi - cphi)>>CONTROL_FRAC))*P1 - ((sp - cp)>>6)*P2;
+                // cmd_pitch = (sp_pitch - ((theta - ctheta)>>CONTROL_FRAC))*P1 + ((sq - cq)>>6)*P2;
+                // cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
+                // motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+                
+                cmd_roll = (sp_roll - ((phi - cphi)>>CONTROL_FRAC))*g_angle_d - ((sp - cp)>>6)*g_rate_d;
+                cmd_pitch = (sp_pitch - ((theta - ctheta)>>CONTROL_FRAC))*g_angle_d + ((sq - cq)>>6)*g_rate_d;
+                cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
+                motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);            
+            }
+            else
+            {
+                motor_mixing(cmd_thrust, 0, 0, 0);
+            }
                    
             // if(cmd_thrust > THRUST_MIN){
             //     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);

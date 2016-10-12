@@ -19,6 +19,8 @@
 // #include "logging_protocol.h"
 
 bool loop;
+uint8_t log_flag = FALSE; 
+
 static void process_bytes(uint8_t byte) {
 	
 	static struct msg_p msg;		// struct to parse the message
@@ -42,10 +44,14 @@ static void process_bytes(uint8_t byte) {
 			case MSG_TUNE: 
 			{
 				msg_tune = (struct msg_tuning_t *)&msg.payload[0];
+				
 				P = msg_tune->P;
 				P1 = msg_tune->P1;
 				P2 = msg_tune->P2;
-				//log_flag = msg_tune->log_flag;
+				log_flag = msg_tune->log_flag;
+				// if(P>6){P=6};				
+				// if(P1>6){P1=6};				
+				// if(P2>6){P2=6};				
 				break;
 			}
 
@@ -57,7 +63,7 @@ static void process_bytes(uint8_t byte) {
 	}
 	set_control_mode(mmode);							// set the mode
 	set_control_command(mthrust, mroll, mpitch, myaw);	// set the control command
-	set_control_gains(P);								// set yaw gain
+	set_control_gains(P, P1, P2);				
 }
 
 /*------------------------------------------------------------------
@@ -119,7 +125,7 @@ int main(void)
 	bool status = true;
 	uint32_t counter = 0;
 	uint32_t counter_log = 0;
-	uint32_t counter_link = 0;
+	// uint32_t counter_link = 0;
 	
 	// profiling
 	#ifdef DRONE_PROFILE
@@ -150,8 +156,8 @@ int main(void)
 	printf(" mode %d\n", control_mode);
 	while(control_mode == ESCAPE) // wait until the PC safe to start up 
 	{
-		printf("mode %d\n", control_mode);
-		if (rx_queue.count) 
+		printf("mode %d\n", control_mode); 	// there is still a bug here
+		if (rx_queue.count) 				// the count is not detected if the print is commented
 		{
 			process_bytes( dequeue(&rx_queue) ) ;
 			break;
@@ -162,7 +168,7 @@ int main(void)
 	while(control_mode != ESCAPE)
 	{
 		// lost the link 1 periodic timer flag
-		if ((counter_link > PERIODIC_LINK) && (control_mode != MODE_PANIC)) control_mode = MODE_PANIC;  
+		// if ((counter_link > PERIODIC_LINK) && (control_mode != MODE_PANIC)) control_mode = MODE_PANIC;  
 		
 		#ifdef DRONE_PROFILE
 		start = get_time_us();
@@ -171,7 +177,7 @@ int main(void)
 		if (rx_queue.count) 
 		{
 			process_bytes( dequeue(&rx_queue) ) ;
-			counter_link = 0;
+			// counter_link = 0;
 		}
 		
 		#ifdef DRONE_PROFILE
@@ -184,7 +190,7 @@ int main(void)
 			if (counter++%10 == 0) 
 			{
 				nrf_gpio_pin_toggle(BLUE);
-				counter_link++;		
+				// counter_link++;		
 			}
 
 			#ifdef DRONE_PROFILE
@@ -203,7 +209,7 @@ int main(void)
 				start = get_time_us();
 				#endif
 				#ifdef ENCODE_PC_RECEIVE
-					msg_tele->mode = mmode;
+					msg_tele->mode = control_mode;
 
 					msg_tele->thrust = mthrust;
 					msg_tele->roll = mroll;
@@ -305,7 +311,7 @@ int main(void)
 				get_dmp_data();
 			}
 
-			if ((status == true)) //&& (log_flag))
+			if ((status == true) && (log_flag == TRUE))
 			{
 				nrf_gpio_pin_toggle(YELLOW);
 				status = flash_data() ;
