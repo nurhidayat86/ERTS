@@ -16,7 +16,8 @@
 
 
 #define PRESCALE 3
-#define THRUST_MIN 200*8
+#define THRUST_MIN 200<<3
+#define AE_MIN 200<<3
 
 #define MAX_THRUST_COM 8192
 #define MIN_THRUST_COM 0
@@ -27,12 +28,13 @@
 #define MAX_CMD 1024              ///< Maximum thrust, roll, pitch and yaw command
 #define MIN_CMD -MAX_CMD          ///< Minimum roll, pitch, yaw command
 #define PANIC_TIME 2000*1000         ///< Time to keep thrust in panic mode (us)
-#define PANIC_THRUST 0.2*MAX_THRUST_COM  ///< The amount of thrust in panic mode
+#define PANIC_THRUST 0.3*MAX_THRUST_COM  ///< The amount of thrust in panic mode
 #define MAX_YAW_RATE 45*131       ///< The maximum yaw rate from js (131 LSB / (degrees/s)) = 5895
 #define MAX_ANGLE 0               ///< The maximum angle from js
 
 // Fractions
-#define CONTROL_FRAC 0          ///< The control gains fraction in powers of 244444  
+// CF 4 255 max command from js only contribute 22.5 deg in attitude
+#define CONTROL_FRAC 4         ///< The control gains fraction in powers of 2
 
 #define Bound(_x, _min, _max) { if (_x > (_max)) _x = (_max); else if (_x < (_min)) _x = (_min); }
 
@@ -40,9 +42,10 @@
 static uint32_t panic_start = 0;                  ///< Time at which panic mode is entered
 static uint16_t cmd_thrust = 0;                   ///< The thrust command
 static int16_t cmd_roll, cmd_pitch, cmd_yaw = 0;  ///< The roll, pitch, yaw command
-// static int16_t cmd_yaw_old = 0;                ///< The roll, pitch, yaw command
 static uint16_t sp_thrust = 0;                    ///< The thrust setpoint
 static int16_t sp_roll, sp_pitch, sp_yaw = 0;     ///< The roll, pitch, yaw setpoint
+
+//static int16_t cmd_roll_rate, cmd_pitch_rate = 0;     ///< The roll, pitch, yaw setpoint
 //static int16_t cphi, ctheta, cpsi = 0;            ///< Calibration values of phi, theta, psi
 //static int16_t cp, cq, cr = 0;                    ///< Calibration valies of p, q and r
 //static uint16_t groll_p, groll_i, groll_d = 0;    ///< The roll control gains (2^CONTROL_FRAC)
@@ -61,43 +64,46 @@ void update_motors(void)
 /* Calculate the motor commands from thrust, roll, pitch and yaw commands */
 static void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw) {
     // Front motor
-    ae[0] = thrust + pitch - yaw;
-    //ae[0] *= MAX_MOTOR;
-    //ae[0] /= MIN_CMD;
-    //Bound(ae[0], MIN_CMD, MAX_CMD);
+    if (thrust < THRUST_MIN) ae[0] = thrust;
+    else if ((thrust + pitch - yaw)>THRUST_MIN) ae[0] = thrust + pitch - yaw;
+    else ae[0] = THRUST_MIN;
+    //ae[0] = thrust + pitch - yaw;
     ae[0] = ae[0]>>PRESCALE;
     Bound(ae[0], 0, MAX_MOTOR);
 
     // Right motor
-    ae[1] = thrust - roll + yaw;
-    // ae[1] *= MAX_MOTOR;
-    // ae[1] /= MIN_CMD;
-    // Bound(ae[1], MIN_CMD, MAX_CMD);
+    if (thrust < THRUST_MIN) ae[1] = thrust;
+    else if ((thrust - roll + yaw)>THRUST_MIN) ae[1] = thrust - roll + yaw;
+    else ae[1] = THRUST_MIN;
+    // ae[1] = thrust - roll + yaw;
     ae[1] = ae[1]>>PRESCALE;
     Bound(ae[1], 0, MAX_MOTOR);
 
     // Back motor
-    ae[2] = thrust - pitch - yaw;
-    // ae[2] *= MAX_MOTOR;
-    // ae[2] /= MIN_CMD;
-    // Bound(ae[2], MIN_CMD, MAX_CMD);
+    if (thrust < THRUST_MIN) ae[2] = thrust;
+    else if ((thrust - pitch - yaw)>THRUST_MIN) ae[2] = thrust - pitch - yaw;
+    else ae[2] = THRUST_MIN;
+    // ae[2] = thrust - pitch - yaw;
     ae[2] = ae[2]>>PRESCALE;
     Bound(ae[2], 0, MAX_MOTOR);
 
     // Left motor
-    ae[3] = thrust + roll + yaw;
-    // ae[3] *= MAX_MOTOR;
-    // ae[3] /= MIN_CMD;
-    // Bound(ae[3], MIN_CMD, MAX_CMD);
+    if (thrust < THRUST_MIN) ae[3] = thrust;
+    else if ((thrust + roll + yaw)>THRUST_MIN) ae[3] = thrust + roll + yaw;
+    else ae[3] = THRUST_MIN;
+    // ae[3] = thrust + roll + yaw;
     ae[3] = ae[3]>>PRESCALE;
     Bound(ae[3], 0, MAX_MOTOR);
-    //printf("%d %d %d %d\n", ae[0], ae[1], ae[2], ae[3]);
 }
 
 /* Change the control mode */
 void set_control_mode(enum control_mode_t mode) {
     /* Certain modes require to reset variables */
     switch(control_mode) {
+        case MODE_SAFE:
+            P = P1 = P2 = 0;
+            break;
+
         /* Mode panic needs the enter time */
         case MODE_PANIC:
             panic_start = get_time_us();
@@ -112,7 +118,7 @@ void set_control_mode(enum control_mode_t mode) {
         case MODE_CALIBRATION:
             cphi = phi;
             ctheta = theta;
-            cpsi = psi;
+            //cpsi = psi;
             cp = sp;
             cq = sq;
             cr = sr;
@@ -120,6 +126,10 @@ void set_control_mode(enum control_mode_t mode) {
 
         /* Full Control Mode */
         case MODE_FULL:
+            break;
+        
+        /* Raw Mode */
+        case MODE_RAW:
             break;
 
         default:
@@ -159,10 +169,21 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
         /* Roll, pitch and yaw setpoint is set and the thrust as command */
         case MODE_FULL:
             cmd_thrust = thrust;
-            sp_roll = roll * MAX_ANGLE / MAX_CMD;
-            sp_pitch = pitch * MAX_ANGLE / MAX_CMD;
-            sp_yaw = yaw * MAX_YAW_RATE / MAX_CMD;
+            // sp_roll = roll * MAX_ANGLE / MAX_CMD;
+            // sp_pitch = pitch * MAX_ANGLE / MAX_CMD;
+            // sp_yaw = yaw * MAX_YAW_RATE / MAX_CMD;
+            sp_roll = roll;
+            sp_pitch = pitch;
+            sp_yaw = yaw;
             break;
+
+        case MODE_RAW:
+            cmd_thrust = thrust;
+            sp_roll = roll;
+            sp_pitch = pitch;
+            sp_yaw = yaw;
+            break;
+
 
         default:
             break;
@@ -192,22 +213,20 @@ void run_filters_and_control(void)
         /* Manual mode is direct mapping from sticks to controls */
         case MODE_MANUAL:
 
-            // motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+            motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
             
-            // do the manual mode if the thrust is high enough
-            if(cmd_thrust > THRUST_MIN){
-                // do the dynamic move if the provided static thrust can keep all the motor rotate 
-                if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) \
-                    && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) \
-                    && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )
-                    
-                {
-                    motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
-                }
-            }
-            // if not, just assign the thrust
-            else
-            {motor_mixing(cmd_thrust, 0, 0, 0);}
+            // // do the manual mode if the thrust is high enough
+            // if(cmd_thrust > THRUST_MIN){
+            //     // do the dynamic move if the provided static thrust can keep all the motor rotate 
+            //     if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )                    
+            //     {
+            //         motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+            //     }
+            // }
+            // // if not, just assign the thrust
+            // else
+            // {motor_mixing(cmd_thrust, 0, 0, 0);}
+            
             break;
 
         /* Calibration mode (not thrust at all) */
@@ -218,7 +237,7 @@ void run_filters_and_control(void)
             // Also calibrate here (until leave mode)
             cphi = phi;
             ctheta = theta;
-            cpsi = psi;
+            // cpsi = psi;
             cp = sp;
             cq = sq;
             cr = sr;
@@ -230,33 +249,61 @@ void run_filters_and_control(void)
         case MODE_YAW:
             //cmd_yaw = ((sp_yaw - sr - cr) * gyaw_d) >> CONTROL_FRAC;
             // do the yaw control if the thrust is high enough
-            if(cmd_thrust > THRUST_MIN){
-                cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d) >> CONTROL_FRAC;
-                // do the dynamic move if the provided static thrust can keep all the motor rotate 
-                if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )  
-                {
-                    motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
-                }
-                else
-                {motor_mixing(cmd_thrust, 0, 0, 0);}
-            }
+            cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
+            motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+            // if(cmd_thrust > THRUST_MIN){
+            //     cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
+            //     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+            //     // // do the dynamic move if the provided static thrust can keep all the motor rotate 
+            //     // if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )  
+            //     // {
+            //     //     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+            //     // }
+            //     // else
+            //     // {motor_mixing(cmd_thrust, 0, 0, 0);}
+            // }
 
             break;
 
         case MODE_FULL:
+            // rate = y and z have the opposite sign 
+            // attitude angle = z has the opposite sign 
+            // P1 angle, P2 rate
+
+            // cmd_roll_rate = (sp_roll - ((phi - cphi)>>CONTROL_FRAC))*P1;
+            // cmd_pitch_rate = (sp_pitch - ((theta - ctheta)>>CONTROL_FRAC))*P1;
+            // cmd_roll = P2*(cmd_roll_rate - (sp - cp));
+            // cmd_pitch = P2*(cmd_pitch_rate + (sq - cq));
+            
+            // shift the 
+            cmd_roll = (sp_roll - ((phi - cphi)>>CONTROL_FRAC))*P1 - (sp - cp)*P2;
+            cmd_pitch = (sp_pitch - ((theta - ctheta)>>CONTROL_FRAC))*P1 + (sq - cq)*P2;
+            
+            cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
+            motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+                   
             // if(cmd_thrust > THRUST_MIN){
-            // // rate = y and z have the opposite sign 
-            // // attitude angle = z has the opposite sign 
-            // // P1 angle, P2 rate
-
-            // cmd_roll = (sp_roll - (phi - cphi))*P1;
-            // cmd_pitch = (sp_pitch - (theta - ctheta))*P1;
-
-            // // cmd_yaw = ((sp_yaw + (sr - cr)>>4)* gyaw_d) >> CONTROL_FRAC;
-            // motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+            //     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+            //     // // do the dynamic move if the provided static thrust can keep all the motor rotate 
+            //     // if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )  
+            //     // {
+            //     //     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+            //     // }
+            //     // else
+            //     // {motor_mixing(cmd_thrust, 0, 0, 0);}
             // }
+
             break;
 
+        case MODE_RAW:
+            // cmd_roll = (sp_roll - ((estimated_phi)>>CONTROL_FRAC))*P1 - estimated_p*P2;
+            // cmd_pitch = (sp_pitch - ((estimated_theta)>>CONTROL_FRAC))*P1 - estimated_q*P2;
+            // cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
+            // motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);               
+            break;
+
+        case MODE_HEIGHT:
+            break;
 
         /* Just in case an invalid mode is selected go to SAFE */
         default:

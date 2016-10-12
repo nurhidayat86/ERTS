@@ -46,7 +46,7 @@ void GPIOTE_IRQHandler(void)
 	{
 		NRF_GPIOTE->EVENTS_IN[0] = 0;
 		sensor_int_flag = true;
-        }
+    }
 }
 
 
