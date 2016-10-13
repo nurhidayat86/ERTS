@@ -12,34 +12,34 @@
 
 void InitCommand(struct msg_combine_all_t* combine_msg_all, struct msg_combine_t* combine_msg, struct msg_keyboard_t* keyboard_msg, struct msg_joystick_t* joystick_msg, struct msg_tuning_t* tuning_msg)
 {
-	joystick_msg->update = FALSE;
+	joystick_msg->update = false;
 	joystick_msg->mode = MODE_SAFE;
 	joystick_msg->thrust = 0;
 	joystick_msg->roll = 0;
 	joystick_msg->pitch = 0;
 	joystick_msg->yaw = 0;
 
-	keyboard_msg->update = FALSE;
+	keyboard_msg->update = false;
 	keyboard_msg->mode = MODE_SAFE;
 	keyboard_msg->thrust = 0;
 	keyboard_msg->roll = 0;
 	keyboard_msg->pitch = 0;
 	keyboard_msg->yaw = 0;
 
-	combine_msg->update = FALSE;
+	combine_msg->update = false;
 	combine_msg->mode = MODE_SAFE;
 	combine_msg->thrust = 0;
 	combine_msg->roll = 0;
 	combine_msg->pitch = 0;
 	combine_msg->yaw = 0;
 	
-	tuning_msg->update = FALSE;
+	tuning_msg->update = false;
 	tuning_msg->P = 0;
 	tuning_msg->P1 = 0;
 	tuning_msg->P2 = 0;
 	tuning_msg->log_flag = false;
 
-	combine_msg_all->update = FALSE;
+	combine_msg_all->update = false;
 	combine_msg_all->mode = MODE_SAFE;
 	combine_msg_all->thrust = 0;
 	combine_msg_all->roll = 0;
@@ -115,11 +115,11 @@ void CombineCommand(struct msg_combine_all_t* combine_msg_all, struct msg_combin
 	combine_msg_all->log_flag = tuning_msg->log_flag;
 
 	// update the flag, it indicates the message has been updated
-	combine_msg->update=FALSE;
+	combine_msg->update=false;
 	// combine_msg->update=TRUE;
-	joystick_msg->update=FALSE;
-	keyboard_msg->update=FALSE;	
-	combine_msg_all->update = FALSE;
+	joystick_msg->update=false;
+	keyboard_msg->update=false;	
+	combine_msg_all->update = true;
 }
 
 void SendCommand(struct msg_combine_t* combine_msg)

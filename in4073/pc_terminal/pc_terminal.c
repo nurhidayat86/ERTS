@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 			// scale it down from U16 to U12 (4096) we might need to compress it a little bit more
 			joystick_msg.thrust = (JOY_THRUST_OFF - axis[3])>>4;
 			if(joystick_msg.thrust > 30) joystick_msg.thrust = (((joystick_msg.thrust)*11)>>4)+1280;
-			joystick_msg.update = TRUE;
+			joystick_msg.update = true;
 			warning = TRUE;	
 		}
 
@@ -272,7 +272,7 @@ int main(int argc, char **argv)
 				if((joystick_msg.mode != MODE_SAFE) && (joystick_msg.mode != MODE_PANIC)) joystick_msg.mode = MODE_PANIC;
 				else if (joystick_msg.mode == MODE_SAFE) joystick_msg.mode = ESCAPE;
 			}	
-			joystick_msg.update = TRUE;
+			joystick_msg.update = true;
 		}
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
@@ -288,7 +288,7 @@ int main(int argc, char **argv)
 		#endif
 		if ((c = term_getchar_nb()) != -1){
 			KeyboardCommand(c, &keyboard_msg, &tuning_msg, &joystick_msg);
-			keyboard_msg.update = TRUE;
+			keyboard_msg.update = true;
 		}
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();

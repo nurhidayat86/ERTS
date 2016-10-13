@@ -141,6 +141,12 @@ void set_control_mode(enum control_mode_t mode) {
         case MODE_RAW:
             break;
 
+        case MODE_START:
+            break;
+
+        case MODE_FINISH:
+            break;
+
         default:
             break;
     };
@@ -195,6 +201,19 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
             sp_yaw = yaw;
             break;
 
+        case MODE_START:
+            cmd_thrust = 0;
+            cmd_roll = 0;
+            cmd_pitch = 0;
+            cmd_yaw = 0;
+            break;
+
+        case MODE_FINISH:
+            cmd_thrust = 0;
+            cmd_roll = 0;
+            cmd_pitch = 0;
+            cmd_yaw = 0;
+            break;
 
         default:
             break;

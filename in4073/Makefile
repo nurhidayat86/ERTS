@@ -68,6 +68,7 @@ $(abspath ../components/softdevice/common/softdevice_handler/softdevice_handler.
 $(abspath ./protocol.c) \
 $(abspath ./logging.c) \
 $(abspath ./kalman.c) \
+$(abspath ./check_comm.c) \
 
 #assembly files common to all targets
 ASM_SOURCE_FILES  = $(abspath ../components/toolchain/gcc/gcc_startup_nrf51.s)
