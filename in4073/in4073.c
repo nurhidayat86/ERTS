@@ -121,9 +121,14 @@ static void process_bytes(uint8_t byte) {
 		};
 		msg.status = UNITINIT; // Start to receive a new packet	
 	}
-	set_control_mode(mmode);							// set the mode
-	set_control_command(mthrust, mroll, mpitch, myaw);	// set the control command
-	set_control_gains(P, P1, P2);				
+	// set_control_mode(mmode);							// set the mode
+	// set_control_command(mthrust, mroll, mpitch, myaw);	// set the control command
+	// set_control_gains(P, P1, P2);
+	
+	set_control_mode(msg_com_all->mode);							// set the mode
+	set_control_command(msg_com_all->thrust, msg_com_all->roll, msg_com_all->pitch, msg_com_all->yaw);	// set the control command
+	set_control_gains(msg_com_all->P, msg_com_all->P1, msg_com_all->P2);
+				
 }
 
 /*------------------------------------------------------------------
@@ -211,18 +216,18 @@ int main(void)
 	
 
 	//=============================== CREATE THE START UP MODE HERE ===================================//
-	loop = true;
-	control_mode = ESCAPE;
-	printf(" mode %d\n", control_mode);
-	while(control_mode == ESCAPE) // wait until the PC safe to start up 
-	{
-		printf("mode %d\n", control_mode); 	// there is still a bug here
-		if (rx_queue.count) 				// the count is not detected if the print is commented
-		{
-			process_bytes( dequeue(&rx_queue) ) ;
-			break;
-		}
-	} 
+	// loop = true;
+	// control_mode = ESCAPE;
+	// printf(" mode %d\n", control_mode);
+	// while(control_mode == ESCAPE) // wait until the PC safe to start up 
+	// {
+	// 	printf("mode %d\n", control_mode); 	// there is still a bug here
+	// 	if (rx_queue.count) 				// the count is not detected if the print is commented
+	// 	{
+	// 		process_bytes( dequeue(&rx_queue) ) ;
+	// 		break;
+	// 	}
+	// } 
 	
 	// while (loop)
 	while(control_mode != ESCAPE)
@@ -247,7 +252,7 @@ int main(void)
 
 		if (check_timer_flag())
 		{
-			if (counter++%10 == 0) 
+			if (counter++%20 == 0) 
 			{
 				nrf_gpio_pin_toggle(BLUE);
 				// counter_link++;		
@@ -377,7 +382,7 @@ int main(void)
 
 			if ((status == true) && (log_flag == TRUE))
 			{
-				nrf_gpio_pin_toggle(YELLOW);
+				nrf_gpio_pin_set(YELLOW);
 				status = flash_data() ;
  				if((status = write_log()) == false) {printf("failed to write log");}	
 			}

@@ -34,8 +34,12 @@
 #define MAX_ANGLE 0               ///< The maximum angle from js
 
 // Fractions
-// CF 4 255 max command from js only contribute 22.5 deg in attitude
-#define CONTROL_FRAC 4         ///< The control gains fraction in powers of 2
+// CF 4 255 max command from js only contribute 22.5 deg approx (14.4 deg true value) in attitude
+#define ANGLE_SHIFT 4         ///< The control gains fraction in powers of 2
+#define ANGLE_GAIN_MAX 3         ///< The control gains fraction in powers of 2
+
+#define RATE_SHIFT 6         ///< The control gains fraction in powers of 2
+#define RATE_GAIN_MAX 3         ///< The control gains fraction in powers of 2
 
 #define Bound(_x, _min, _max) { if (_x > (_max)) _x = (_max); else if (_x < (_min)) _x = (_min); }
 
@@ -210,9 +214,9 @@ void run_filters_and_control(void)
         /* Panic mode (PANIC_THRUST of thrust for PANIC_TIME seconds, then safe mode) */
         case MODE_PANIC:
             //motor_mixing(PANIC_THRUST, 0, 0, 0);
-            if(panic_thrust > 20) panic_thrust = panic_thrust-10;
-            else {panic_thrust = 0;}
-            motor_mixing(panic_thrust, 0, 0, 0);
+            // if(panic_thrust > 20) panic_thrust = panic_thrust-10;
+            // else {panic_thrust = 0;}
+            motor_mixing(PANIC_THRUST, 0, 0, 0);
             // Check if time exceeded
             if((get_time_us() - panic_start) > PANIC_TIME) {
                 set_control_mode(MODE_SAFE);
@@ -294,8 +298,8 @@ void run_filters_and_control(void)
                 // cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
                 // motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
                 
-                cmd_roll = (sp_roll - ((phi - cphi)>>CONTROL_FRAC))*g_angle_d - ((sp - cp)>>6)*g_rate_d;
-                cmd_pitch = (sp_pitch - ((theta - ctheta)>>CONTROL_FRAC))*g_angle_d + ((sq - cq)>>6)*g_rate_d;
+                cmd_roll = (((sp_roll - ((phi - cphi)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_MAX) - ((sp - cp)>>RATE_SHIFT)*g_rate_d;
+                cmd_pitch = (((sp_pitch - ((theta - ctheta)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_MAX) + ((sq - cq)>>RATE_SHIFT)*g_rate_d;
                 cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
                 motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);            
             }
