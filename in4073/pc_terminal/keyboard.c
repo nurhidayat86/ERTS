@@ -71,7 +71,7 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 			case 'u':	// increase the yaw gain
 				if(combine_msg_all->mode == MODE_YAW || combine_msg_all->mode == MODE_FULL)
 				{
-					if (combine_msg_all->P < 6) {combine_msg_all->P+=1;}
+					if (combine_msg_all->P < MAX_P) {combine_msg_all->P+=1;}
 					combine_msg_all->update = TRUE;
 				}
 				break;
@@ -87,7 +87,7 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 			case 'i':	// increase the P1 gain
 				if(combine_msg_all->mode == MODE_FULL)
 				{	
-					if (combine_msg_all->P1 < 6) {combine_msg_all->P1+=1;}
+					if (combine_msg_all->P1 < MAX_P1) {combine_msg_all->P1+=1;}
 					combine_msg_all->update = TRUE;
 				}
 				break;
@@ -103,7 +103,7 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 			case 'o':	// increase the P2 gain
 				if(combine_msg_all->mode == MODE_FULL)
 				{	
-					if (combine_msg_all->P2 < 6) {combine_msg_all->P2+=1;}
+					if (combine_msg_all->P2 < MAX_P2) {combine_msg_all->P2+=1;}
 					combine_msg_all->update = TRUE;
 				}
 				break;
@@ -181,6 +181,22 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 			case 27: 
 				combine_msg_all->mode = ESCAPE;
 				break;
+
+			// additional
+			case 'm': // start flexible logging 
+				if (combine_msg_all->log_flag == FALSE) 
+				{
+					combine_msg_all->log_flag = TRUE;
+					//printf("masuk ke false");
+				}
+				else if (combine_msg_all->log_flag == TRUE) {
+					combine_msg_all->log_flag = FALSE;
+					//printf("masuk ke true");
+				}
+				combine_msg_all->update = TRUE;
+				//printf("masuk update");
+			break;
+
 
 			default:
 				break;

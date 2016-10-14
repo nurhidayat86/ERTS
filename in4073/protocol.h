@@ -24,6 +24,10 @@
 
 #define HEART_BEAT 0x77
 
+#define MAX_P 16
+#define MAX_P1 30
+#define MAX_P2 8
+
 enum msg_status {
 	UNITINIT,
 	GOT_HDR,

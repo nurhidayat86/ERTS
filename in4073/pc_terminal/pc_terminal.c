@@ -277,11 +277,13 @@ int main(int argc, char **argv)
 			proc_key = end_profile - start_profile;
 			//printf("k %d ", proc_key);
 		#endif
-
+		CombineCommand(&combine_msg_all);
 		// combine keyboard and joystick
 		#ifdef PC_PROFILE 
 			start_profile = mon_time_us();
 		#endif
+
+
 
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
@@ -329,7 +331,7 @@ int main(int argc, char **argv)
 						printf("%d %d %d %d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
 						// printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
 						
-						if((msg_tele->bat_volt<1100) && ((mon_time_ms() - start_batt) > 1000)) 
+						if((msg_tele->bat_volt<1070) && ((mon_time_ms() - start_batt) > 1000)) 
 						{
 							// printf("\n == The BATTERY is LOW == \n \n");
 							// if(msg_tele->bat_volt<1050){combine_msg.mode = MODE_PANIC;}
