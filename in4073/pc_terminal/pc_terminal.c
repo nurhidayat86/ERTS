@@ -187,8 +187,6 @@ int main(int argc, char **argv)
 	/* send & receive */	
 	while(combine_msg_all.mode != MODE_LOG)		// while loop for the mission phase
 	{
-		if(combine_msg_all.mode == MODE_RAW)
-			stop_sending = TRUE;
 		
 		#ifdef PC_PROFILE 
 			start_profile = mon_time_us();

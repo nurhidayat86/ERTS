@@ -28,7 +28,7 @@
 #define MAX_MOTOR 1000            ///< Maximum PWM signal (1000us is added)
 #define MAX_CMD 1024              ///< Maximum thrust, roll, pitch and yaw command
 #define MIN_CMD -MAX_CMD          ///< Minimum roll, pitch, yaw command
-#define PANIC_TIME 3000*1000         ///< Time to keep thrust in panic mode (us)
+#define PANIC_TIME 4000*1000         ///< Time to keep thrust in panic mode (us)
 #define PANIC_THRUST 0.4*MAX_THRUST_COM  ///< The amount of thrust in panic mode
 #define MAX_YAW_RATE 45*131       ///< The maximum yaw rate from js (131 LSB / (degrees/s)) = 5895
 #define MAX_ANGLE 0               ///< The maximum angle from js
@@ -50,7 +50,7 @@ static int16_t cmd_roll, cmd_pitch, cmd_yaw = 0;  ///< The roll, pitch, yaw comm
 static uint16_t sp_thrust = 0;                    ///< The thrust setpoint
 static int16_t sp_roll, sp_pitch, sp_yaw = 0;     ///< The roll, pitch, yaw setpoint
 
-static uint16_t panic_thrust = 0;                  ///< Time at which panic mode is entered
+//static uint16_t panic_thrust = 0;                  ///< Time at which panic mode is entered
 
 //static int16_t cmd_roll_rate, cmd_pitch_rate = 0;     ///< The roll, pitch, yaw setpoint
 //static int16_t cphi, ctheta, cpsi = 0;            ///< Calibration values of phi, theta, psi
@@ -60,7 +60,7 @@ static uint16_t panic_thrust = 0;                  ///< Time at which panic mode
 static uint8_t gyaw_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
 static uint8_t g_angle_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
 static uint8_t g_rate_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
-
+static uint32_t current_panic = 0;
 
 /* Set the motor commands */
 void update_motors(void)
@@ -116,7 +116,6 @@ void set_control_mode(enum control_mode_t mode) {
 
         /* Mode panic needs the enter time */
         case MODE_PANIC:
-            panic_start = get_time_us();
             nrf_gpio_pin_toggle(YELLOW);
             break;
 
@@ -169,6 +168,11 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
     /* Based on the control mode we need to use it seperately */
     switch(control_mode) {
         /* Mode manual copies it to the commands */
+        
+        case MODE_PANIC:
+        	panic_start = get_time_us();
+            break;
+
         case MODE_MANUAL:
             cmd_thrust = thrust;
             cmd_roll = roll;
@@ -234,12 +238,14 @@ void run_filters_and_control(void)
 
         /* Panic mode (PANIC_THRUST of thrust for PANIC_TIME seconds, then safe mode) */
         case MODE_PANIC:
-        	lost_flag = true;
             motor_mixing(PANIC_THRUST, 0, 0, 0);
-            // Check if time exceeded
-            if((get_time_us() - panic_start) > PANIC_TIME) {
+            lost_flag = true;
+            current_panic = get_time_us() - panic_start;
+            if(current_panic > PANIC_TIME) 
+            {
+            	printf("current pani: %ld\n", current_panic);
                 set_control_mode(MODE_SAFE);
-                panic_thrust = PANIC_THRUST;
+                printf("lost flag change\n");
             }
             nrf_gpio_pin_toggle(YELLOW);
             break;
