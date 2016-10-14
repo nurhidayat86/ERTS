@@ -2,7 +2,7 @@
 #include <stdbool.h>
 
 
-void comm_check(uint16_t comm_duration, uint16_t *total_dur, bool *update_flag)
+void comm_check(uint16_t comm_duration, uint32_t *total_dur, bool *update_flag)
 {
 
 	if(*update_flag == true)

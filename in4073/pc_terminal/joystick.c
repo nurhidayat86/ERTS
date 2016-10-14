@@ -31,36 +31,3 @@ void init_joystick(int* fd)
 
 	fcntl(*fd, F_SETFL, O_NONBLOCK);
 }
-
-void JoystickCommand(int fd, struct js_event js, struct msg_joystick_t* joystick_msg)
-{
-	// int axis[4];
-	// char button[8];
-	// while (read(fd, &js, sizeof(struct js_event)) == sizeof(struct js_event)){
-	// 	button[js.number] = js.value;
-	// 	axis[js.number] = js.value;
-	 	//printf("before assigning \n");
-
-		//here
-		////mapping to output
-		// joystick_msg.roll = axis[0];
-		// joystick_msg.pitch = axis[1];
-		// joystick_msg.yaw = axis[2];
-		// joystick_msg.thrust = axis[3];
-		// joystick_msg.mode = (button[0] << 7) | (button[1] << 6) | (button[2] << 5) | (button[3] << 4) | (button[4] << 3) | (button[5] << 2) | (button[6] << 1) | (button[7]);
-		// joystick_msg.update = true;
-	//}
-}
-
-// send the joystick message to the drone
-// if(joystick_msg.update)
-// {
-// 	encode_packet((uint8_t *) &joystick_msg, sizeof(struct msg_joystick_t), MSG_JOYSTICK, output_data, &output_size);
-
-// 	//printf("Axes: %s Output data:", &axes);
-// 	for (i=0; i<output_size; i++) {
-// 	rs232_putchar((char) output_data[i]);
-// 	//printf("0x%X ", output_data[i]);
-// 	}
-// 	joystick_msg.update=FALSE;
-// }

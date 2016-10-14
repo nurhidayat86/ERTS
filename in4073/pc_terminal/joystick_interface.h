@@ -18,6 +18,4 @@
 #define JOY_THRUST_OFF 32767
 
 void init_joystick(int* fd);
-void JoystickCommand(int fd, struct js_event js, struct msg_joystick_t* joystick_msg);
-
 #endif /* _JOYSTICK_INTERFACE_H */

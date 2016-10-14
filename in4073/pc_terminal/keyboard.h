@@ -13,6 +13,6 @@
 
 extern bool stop_sending;
 
-void KeyboardCommand(char c, struct msg_keyboard_t* keyboard_msg, struct msg_tuning_t* tuning_msg, struct msg_joystick_t* joystick_msg);
+void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all);
 
 #endif /* _KEYBOARD_H_ */

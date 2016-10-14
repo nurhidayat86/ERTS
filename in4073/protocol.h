@@ -28,7 +28,6 @@ enum msg_status {
 	GOT_LEN,
 	GOT_ID,
 	GOT_PAYLOAD,
-	//GOT_CRC1,
 	GOT_PACKET
 };
 
@@ -58,41 +57,6 @@ enum control_mode_t {
   MODE_START,
   MODE_FINISH
 };
-
-struct msg_joystick_t{
-	bool update;
-	uint8_t mode;
-	uint16_t thrust;
-	int16_t roll;
- 	int16_t pitch;
- 	int16_t yaw;
-}__attribute__((packed));
-
-struct msg_keyboard_t{
- 	bool update;
-	uint8_t mode;
-	uint16_t thrust;
-	int16_t roll;
- 	int16_t pitch;
- 	int16_t yaw;
-}__attribute__((packed));
-
-struct msg_combine_t{
- 	bool update;
-	uint8_t mode;
-	uint16_t thrust;
-	int16_t roll;
- 	int16_t pitch;
- 	int16_t yaw;
-}__attribute__((packed));
-
-struct msg_tuning_t{
- 	bool update;
-	uint8_t P;
-	uint8_t P1;
-	uint8_t P2;
-	uint8_t log_flag;
-}__attribute__((packed));
 
 struct msg_combine_all_t{
  	bool update;

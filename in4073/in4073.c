@@ -25,49 +25,15 @@ bool update_flag = true;
 static void process_bytes(uint8_t byte) {
 	
 	static struct msg_p msg;		// struct to parse the message
-	struct msg_combine_t *msg_com; 
-	struct msg_tuning_t *msg_tune;	// struct to capture the gain tuning message
 	struct msg_combine_all_t *msg_com_all; 
 	msg_parse(&msg, byte);
 	if(msg.status == GOT_PACKET) { 	// got the packet
 		nrf_gpio_pin_toggle(RED);	// toggle the RED led to indicate the command from PC received
 		switch(msg.msg_id) {		// capture the message based on the message id
-			case MSG_COMBINE: 		// the message is command message
-			{		
-				msg_com = (struct msg_combine_t *)&msg.payload[0];
-				mmode = msg_com->mode;
-				mthrust = msg_com->thrust;
-				mroll = msg_com->roll;
-				mpitch = msg_com->pitch;
-				myaw = msg_com->yaw;
-				break;
-			}
-
-
-			case MSG_TUNE: 
-            {
-                msg_tune = (struct msg_tuning_t *)&msg.payload[0];
-                if (abs(P - msg_tune->P) < 4) {
-                    P = msg_tune->P;
-                }
-                if (abs(P1 - msg_tune->P1) < 4) {
-                    P1 = msg_tune->P1;
-                }
-                if (abs(P2 - msg_tune->P2) < 4) {
-                    P2 = msg_tune->P2;
-                }
-                log_flag = msg_tune->log_flag;
-
-                P = P & (0x7);
-                P1 = P1 & (0x7);
-                P2 = P2 & (0x7);
-                break;
-            }
-
-            case MSG_COMBINE_ALL: 		// the message is command message
+			case MSG_COMBINE_ALL: 		// the message is command message
 			{
 				msg_com_all = (struct msg_combine_all_t *)&msg.payload[0];
-				//update_flag = msg_com_all->update;
+				update_flag = msg_com_all->update;
 				mmode = msg_com_all->mode;
 				mthrust = msg_com_all->thrust;
 				mroll = msg_com_all->roll;
@@ -179,10 +145,10 @@ int main(void)
 	#endif
 
 	//communication lost timer
-	// uint32_t comm_start = 0;
-	// uint32_t comm_end = 0;
-	// uint16_t comm_duration = 0;
-	// uint16_t comm_duration_total = 0;
+	uint32_t comm_start = 0;
+	uint32_t comm_end = 0;
+	uint16_t comm_duration = 0;
+	uint32_t comm_duration_total = 0;
 
 
 	//=============================== MODE_START ===================================//
@@ -211,21 +177,23 @@ int main(void)
 
 
 		//=============================== COMM ROBUST CHECK ==================================//
-		//comm_end = get_time_us();
+		comm_end = get_time_us();
 		if (rx_queue.count) 
 		{
 			process_bytes( dequeue(&rx_queue) ) ;
-			// counter_link = 0;
 		}
-		//comm_duration = (comm_start - comm_end) >> 10;
-		// if(comm_duration > 0)
-		// {
-		// 	comm_check(comm_duration, &comm_duration_total, &update_flag);
-		// 	if (comm_duration_total >= 1024) set_control_mode(MODE_PANIC);
 
-		// }
-		// comm_start = get_time_us();
+		comm_duration = (comm_end - comm_start);
+		
+		if(comm_duration > 0)
+		{
+			comm_check(comm_duration, &comm_duration_total, &update_flag);
+			if (comm_duration_total >= 500000) set_control_mode(MODE_PANIC);
+		}
 		//=============================== END COMM ROBUST CHECK ==============================//
+		comm_start = get_time_us();
+		
+		
 
 		
 		#ifdef DRONE_PROFILE
@@ -408,7 +376,6 @@ int main(void)
 		}
 		start_send = get_time_us();	
 		#endif
-				
 	}
 	//=============================== END MODE_NONESCAPE ===================================//
 
