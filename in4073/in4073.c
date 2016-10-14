@@ -189,11 +189,10 @@ int main(void)
 		if(comm_duration > 0)
 		{
 			comm_check(comm_duration, &comm_duration_total, &update_flag);
-			if ((comm_duration_total >= 1000000) && !lost_flag)
+			if ((comm_duration_total >= 500000) && !lost_flag)
 				{
 					set_control_mode(MODE_PANIC);
 					set_control_command(400, 0, 0, 0); //--> bug solved due to this dont remove
-					printf("panic mode\n");
 					comm_duration_total = 0; // --> to prevent MODE_PANIC triger forever without going to mode_safe.
 				}
 		}

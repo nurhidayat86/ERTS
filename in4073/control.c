@@ -28,7 +28,7 @@
 #define MAX_MOTOR 1000            ///< Maximum PWM signal (1000us is added)
 #define MAX_CMD 1024              ///< Maximum thrust, roll, pitch and yaw command
 #define MIN_CMD -MAX_CMD          ///< Minimum roll, pitch, yaw command
-#define PANIC_TIME 4000*1000         ///< Time to keep thrust in panic mode (us)
+#define PANIC_TIME 2000*1000         ///< Time to keep thrust in panic mode (us)
 #define PANIC_THRUST 0.4*MAX_THRUST_COM  ///< The amount of thrust in panic mode
 #define MAX_YAW_RATE 45*131       ///< The maximum yaw rate from js (131 LSB / (degrees/s)) = 5895
 #define MAX_ANGLE 0               ///< The maximum angle from js
@@ -243,9 +243,7 @@ void run_filters_and_control(void)
             current_panic = get_time_us() - panic_start;
             if(current_panic > PANIC_TIME) 
             {
-            	printf("current pani: %ld\n", current_panic);
                 set_control_mode(MODE_SAFE);
-                printf("lost flag change\n");
             }
             nrf_gpio_pin_toggle(YELLOW);
             break;
