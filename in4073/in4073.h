@@ -18,7 +18,7 @@
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
 #include "ml.h"
-
+#include "kalman.h"
 #include "protocol.h"
 
 #define RED					22
@@ -36,6 +36,8 @@
 enum control_mode_t control_mode;
 struct msg_telemetry_t *msg_tele;
 struct msg_profile_t msg_profile;
+bool lost_flag;
+bool raw_init_flag;
 
 uint16_t c1phi;
 uint16_t c1theta;
@@ -136,5 +138,8 @@ queue ble_rx_queue;
 queue ble_tx_queue;
 void ble_init(void);
 void ble_send(void);
+
+//communication check;
+void comm_check(uint16_t comm_duration, uint32_t *total_dur, bool *update_flag);
 
 #endif // IN4073_H__

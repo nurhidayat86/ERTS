@@ -29,13 +29,20 @@
 #define MAX_CMD 1024              ///< Maximum thrust, roll, pitch and yaw command
 #define MIN_CMD -MAX_CMD          ///< Minimum roll, pitch, yaw command
 #define PANIC_TIME 2000*1000         ///< Time to keep thrust in panic mode (us)
-#define PANIC_THRUST 0.3*MAX_THRUST_COM  ///< The amount of thrust in panic mode
+#define PANIC_THRUST 0.4*MAX_THRUST_COM  ///< The amount of thrust in panic mode
 #define MAX_YAW_RATE 45*131       ///< The maximum yaw rate from js (131 LSB / (degrees/s)) = 5895
 #define MAX_ANGLE 0               ///< The maximum angle from js
 
 // Fractions
-// CF 4 255 max command from js only contribute 22.5 deg in attitude
-#define CONTROL_FRAC 4         ///< The control gains fraction in powers of 2
+// CF 4 255 max command from js only contribute 22.5 deg approx (14.4 deg true value) in attitude
+#define ANGLE_SHIFT 4           ///< The control gains fraction in powers of 2
+#define ANGLE_GAIN_SHIFT 3        ///< The control gains fraction in powers of 2
+
+#define RATE_SHIFT 4            ///< The control gains fraction in powers of 2
+#define RATE_GAIN_SHIFT 3         ///< The control gains fraction in powers of 2
+
+#define RATE_SHIFT_YAW 4           ///< The control gains fraction in powers of 2
+#define RATE_GAIN_SHIFT_YAW 0       ///< The control gains fraction in powers of 2
 
 #define Bound(_x, _min, _max) { if (_x > (_max)) _x = (_max); else if (_x < (_min)) _x = (_min); }
 
@@ -46,7 +53,7 @@ static int16_t cmd_roll, cmd_pitch, cmd_yaw = 0;  ///< The roll, pitch, yaw comm
 static uint16_t sp_thrust = 0;                    ///< The thrust setpoint
 static int16_t sp_roll, sp_pitch, sp_yaw = 0;     ///< The roll, pitch, yaw setpoint
 
-static uint16_t panic_thrust = 0;                  ///< Time at which panic mode is entered
+//static uint16_t panic_thrust = 0;                  ///< Time at which panic mode is entered
 
 //static int16_t cmd_roll_rate, cmd_pitch_rate = 0;     ///< The roll, pitch, yaw setpoint
 //static int16_t cphi, ctheta, cpsi = 0;            ///< Calibration values of phi, theta, psi
@@ -56,6 +63,7 @@ static uint16_t panic_thrust = 0;                  ///< Time at which panic mode
 static uint8_t gyaw_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
 static uint8_t g_angle_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
 static uint8_t g_rate_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
+static uint32_t current_panic = 0;
 
 /* Set the motor commands */
 void update_motors(void)
@@ -72,7 +80,6 @@ static void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
     if (thrust < THRUST_MIN) ae[0] = thrust;
     else if ((thrust + pitch - yaw)>THRUST_MIN) ae[0] = thrust + pitch - yaw;
     else ae[0] = THRUST_MIN;
-    //ae[0] = thrust + pitch - yaw;
     ae[0] = ae[0]>>PRESCALE;
     Bound(ae[0], 0, MAX_MOTOR);
 
@@ -80,7 +87,6 @@ static void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
     if (thrust < THRUST_MIN) ae[1] = thrust;
     else if ((thrust - roll + yaw)>THRUST_MIN) ae[1] = thrust - roll + yaw;
     else ae[1] = THRUST_MIN;
-    // ae[1] = thrust - roll + yaw;
     ae[1] = ae[1]>>PRESCALE;
     Bound(ae[1], 0, MAX_MOTOR);
 
@@ -88,7 +94,6 @@ static void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
     if (thrust < THRUST_MIN) ae[2] = thrust;
     else if ((thrust - pitch - yaw)>THRUST_MIN) ae[2] = thrust - pitch - yaw;
     else ae[2] = THRUST_MIN;
-    // ae[2] = thrust - pitch - yaw;
     ae[2] = ae[2]>>PRESCALE;
     Bound(ae[2], 0, MAX_MOTOR);
 
@@ -96,7 +101,6 @@ static void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
     if (thrust < THRUST_MIN) ae[3] = thrust;
     else if ((thrust + roll + yaw)>THRUST_MIN) ae[3] = thrust + roll + yaw;
     else ae[3] = THRUST_MIN;
-    // ae[3] = thrust + roll + yaw;
     ae[3] = ae[3]>>PRESCALE;
     Bound(ae[3], 0, MAX_MOTOR);
 }
@@ -104,18 +108,35 @@ static void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
 /* Change the control mode */
 void set_control_mode(enum control_mode_t mode) {
     /* Certain modes require to reset variables */
+    control_mode = mode;
     switch(control_mode) {
         case MODE_SAFE:
+        	if (raw_init_flag == true)
+        	{
+        		imu_init(true, 100);
+        		raw_init_flag = false;
+        	}
             P = P1 = P2 = 0;
             break;
 
         /* Mode panic needs the enter time */
         case MODE_PANIC:
+        	if (raw_init_flag == true)
+        	{
+        		imu_init(true, 100);
+        		raw_init_flag = false;
+        	}
+            nrf_gpio_pin_toggle(YELLOW);
             panic_start = get_time_us();
             break;
 
         /* Mode manual needs to reset the setpoints */
         case MODE_MANUAL:
+        	if (raw_init_flag == true)
+        	{
+        		imu_init(true, 100);
+        		raw_init_flag = false;
+        	}
             sp_thrust = sp_roll = sp_pitch = sp_yaw = 0;
             break;
 
@@ -131,18 +152,32 @@ void set_control_mode(enum control_mode_t mode) {
 
         /* Full Control Mode */
         case MODE_FULL:
+        	if (raw_init_flag == true)
+        	{
+        		imu_init(true, 100);
+        		raw_init_flag = false;
+        	}
             break;
         
         /* Raw Mode */
         case MODE_RAW:
+        	if (raw_init_flag == false)
+        	{
+        		imu_init(false, 256);
+        		phi = 0; theta = 0; psi = 0;
+        		raw_init_flag = true;
+        	}         
+            break;
+
+        case MODE_START:
+            break;
+
+        case MODE_FINISH:
             break;
 
         default:
             break;
     };
-    // printf("%d\n", control_mode );
-    control_mode = mode;
-    // printf("%d\n", control_mode );
 }
 
 /* Set the control gains */
@@ -156,6 +191,9 @@ void set_control_gains(uint8_t yaw_d, uint8_t g_angle, uint8_t g_rate) {
 void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw) {
     /* Based on the control mode we need to use it seperately */
     switch(control_mode) {
+        case MODE_PANIC:
+        	break;
+
         /* Mode manual copies it to the commands */
         case MODE_MANUAL:
             cmd_thrust = thrust;
@@ -169,16 +207,12 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
             cmd_thrust = thrust;
             cmd_roll = roll;
             cmd_pitch = pitch;
-            //sp_yaw = yaw * MAX_YAW_RATE / MAX_CMD;
             sp_yaw = yaw;
             break;
 
         /* Roll, pitch and yaw setpoint is set and the thrust as command */
         case MODE_FULL:
             cmd_thrust = thrust;
-            // sp_roll = roll * MAX_ANGLE / MAX_CMD;
-            // sp_pitch = pitch * MAX_ANGLE / MAX_CMD;
-            // sp_yaw = yaw * MAX_YAW_RATE / MAX_CMD;
             sp_roll = roll;
             sp_pitch = pitch;
             sp_yaw = yaw;
@@ -191,6 +225,19 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
             sp_yaw = yaw;
             break;
 
+        case MODE_START:
+            cmd_thrust = 0;
+            cmd_roll = 0;
+            cmd_pitch = 0;
+            cmd_yaw = 0;
+            break;
+
+        case MODE_FINISH:
+            cmd_thrust = 0;
+            cmd_roll = 0;
+            cmd_pitch = 0;
+            cmd_yaw = 0;
+            break;
 
         default:
             break;
@@ -209,34 +256,19 @@ void run_filters_and_control(void)
 
         /* Panic mode (PANIC_THRUST of thrust for PANIC_TIME seconds, then safe mode) */
         case MODE_PANIC:
-            //motor_mixing(PANIC_THRUST, 0, 0, 0);
-            if(panic_thrust > 20) panic_thrust = panic_thrust-10;
-            else {panic_thrust = 0;}
-            motor_mixing(panic_thrust, 0, 0, 0);
-            // Check if time exceeded
-            if((get_time_us() - panic_start) > PANIC_TIME) {
+            motor_mixing(PANIC_THRUST, 0, 0, 0);
+            lost_flag = true;
+            current_panic = get_time_us() - panic_start;
+            if(current_panic > PANIC_TIME) 
+            {
                 set_control_mode(MODE_SAFE);
-                panic_thrust = PANIC_THRUST;
             }
+            nrf_gpio_pin_toggle(YELLOW);
             break;
 
         /* Manual mode is direct mapping from sticks to controls */
         case MODE_MANUAL:
-
-            motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
-            
-            // // do the manual mode if the thrust is high enough
-            // if(cmd_thrust > THRUST_MIN){
-            //     // do the dynamic move if the provided static thrust can keep all the motor rotate 
-            //     if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )                    
-            //     {
-            //         motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
-            //     }
-            // }
-            // // if not, just assign the thrust
-            // else
-            // {motor_mixing(cmd_thrust, 0, 0, 0);}
-            
+            motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);    
             break;
 
         /* Calibration mode (not thrust at all) */
@@ -257,21 +289,17 @@ void run_filters_and_control(void)
 
         /* Yaw rate controlled mode */
         case MODE_YAW:
-            //cmd_yaw = ((sp_yaw - sr - cr) * gyaw_d) >> CONTROL_FRAC;
+            
             // do the yaw control if the thrust is high enough
-            cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
-            motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
-            // if(cmd_thrust > THRUST_MIN){
-            //     cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
-            //     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
-            //     // // do the dynamic move if the provided static thrust can keep all the motor rotate 
-            //     // if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )  
-            //     // {
-            //     //     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
-            //     // }
-            //     // else
-            //     // {motor_mixing(cmd_thrust, 0, 0, 0);}
-            // }
+            if(cmd_thrust > THRUST_MIN_FULL)
+            {               
+                cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) + ((sr - cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
+                motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
+            }
+            else
+            {
+                motor_mixing(cmd_thrust, 0, 0, 0);
+            }
 
             break;
 
@@ -279,42 +307,17 @@ void run_filters_and_control(void)
             // rate = y and z have the opposite sign 
             // attitude angle = z has the opposite sign 
             // P1 angle, P2 rate
-
-            // cmd_roll_rate = (sp_roll - ((phi - cphi)>>CONTROL_FRAC))*P1;
-            // cmd_pitch_rate = (sp_pitch - ((theta - ctheta)>>CONTROL_FRAC))*P1;
-            // cmd_roll = P2*(cmd_roll_rate - (sp - cp));
-            // cmd_pitch = P2*(cmd_pitch_rate + (sq - cq));
-            
-            // shift the 
-            
             if(cmd_thrust > THRUST_MIN_FULL)
-            {
-                // cmd_roll = (sp_roll - ((phi - cphi)>>CONTROL_FRAC))*P1 - ((sp - cp)>>6)*P2;
-                // cmd_pitch = (sp_pitch - ((theta - ctheta)>>CONTROL_FRAC))*P1 + ((sq - cq)>>6)*P2;
-                // cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
-                // motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
-                
-                cmd_roll = (sp_roll - ((phi - cphi)>>CONTROL_FRAC))*g_angle_d - ((sp - cp)>>6)*g_rate_d;
-                cmd_pitch = (sp_pitch - ((theta - ctheta)>>CONTROL_FRAC))*g_angle_d + ((sq - cq)>>6)*g_rate_d;
-                cmd_yaw = ((sp_yaw + ((sr - cr)))* gyaw_d);
+            {               
+                cmd_roll = (((sp_roll - ((phi - cphi)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((sp - cp)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
+                cmd_pitch = (((sp_pitch - ((theta - ctheta)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) + ((((sq - cq)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
+                cmd_yaw = ((( (sp_yaw>>RATE_SHIFT_YAW)  + ((sr - cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);            
             }
             else
             {
                 motor_mixing(cmd_thrust, 0, 0, 0);
             }
-                   
-            // if(cmd_thrust > THRUST_MIN){
-            //     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
-            //     // // do the dynamic move if the provided static thrust can keep all the motor rotate 
-            //     // if( (cmd_thrust > (abs(cmd_roll) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_pitch) + THRUST_MIN)) && (cmd_thrust > (abs(cmd_yaw) + THRUST_MIN)) )  
-            //     // {
-            //     //     motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
-            //     // }
-            //     // else
-            //     // {motor_mixing(cmd_thrust, 0, 0, 0);}
-            // }
-
             break;
 
         case MODE_RAW:

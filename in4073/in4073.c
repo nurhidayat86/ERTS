@@ -19,39 +19,31 @@
 // #include "logging_protocol.h"
 
 bool loop;
-uint8_t log_flag = FALSE; 
+uint8_t log_flag = FALSE;
+bool update_flag = true;
 
 static void process_bytes(uint8_t byte) {
 	
 	static struct msg_p msg;		// struct to parse the message
-	struct msg_tuning_t *msg_tune;	// struct to capture the gain tuning message
+	struct msg_combine_all_t *msg_com_all; 
 	msg_parse(&msg, byte);
 	if(msg.status == GOT_PACKET) { 	// got the packet
 		nrf_gpio_pin_toggle(RED);	// toggle the RED led to indicate the command from PC received
 		switch(msg.msg_id) {		// capture the message based on the message id
-			case MSG_COMBINE: 		// the message is command message
+			case MSG_COMBINE_ALL: 		// the message is command message
 			{
-				// capture the payload of the message
-				msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-				mmode = msg_tele->mode;
-				mthrust = msg_tele->thrust;
-				mroll = msg_tele->roll;
-				mpitch = msg_tele->pitch;
-				myaw = msg_tele->yaw;
-				break;
-			}
+				msg_com_all = (struct msg_combine_all_t *)&msg.payload[0];
+				update_flag = msg_com_all->update;
+				mmode = msg_com_all->mode;
+				mthrust = msg_com_all->thrust;
+				mroll = msg_com_all->roll;
+				mpitch = msg_com_all->pitch;
+				myaw = msg_com_all->yaw;
 
-			case MSG_TUNE: 
-			{
-				msg_tune = (struct msg_tuning_t *)&msg.payload[0];
-				
-				P = msg_tune->P;
-				P1 = msg_tune->P1;
-				P2 = msg_tune->P2;
-				log_flag = msg_tune->log_flag;
-				// if(P>6){P=6};				
-				// if(P1>6){P1=6};				
-				// if(P2>6){P2=6};				
+				P = msg_com_all->P;
+				P1 = msg_com_all->P1;
+				P2 = msg_com_all->P2;
+				log_flag = msg_com_all->log_flag;
 				break;
 			}
 
@@ -60,10 +52,14 @@ static void process_bytes(uint8_t byte) {
 
 		};
 		msg.status = UNITINIT; // Start to receive a new packet	
+		lost_flag = false; 
 	}
-	set_control_mode(mmode);							// set the mode
-	set_control_command(mthrust, mroll, mpitch, myaw);	// set the control command
-	set_control_gains(P, P1, P2);				
+	
+	set_control_mode(msg_com_all->mode);							// set the mode
+	set_control_command(msg_com_all->thrust, msg_com_all->roll, msg_com_all->pitch, msg_com_all->yaw);	// set the control command
+	if ((msg_com_all->P<=MAX_P)&&(msg_com_all->P1<=MAX_P1)&&(msg_com_all->P2<=MAX_P2)) //add safety constraint
+		set_control_gains(msg_com_all->P, msg_com_all->P1, msg_com_all->P2);
+				
 }
 
 /*------------------------------------------------------------------
@@ -78,7 +74,7 @@ int main(void)
 	adc_init();
 	twi_init();
 	imu_init(true, 100);
-	baro_init();
+	//baro_init();
 	spi_flash_init();
 	//	ble_init();
 
@@ -89,10 +85,8 @@ int main(void)
 	mpu_get_gyro_fsr(gfsr);
     mpu_get_accel_fsr(afsr);
     mpu_get_sample_rate(srfsr);  
-
     printf("%d %d %d", gfsr[0], afsr[0], srfsr[0]);
 
-    //uint8_t log_flag = FALSE;
 
     uint16_t c1phi = 10;
 	uint16_t c1theta = 10;
@@ -112,7 +106,7 @@ int main(void)
 	#endif
 
     // command_init();
-	// msg_tele->update = FALSE;
+	msg_tele->update = FALSE;
 	msg_tele->mode = 0;
 	msg_tele->thrust = 0;
 	msg_tele->roll = 0;
@@ -148,37 +142,62 @@ int main(void)
 	msg_profile.proc_dmp = 0;
 	msg_profile.proc_control = 0;
 	#endif
-	
 
-	//=============================== CREATE THE START UP MODE HERE ===================================//
-	loop = true;
-	control_mode = ESCAPE;
-	printf(" mode %d\n", control_mode);
-	while(control_mode == ESCAPE) // wait until the PC safe to start up 
+	//communication lost
+	uint32_t comm_start = 0;
+	uint32_t comm_end = 0;
+	uint16_t comm_duration = 0;
+	uint32_t comm_duration_total = 0;
+	lost_flag = false;
+
+
+	//=============================== MODE_START ===================================//
+	set_control_mode(MODE_START);
+	printf(" mode start: %d\n", control_mode);
+	while(control_mode == MODE_START) // wait until the PC safe to start up 
 	{
-		printf("mode %d\n", control_mode); 	// there is still a bug here
+		uart_put(0); 	// there is still a bug here
 		if (rx_queue.count) 				// the count is not detected if the print is commented
 		{
-			process_bytes( dequeue(&rx_queue) ) ;
+			process_bytes( dequeue(&rx_queue) );
+			set_control_mode(MODE_SAFE);
 			break;
 		}
 	} 
-	
-	// while (loop)
-	while(control_mode != ESCAPE)
+	//=============================== END MODE_START ===================================//
+
+
+	//=============================== MODE_NONESCAPE ===================================//
+	while((control_mode != ESCAPE))
 	{
-		// lost the link 1 periodic timer flag
-		// if ((counter_link > PERIODIC_LINK) && (control_mode != MODE_PANIC)) control_mode = MODE_PANIC;  
 		
 		#ifdef DRONE_PROFILE
 		start = get_time_us();
 		#endif
 
+
+		//=============================== COMM ROBUST CHECK ==================================//
+		comm_end = get_time_us();
 		if (rx_queue.count) 
 		{
 			process_bytes( dequeue(&rx_queue) ) ;
-			// counter_link = 0;
 		}
+
+		if (lost_flag == false)
+			comm_duration = (comm_end - comm_start); //--> prevent loop forever in panic mode
+		
+		if(comm_duration > 0)
+		{
+			comm_check(comm_duration, &comm_duration_total, &update_flag);
+			if ((comm_duration_total >= 500000) && !lost_flag)
+				{
+					set_control_mode(MODE_PANIC);
+					// set_control_command(400, 0, 0, 0); //--> bug solved due to this dont remove
+					comm_duration_total = 0; // --> to prevent MODE_PANIC triger forever without going to mode_safe.
+				}
+		}
+		//=============================== END COMM ROBUST CHECK ==============================//
+		comm_start = get_time_us();
 		
 		#ifdef DRONE_PROFILE
 		end = get_time_us();
@@ -187,11 +206,13 @@ int main(void)
 
 		if (check_timer_flag())
 		{
-			if (counter++%10 == 0) 
+			if (counter++%20 == 0) 
 			{
 				nrf_gpio_pin_toggle(BLUE);
+				// uart_put(HEART_BEAT);
 				// counter_link++;		
 			}
+
 
 			#ifdef DRONE_PROFILE
 			start = get_time_us();
@@ -203,7 +224,7 @@ int main(void)
 			proc_adc = end - start;
 			#endif
 
-			if (counter_log++%2 == 0)
+			if ((counter_log++%2 == 0));
 			{
 				#ifdef DRONE_PROFILE
 				start = get_time_us();
@@ -245,19 +266,18 @@ int main(void)
 					msg_tele->saz = saz;
 
 					msg_tele->bat_volt = bat_volt;
-
 					msg_tele->P = P;
 					msg_tele->P1 = P1;
 					msg_tele->P2 = P2;
 
 					// simulate the communication lost by preventing the drone the send the telemetry message 
 					// (by going to the height mode for time being)
-					if(control_mode != MODE_HEIGHT)
-					{
+					// if(control_mode != MODE_HEIGHT)
+					// {
 						//nrf_gpio_pin_toggle(YELLOW);
 						encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
 						for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
-					}	
+					// }	
 					
 				#else
 					printf("%d %d %d %d %d %d| ", mmode, control_mode, mthrust, mroll, mpitch, myaw);
@@ -274,6 +294,7 @@ int main(void)
 				end = get_time_us();
 				proc_send = end - start;
 				#endif
+
 			}
 			
 
@@ -281,42 +302,42 @@ int main(void)
 			#ifdef DRONE_PROFILE
 			start = get_time_us();
 			#endif
-			// if (status == true)
-			// {
-			// 	status = flash_data() ;
- 			// 	if((status = write_log()) == false) {printf("failed to write log");}	
-			// }
+
+			//profiling
 			#ifdef DRONE_PROFILE
 			end = get_time_us();
 			proc_log = end - start;
-			#endif
-			
+			#endif			
+
 			clear_timer_flag();
 		}
 
 		if (check_sensor_int_flag())
 		{
-			nrf_gpio_pin_toggle(GREEN);
 			#ifdef DRONE_PROFILE
 			start = get_time_us();
 			#endif
 			
+			if (control_mode != MODE_RAW)
+			{
+				get_dmp_data();
+			}
+
+			//=============================== RAW  ==============================//
 			if(control_mode == MODE_RAW)
 			{
 				get_raw_sensor_data();
 				kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &estimated_phi, &estimated_theta, &bp, &bq);
 			}
-			else
-			{
-				get_dmp_data();
-			}
+			//=============================== END RAW =================================//
 
 			if ((status == true) && (log_flag == TRUE))
 			{
-				nrf_gpio_pin_toggle(YELLOW);
+				nrf_gpio_pin_clear(GREEN);
 				status = flash_data() ;
  				if((status = write_log()) == false) {printf("failed to write log");}	
 			}
+			else {nrf_gpio_pin_set(GREEN);}
 						
 			#ifdef DRONE_PROFILE
 			end = get_time_us();
@@ -364,15 +385,17 @@ int main(void)
 		}
 		start_send = get_time_us();	
 		#endif
-				
 	}
+	//=============================== END MODE_NONESCAPE ===================================//
 
+	//=============================== MODE_LOG ===================================//
 	while(true)
 	{
 		read_logs();
 		printf("Finished");
 		break;	
 	}
+	//=============================== END MODE_LOG ===================================//
 
 	printf("\n\t Goodbye \n\n");
 	nrf_delay_ms(100);

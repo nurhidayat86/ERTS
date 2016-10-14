@@ -29,7 +29,7 @@
 #define REFRESH_TIME 200
 pthread_mutex_t lock_send;
 bool heartbeat_flag;
-struct msg_combine_t combine_msg;
+struct msg_combine_all_t combine_msg;
 void *heartbeat(void* x_void_ptr);
 uint32_t hb_timer, print_warning_start;
 bool stop_sending = FALSE;
@@ -98,26 +98,29 @@ int main(int argc, char **argv)
 
 	#ifdef ENCODE_PC_RECEIVE
 	struct msg_p msg;
+
+	//pointer to receive
 	struct msg_telemetry_t *msg_tele;
 	struct msg_log_t *msg_logging;
+
+	//nonpointer to store
+	struct msg_telemetry_t msg_tele;
+	struct msg_log_t msg_logging;
+
 		#ifdef DRONE_PROFILE
 		struct msg_profile_t *msg_profile;
 		#endif
 	#endif
 
 	// message struck
-	struct msg_joystick_t joystick_msg;
-	struct msg_keyboard_t keyboard_msg;
-	//struct msg_combine_t combine_msg;
-	struct msg_tuning_t tuning_msg;
+	struct msg_combine_all_t combine_msg_all;
 	
 	// initialize the message by zeroing all value
-	InitCommand(&combine_msg, &keyboard_msg, &joystick_msg, &tuning_msg);
+	InitCommand(&combine_msg_all);
 
 	// logging variable
 	FILE *kp;
 	uint8_t decode_status;
- 	// static struct msg_p_log msg_log_p;
 	bool log_start = TRUE;
 
 	// joystick initialization
@@ -139,11 +142,11 @@ int main(int argc, char **argv)
 
 	/* discard any incoming text
 	 */
-	//while ((c = rs232_getchar_nb()) != -1)
-	//	fputc(c,stderr);
+	while ((c = rs232_getchar_nb()) != -1)
+		fputc(c,stderr);
 
 	// check joystick command when start up the system
-	while((!joystick_msg.update) || (joystick_msg.thrust != 0) || joystick_msg.roll != 0 || joystick_msg.pitch != 0 || joystick_msg.yaw != 0)
+	while((!combine_msg_all.update) || (combine_msg_all.thrust != 0) || combine_msg_all.roll != 0 || combine_msg_all.pitch != 0 || combine_msg_all.yaw != 0)
 	{
 		if (read(fd_RS232, &c, 1)){printf("%c", (uint8_t)c);}
 
@@ -159,20 +162,20 @@ int main(int argc, char **argv)
 			}
 		
 			// scale it down to 9 bit signed integer (-255 to 255), make it less sensitive
-			joystick_msg.roll = axis[0]>>7; 
-			joystick_msg.pitch = axis[1]>>7;
-			joystick_msg.yaw = axis[2]>>6;
+			combine_msg_all.roll = axis[0]>>7; 
+			combine_msg_all.pitch = axis[1]>>7;
+			combine_msg_all.yaw = axis[2]>>6;
 			
 			// scale it down from U16 to U12 (4096) we might need to compress it a little bit more
-			joystick_msg.thrust = (JOY_THRUST_OFF - axis[3])>>4;
-			if(joystick_msg.thrust > 30) joystick_msg.thrust = (((joystick_msg.thrust)*11)>>4)+1280;
-			joystick_msg.update = TRUE;
+			combine_msg_all.thrust = (JOY_THRUST_OFF - axis[3])>>4;
+			if(combine_msg_all.thrust > 30) combine_msg_all.thrust = (((combine_msg_all.thrust)*11)>>4)+1280;
+			combine_msg_all.update = true;
 			warning = TRUE;	
 		}
 
 		if(warning)		// print a warning to terminal
 		{
-			printf("WARNING! thrust %d roll %d pitch %d yaw %d \n", joystick_msg.thrust, joystick_msg.roll, joystick_msg.pitch, joystick_msg.yaw);
+			printf("WARNING! thrust %d roll %d pitch %d yaw %d \n", combine_msg_all.thrust, combine_msg_all.roll, combine_msg_all.pitch, combine_msg_all.yaw);
 			warning = FALSE;	
 		}
 
@@ -189,47 +192,36 @@ int main(int argc, char **argv)
 	// thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
 
 	/* send & receive */	
-	while(combine_msg.mode != MODE_LOG)		// while loop for the mission phase
+	while(combine_msg_all.mode != MODE_LOG)		// while loop for the mission phase
 	{
+		
 		#ifdef PC_PROFILE 
 			start_profile = mon_time_us();
 		#endif
 		// periodically send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time interval
 		end = mon_time_ms();
-		if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG)) //&& (!stop_sending)
+		if((((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG)) && (!stop_sending))
 		{
-			// printf("sending %d\n", stop_sending);
-			// send gain tuning message
-			// the attitude command wont be sent if the gain tuning updated
-			if(tuning_msg.update)
-			{
-				SendCommandTuning(&tuning_msg);
-				tuning_msg.update = FALSE;
-			}
-			else // send thrust and attitude command
-			{
-				SendCommand(&combine_msg);
-				// combine_msg.update = FALSE;			
-			}
-			
+			SendCommandAll(&combine_msg_all);
+
 			// check if panic_mode happened
 			#ifdef ENCODE_PC_RECEIVE
-			if(combine_msg.mode == MODE_PANIC || (msg.crc_fails > 4)) 
+			if(combine_msg_all.mode == MODE_PANIC || (msg.crc_fails > 4)) 
 			#else
-			if(combine_msg.mode == MODE_PANIC) 
+			if(combine_msg_all.mode == MODE_PANIC) 
 			#endif
 			{
 				// start panic start, reset the mode to the safe mode
 				panic_start = mon_time_ms();
-				keyboard_msg.mode = joystick_msg.mode = combine_msg.mode = MODE_SAFE;
-				combine_msg.thrust = keyboard_msg.thrust = 0;	
-				combine_msg.roll = keyboard_msg.roll = 0;
-				combine_msg.pitch = keyboard_msg.pitch = 0;
-				combine_msg.yaw = keyboard_msg.yaw = 0;
-				tuning_msg.P = 0;
-				tuning_msg.P1 = 0;
-				tuning_msg.P2 = 0;
+				combine_msg_all.mode = MODE_SAFE;
+				combine_msg_all.thrust = 0;	
+				combine_msg_all.roll = 0;
+				combine_msg_all.pitch = 0;
+				combine_msg_all.yaw = 0;
+				combine_msg_all.P = 0;
+				combine_msg_all.P1 = 0;
+				combine_msg_all.P2 = 0;
 			}
 			start = mon_time_ms();
 		}
@@ -256,20 +248,20 @@ int main(int argc, char **argv)
 			}
 		
 			// scale it down to 9 bit signed integer (-255 to 255)
-			joystick_msg.roll = axis[0]>>7; 
-			joystick_msg.pitch = axis[1]>>7;
-			joystick_msg.yaw = axis[2]>>6; // make it more sensitive than the others 
+			combine_msg_all.roll = axis[0]>>7; 
+			combine_msg_all.pitch = axis[1]>>7;
+			combine_msg_all.yaw = axis[2]>>6; // make it more sensitive than the others 
 			
 			// scale it down from U16 to U12 (4096) we might need to compress it a little bit more
-			joystick_msg.thrust = (JOY_THRUST_OFF - axis[3])>>4;
-			if(joystick_msg.thrust > 30) joystick_msg.thrust = (((joystick_msg.thrust)*11)>>4)+1280;
+			combine_msg_all.thrust = (JOY_THRUST_OFF - axis[3])>>4;
+			if(combine_msg_all.thrust > 30) combine_msg_all.thrust = (((combine_msg_all.thrust)*11)>>4)+1280;
 			// assign the fire button
 			if(button[0]) 
 			{
-				if((joystick_msg.mode != MODE_SAFE) && (joystick_msg.mode != MODE_PANIC)) joystick_msg.mode = MODE_PANIC;
-				else if (joystick_msg.mode == MODE_SAFE) joystick_msg.mode = ESCAPE;
+				if((combine_msg_all.mode != MODE_SAFE) && (combine_msg_all.mode != MODE_PANIC)) combine_msg_all.mode = MODE_PANIC;
+				else if (combine_msg_all.mode == MODE_SAFE) combine_msg_all.mode = ESCAPE;
 			}	
-			joystick_msg.update = TRUE;
+			combine_msg_all.update = true;
 		}
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
@@ -284,23 +276,22 @@ int main(int argc, char **argv)
 			start_profile = mon_time_us();
 		#endif
 		if ((c = term_getchar_nb()) != -1){
-			KeyboardCommand(c, &keyboard_msg, &tuning_msg, &joystick_msg);
-			keyboard_msg.update = TRUE;
+			KeyboardCommand(c, &combine_msg_all);
+			combine_msg_all.update = true;
 		}
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
 			proc_key = end_profile - start_profile;
 			//printf("k %d ", proc_key);
 		#endif
-
+		CombineCommand(&combine_msg_all);
 		// combine keyboard and joystick
 		#ifdef PC_PROFILE 
 			start_profile = mon_time_us();
 		#endif
-		combine_msg.update = (keyboard_msg.update || joystick_msg.update);
-		if(combine_msg.update){
-			CombineCommand(&combine_msg, &keyboard_msg, &joystick_msg, &tuning_msg);
-		}
+
+
+
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
 			proc_comb = end_profile - start_profile;
@@ -338,7 +329,7 @@ int main(int argc, char **argv)
 						printf("%d %d %d %d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
 						// printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
 						
-						if((msg_tele->bat_volt<1100) && ((mon_time_ms() - start_batt) > 1000)) 
+						if((msg_tele->bat_volt<1070) && ((mon_time_ms() - start_batt) > 1000)) 
 						{
 							// printf("\n == The BATTERY is LOW == \n \n");
 							// if(msg_tele->bat_volt<1050){combine_msg.mode = MODE_PANIC;}
@@ -394,7 +385,6 @@ int main(int argc, char **argv)
 		
 	}
 	
-	// printf("mode %d ", combine_msg.mode);
 	
 	while(true) // start logging 
 	{
@@ -407,8 +397,6 @@ int main(int argc, char **argv)
 						case MSG_TELEMETRY: 
 						{
 							// send again the escape command
-							combine_msg.mode = ESCAPE;
-							SendCommand(&combine_msg);
 
 							msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
 							printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);

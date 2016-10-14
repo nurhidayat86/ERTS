@@ -22,13 +22,18 @@
 #define ENCODE_PC_RECEIVE
 // #define PC_DEBUG
 
+#define HEART_BEAT 0x77
+
+#define MAX_P 16
+#define MAX_P1 30
+#define MAX_P2 8
+
 enum msg_status {
 	UNITINIT,
 	GOT_HDR,
 	GOT_LEN,
 	GOT_ID,
 	GOT_PAYLOAD,
-	//GOT_CRC1,
 	GOT_PACKET
 };
 
@@ -39,7 +44,8 @@ enum msg_id{
 	MSG_TELEMETRY,
 	MSG_LOG,
 	MSG_TUNE,
-	MSG_PROFILE
+	MSG_PROFILE,
+	MSG_COMBINE_ALL
 };
 
 // Control
@@ -53,42 +59,33 @@ enum control_mode_t {
   MODE_RAW,
   MODE_HEIGHT,
   ESCAPE,
-  MODE_LOG
+  MODE_LOG,
+  MODE_START,
+  MODE_FINISH
 };
 
-struct msg_joystick_t{
-	bool update;
-	uint8_t mode;
-	uint16_t thrust;
-	int16_t roll;
- 	int16_t pitch;
- 	int16_t yaw;
-}__attribute__((packed));
-
-struct msg_keyboard_t{
+struct msg_combine_all_t{
  	bool update;
 	uint8_t mode;
 	uint16_t thrust;
 	int16_t roll;
  	int16_t pitch;
  	int16_t yaw;
-}__attribute__((packed));
-
-struct msg_combine_t{
- 	bool update;
-	uint8_t mode;
-	uint16_t thrust;
-	int16_t roll;
- 	int16_t pitch;
- 	int16_t yaw;
-}__attribute__((packed));
-
-struct msg_tuning_t{
- 	bool update;
 	uint8_t P;
 	uint8_t P1;
 	uint8_t P2;
 	uint8_t log_flag;
+}__attribute__((packed));
+
+struct msg_combine_all_compact{
+ 	uint8_t mode;
+	uint8_t thrust;
+	int8_t roll;
+ 	int8_t pitch;
+ 	int8_t yaw;
+ 	uint8_t P;
+	uint8_t P1;
+	uint8_t P2;
 }__attribute__((packed));
 
 // need a bigger struct size
