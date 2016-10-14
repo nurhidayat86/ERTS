@@ -8,5 +8,6 @@
 
 void InitCommand(struct msg_combine_all_t* combine_msg_all);
 void SendCommandAll(struct msg_combine_all_t* combine_msg_all);
+void CombineCommand(struct msg_combine_all_t* combine_msg_all);
 
 #endif /* _COMMAND_H_ */
