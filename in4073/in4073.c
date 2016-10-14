@@ -58,7 +58,7 @@ static void process_bytes(uint8_t byte) {
 	set_control_mode(msg_com_all->mode);							// set the mode
 	set_control_command(msg_com_all->thrust, msg_com_all->roll, msg_com_all->pitch, msg_com_all->yaw);	// set the control command
 	if ((msg_com_all->P<=8)&&(msg_com_all->P1<=8)&&(msg_com_all->P2<=8)) //add safety constraint
-		set_control_gains(msg_com_all->P, msg_com_all->P1, msg_com_all->P2);/
+		set_control_gains(msg_com_all->P, msg_com_all->P1, msg_com_all->P2);
 				
 }
 

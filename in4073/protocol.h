@@ -22,7 +22,7 @@
 // #define ENCODE_PC_RECEIVE
 // #define PC_DEBUG
 
-#define HEART_BEAT 0x77;
+#define HEART_BEAT 0x77
 
 enum msg_status {
 	UNITINIT,
