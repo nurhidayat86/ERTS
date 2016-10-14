@@ -19,7 +19,7 @@
 #define ENCODE
 // #define DRONE_PROFILE
 // #define PC_PROFILE
-// #define ENCODE_PC_RECEIVE
+#define ENCODE_PC_RECEIVE
 // #define PC_DEBUG
 
 #define HEART_BEAT 0x77

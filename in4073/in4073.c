@@ -307,16 +307,7 @@ int main(void)
 			#ifdef DRONE_PROFILE
 			end = get_time_us();
 			proc_log = end - start;
-			#endif
-			
-
-			//=============================== GETR AW DATA OUTSITE SENSOR FLAG OTHERWISE FIFO ERROR WILL BE SO MANY IN MODE_RAW  ==============================//
-			if(control_mode == MODE_RAW)
-			{
-				get_raw_sensor_data();
-				kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &estimated_phi, &estimated_theta, &bp, &bq);
-			}
-			//=============================== END GETR AW DATA OUTSITE SENSOR FLAG ============================================  ==============================//
+			#endif			
 
 			clear_timer_flag();
 		}
@@ -331,6 +322,14 @@ int main(void)
 			{
 				get_dmp_data();
 			}
+
+			//=============================== RAW  ==============================//
+			if(control_mode == MODE_RAW)
+			{
+				get_raw_sensor_data();
+				kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &estimated_phi, &estimated_theta, &bp, &bq);
+			}
+			//=============================== END RAW =================================//
 
 			if ((status == true) && (log_flag == TRUE))
 			{
