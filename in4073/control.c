@@ -252,7 +252,6 @@ void run_filters_and_control(void)
 
         /* Manual mode is direct mapping from sticks to controls */
         case MODE_MANUAL:
-
             motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
             
             // // do the manual mode if the thrust is high enough

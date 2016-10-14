@@ -47,8 +47,6 @@ static void process_bytes(uint8_t byte) {
 				break;
 			}
 
-
-			
 			default:
 				break;
 
@@ -60,7 +58,7 @@ static void process_bytes(uint8_t byte) {
 	set_control_mode(msg_com_all->mode);							// set the mode
 	set_control_command(msg_com_all->thrust, msg_com_all->roll, msg_com_all->pitch, msg_com_all->yaw);	// set the control command
 	if ((msg_com_all->P<=8)&&(msg_com_all->P1<=8)&&(msg_com_all->P2<=8)) //add safety constraint
-		set_control_gains(msg_com_all->P, msg_com_all->P1, msg_com_all->P2);
+		set_control_gains(msg_com_all->P, msg_com_all->P1, msg_com_all->P2);/
 				
 }
 
@@ -194,9 +192,9 @@ int main(void)
 			if ((comm_duration_total >= 1000000) && !lost_flag)
 				{
 					set_control_mode(MODE_PANIC);
-					set_control_command(400, 0, 0, 0);
+					set_control_command(400, 0, 0, 0); //--> bug solved due to this dont remove
 					printf("panic mode\n");
-					comm_duration_total = 0; // --> to prevent MODE_PANIC triger for 2nd time.
+					comm_duration_total = 0; // --> to prevent MODE_PANIC triger forever without going to mode_safe.
 				}
 		}
 		//=============================== END COMM ROBUST CHECK ==============================//
@@ -212,8 +210,10 @@ int main(void)
 			if (counter++%20 == 0) 
 			{
 				nrf_gpio_pin_toggle(BLUE);
+				uart_put(HEART_BEAT);
 				// counter_link++;		
 			}
+
 
 			#ifdef DRONE_PROFILE
 			start = get_time_us();
