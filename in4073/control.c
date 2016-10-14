@@ -28,8 +28,8 @@
 #define MAX_MOTOR 1000            ///< Maximum PWM signal (1000us is added)
 #define MAX_CMD 1024              ///< Maximum thrust, roll, pitch and yaw command
 #define MIN_CMD -MAX_CMD          ///< Minimum roll, pitch, yaw command
-#define PANIC_TIME 2000*1000         ///< Time to keep thrust in panic mode (us)
-#define PANIC_THRUST 0.3*MAX_THRUST_COM  ///< The amount of thrust in panic mode
+#define PANIC_TIME 3000*1000         ///< Time to keep thrust in panic mode (us)
+#define PANIC_THRUST 0.4*MAX_THRUST_COM  ///< The amount of thrust in panic mode
 #define MAX_YAW_RATE 45*131       ///< The maximum yaw rate from js (131 LSB / (degrees/s)) = 5895
 #define MAX_ANGLE 0               ///< The maximum angle from js
 
@@ -60,6 +60,7 @@ static uint16_t panic_thrust = 0;                  ///< Time at which panic mode
 static uint8_t gyaw_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
 static uint8_t g_angle_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
 static uint8_t g_rate_d = 0;                       ///< The yaw control gains (2^CONTROL_FRAC)
+
 
 /* Set the motor commands */
 void update_motors(void)
@@ -116,6 +117,7 @@ void set_control_mode(enum control_mode_t mode) {
         /* Mode panic needs the enter time */
         case MODE_PANIC:
             panic_start = get_time_us();
+            nrf_gpio_pin_toggle(YELLOW);
             break;
 
         /* Mode manual needs to reset the setpoints */
@@ -138,7 +140,7 @@ void set_control_mode(enum control_mode_t mode) {
             break;
         
         /* Raw Mode */
-        case MODE_RAW:
+        case MODE_RAW:     
             break;
 
         case MODE_START:
@@ -232,15 +234,14 @@ void run_filters_and_control(void)
 
         /* Panic mode (PANIC_THRUST of thrust for PANIC_TIME seconds, then safe mode) */
         case MODE_PANIC:
-            //motor_mixing(PANIC_THRUST, 0, 0, 0);
-            // if(panic_thrust > 20) panic_thrust = panic_thrust-10;
-            // else {panic_thrust = 0;}
+        	lost_flag = true;
             motor_mixing(PANIC_THRUST, 0, 0, 0);
             // Check if time exceeded
             if((get_time_us() - panic_start) > PANIC_TIME) {
                 set_control_mode(MODE_SAFE);
                 panic_thrust = PANIC_THRUST;
             }
+            nrf_gpio_pin_toggle(YELLOW);
             break;
 
         /* Manual mode is direct mapping from sticks to controls */

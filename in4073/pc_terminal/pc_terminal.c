@@ -187,13 +187,16 @@ int main(int argc, char **argv)
 	/* send & receive */	
 	while(combine_msg_all.mode != MODE_LOG)		// while loop for the mission phase
 	{
+		if(combine_msg_all.mode == MODE_RAW)
+			stop_sending = TRUE;
+		
 		#ifdef PC_PROFILE 
 			start_profile = mon_time_us();
 		#endif
 		// periodically send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time interval
 		end = mon_time_ms();
-		if(((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG)) //&& (!stop_sending)
+		if((((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG)) && (!stop_sending))
 		{
 			SendCommandAll(&combine_msg_all);
 

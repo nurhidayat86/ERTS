@@ -75,7 +75,7 @@ int main(void)
 	adc_init();
 	twi_init();
 	imu_init(true, 100);
-	baro_init();
+	//baro_init();
 	spi_flash_init();
 	//	ble_init();
 
@@ -144,11 +144,12 @@ int main(void)
 	msg_profile.proc_control = 0;
 	#endif
 
-	//communication lost timer
+	//communication lost
 	uint32_t comm_start = 0;
 	uint32_t comm_end = 0;
 	uint16_t comm_duration = 0;
 	uint32_t comm_duration_total = 0;
+	lost_flag = false;
 
 
 	//=============================== MODE_START ===================================//
@@ -168,7 +169,7 @@ int main(void)
 
 
 	//=============================== MODE_NONESCAPE ===================================//
-	while(control_mode != ESCAPE)
+	while((control_mode != ESCAPE))
 	{
 		
 		#ifdef DRONE_PROFILE
@@ -188,13 +189,13 @@ int main(void)
 		if(comm_duration > 0)
 		{
 			comm_check(comm_duration, &comm_duration_total, &update_flag);
-			if (comm_duration_total >= 500000) set_control_mode(MODE_PANIC);
+			if ((comm_duration_total >= 500000) && !lost_flag)
+				{
+					set_control_mode(MODE_PANIC);
+				}
 		}
 		//=============================== END COMM ROBUST CHECK ==============================//
 		comm_start = get_time_us();
-		
-		
-
 		
 		#ifdef DRONE_PROFILE
 		end = get_time_us();
@@ -219,7 +220,7 @@ int main(void)
 			proc_adc = end - start;
 			#endif
 
-			if (counter_log++%2 == 0)
+			if ((counter_log++%2 == 0));
 			{
 				#ifdef DRONE_PROFILE
 				start = get_time_us();
@@ -289,6 +290,7 @@ int main(void)
 				end = get_time_us();
 				proc_send = end - start;
 				#endif
+
 			}
 			
 
@@ -303,6 +305,15 @@ int main(void)
 			proc_log = end - start;
 			#endif
 			
+
+			//=============================== GETR AW DATA OUTSITE SENSOR FLAG OTHERWISE FIFO ERROR WILL BE SO MANY IN MODE_RAW  ==============================//
+			if(control_mode == MODE_RAW)
+			{
+				get_raw_sensor_data();
+				kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &estimated_phi, &estimated_theta, &bp, &bq);
+			}
+			//=============================== END GETR AW DATA OUTSITE SENSOR FLAG ============================================  ==============================//
+
 			clear_timer_flag();
 		}
 
@@ -313,12 +324,7 @@ int main(void)
 			start = get_time_us();
 			#endif
 			
-			if(control_mode == MODE_RAW)
-			{
-				get_raw_sensor_data();
-				kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &estimated_phi, &estimated_theta, &bp, &bq);
-			}
-			else
+			if (control_mode != MODE_RAW)
 			{
 				get_dmp_data();
 			}
