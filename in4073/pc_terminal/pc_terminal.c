@@ -98,8 +98,15 @@ int main(int argc, char **argv)
 
 	#ifdef ENCODE_PC_RECEIVE
 	struct msg_p msg;
+
+	//pointer to receive
 	struct msg_telemetry_t *msg_tele;
 	struct msg_log_t *msg_logging;
+
+	//nonpointer to store
+	struct msg_telemetry_t msg_tele;
+	struct msg_log_t msg_logging;
+
 		#ifdef DRONE_PROFILE
 		struct msg_profile_t *msg_profile;
 		#endif
@@ -297,15 +304,6 @@ int main(int argc, char **argv)
 		#endif
 		
 		if (read(fd_RS232, &c, 1)){
-
-			/**************************************************************************************************************************************
-			*	Check heart_beat;
-			***************************************************************************************************************************************/
-			
-
-			/**************************************************************************************************************************************
-			*	End of Check heart_beat
-			***************************************************************************************************************************************/
 
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
