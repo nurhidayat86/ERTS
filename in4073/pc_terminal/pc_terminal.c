@@ -83,6 +83,9 @@ void *heartbeat(void* x_void_ptr)
 
 int main(int argc, char **argv)
 {
+	/****************************************************************************************
+	* Variable initiator
+	*****************************************************************************************/
 	// periodic command timer 
 	uint32_t start, end, panic_start, start_batt = 0;
 	
@@ -104,11 +107,16 @@ int main(int argc, char **argv)
 	struct msg_log_t *msg_logging;
 
 	//nonpointer to store
-	struct msg_telemetry_t msg_tele;
-	struct msg_log_t msg_logging;
+	struct msg_telemetry_t msg_tele_np;
+	struct msg_log_t msg_logging_np;
 
 		#ifdef DRONE_PROFILE
+
+		//pointer to receive
 		struct msg_profile_t *msg_profile;
+
+		//nonpointer to receive
+		struct msg_profile_t msg_profile_np;
 		#endif
 	#endif
 
@@ -122,6 +130,9 @@ int main(int argc, char **argv)
 	FILE *kp;
 	uint8_t decode_status;
 	bool log_start = TRUE;
+	/****************************************************************************************
+	* Variable initiator end
+	*****************************************************************************************/
 
 	// joystick initialization
 	int fd = 0;
@@ -145,7 +156,9 @@ int main(int argc, char **argv)
 	while ((c = rs232_getchar_nb()) != -1)
 		fputc(c,stderr);
 
-	// check joystick command when start up the system
+	/****************************************************************************************
+	* check joystick command when start up the system
+	*****************************************************************************************/
 	while((!combine_msg_all.update) || (combine_msg_all.thrust != 0) || combine_msg_all.roll != 0 || combine_msg_all.pitch != 0 || combine_msg_all.yaw != 0)
 	{
 		if (read(fd_RS232, &c, 1)){printf("%c", (uint8_t)c);}
@@ -180,6 +193,9 @@ int main(int argc, char **argv)
 		}
 
 	}
+	/****************************************************************************************
+	* End of joystick check end reset
+	*****************************************************************************************/
 
 	/* this variable is our reference to the second thread */
     pthread_t heartbeat_thread;
@@ -191,7 +207,11 @@ int main(int argc, char **argv)
  	//========================================================================================//
 	// thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
 
-	/* send & receive */	
+	/* send & receive */
+
+	/****************************************************************************************
+	* Mission phase
+	*****************************************************************************************/
 	while(combine_msg_all.mode != MODE_LOG)		// while loop for the mission phase
 	{
 		
@@ -319,14 +339,24 @@ int main(int argc, char **argv)
 						// update the heartbeat flag, indicates the communication is still running
 						heartbeat_flag = true;
 						hb_timer = mon_time_ms();
-						
 						msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-						printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-						printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
-						printf("%d %d %d| ",msg_tele->phi, msg_tele->theta, msg_tele->psi);
-						printf("%d %d %d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
-						printf("%d %d %d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
-						printf("%d %d %d %d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
+						msg_tele_np = *msg_tele;
+						term_putchar(msg_tele_np.mode);
+						// printf("%d %d %d %d| ", msg_tele_np.engine[0],msg_tele_np.engine[1],msg_tele_np.engine[2],msg_tele_np.engine[3]);
+						// printf("%d %d %d| ",msg_tele_np.phi, msg_tele_np.theta, msg_tele_np.psi);
+						// printf("%d %d %d| ",msg_tele_np.sp, msg_tele_np.sq, msg_tele_np.sr);
+						// printf("%d %d %d| ",msg_tele_np.sax, msg_tele_np.say, msg_tele_np.saz);
+						// printf("%d %d %d %d\n ",msg_tele_np.bat_volt, msg_tele_np.P, msg_tele_np.P1, msg_tele_np.P2);
+						// printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
+						
+						// msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
+						// msg_tele_np = *msg_tele;
+						// printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele_np.mode, msg_tele_np.thrust, msg_tele_np.roll, msg_tele_np.pitch, msg_tele_np.yaw);
+						// printf("%d %d %d %d| ", msg_tele_np.engine[0],msg_tele_np.engine[1],msg_tele_np.engine[2],msg_tele_np.engine[3]);
+						// printf("%d %d %d| ",msg_tele_np.phi, msg_tele_np.theta, msg_tele_np.psi);
+						// printf("%d %d %d| ",msg_tele_np.sp, msg_tele_np.sq, msg_tele_np.sr);
+						// printf("%d %d %d| ",msg_tele_np.sax, msg_tele_np.say, msg_tele_np.saz);
+						// printf("%d %d %d %d\n ",msg_tele_np.bat_volt, msg_tele_np.P, msg_tele_np.P1, msg_tele_np.P2);
 						// printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
 						
 						if((msg_tele->bat_volt<1070) && ((mon_time_ms() - start_batt) > 1000)) 
@@ -342,7 +372,8 @@ int main(int argc, char **argv)
 					case MSG_PROFILE: 
 					{
 						msg_profile = (struct msg_profile_t *)&msg.payload[0];
-						printf("\n%d %d %d %d %d %d %d\n", msg_profile->proc_read, msg_profile->proc_adc, msg_profile->proc_send, msg_profile->proc_log, msg_profile->proc_dmp, msg_profile->proc_control,  msg_profile->time_all);
+						msg_profile_np = *msg_profile;
+						printf("\n%d %d %d %d %d %d %d\n", msg_profile_np.proc_read, msg_profile_np.proc_adc, msg_profile_np.proc_send, msg_profile_np.proc_log, msg_profile_np.proc_dmp, msg_profile_np.proc_control,  msg_profile_np.time_all);
 						break;
 					}
 					#endif
@@ -350,20 +381,21 @@ int main(int argc, char **argv)
 					case MSG_LOG:
 					{
 						msg_logging = (struct msg_log_t *)&msg.payload[0];
+						msg_logging_np = *msg_logging;
 						kp = fopen("logging.csv","w+");
 						fprintf(kp,"index_log, time_stamp, mode, thrust, roll, pitch, yaw, ae[0], ae[1], ae[2], ae[3], phi, theta, psi, sp, sq, sr, sax, say, saz, bat_volt, P, P1, P2, temperature, pressure\n");
-						printf("%d %d | %d | %d %d %d %d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
-						fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
-						printf("%d %d %d %d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
-						fprintf(kp, "%d, %d, %d, %d, ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
-						printf("%d %d %d | ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
-						fprintf(kp,"%d, %d, %d, ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
-						printf("%d %d %d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
-						fprintf(kp,"%d, %d, %d, ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
-						printf("%d %d %d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
-						fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
-						printf("%d %d %d %d |%d %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
-						fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
+						printf("%d %d | %d | %d %d %d %d | ", msg_logging_np.index_log, msg_logging_np.time_stamp, msg_logging_np.mode, msg_logging_np.thrust, msg_logging_np.roll, msg_logging_np.pitch, msg_logging_np.yaw);
+						fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging_np.index_log, msg_logging_np.time_stamp, msg_logging_np.mode, msg_logging_np.thrust, msg_logging_np.roll, msg_logging_np.pitch, msg_logging_np.yaw);
+						printf("%d %d %d %d | ", msg_logging_np.ae[0], msg_logging_np.ae[1], msg_logging_np.ae[2], msg_logging_np.ae[3]);
+						fprintf(kp, "%d, %d, %d, %d, ", msg_logging_np.ae[0], msg_logging_np.ae[1], msg_logging_np.ae[2], msg_logging_np.ae[3]);
+						printf("%d %d %d | ", msg_logging_np.phi, msg_logging_np.theta, msg_logging_np.psi);
+						fprintf(kp,"%d, %d, %d, ", msg_logging_np.phi, msg_logging_np.theta, msg_logging_np.psi);
+						printf("%d %d %d | ", msg_logging_np.sp, msg_logging_np.sq, msg_logging_np.sr);
+						fprintf(kp,"%d, %d, %d, ", msg_logging_np.sp, msg_logging_np.sq, msg_logging_np.sr); 
+						printf("%d %d %d | ", msg_logging_np.sax, msg_logging_np.say, msg_logging_np.saz);
+						fprintf(kp,"%d, %d, %d, ", msg_logging_np.sax, msg_logging_np.say, msg_logging_np.saz); 
+						printf("%d %d %d %d |%d %d\n", msg_logging_np.bat_volt, msg_logging_np.P, msg_logging_np.P1, msg_logging_np.P2, msg_logging_np.temperature, msg_logging_np.pressure);
+						fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging_np.bat_volt, msg_logging_np.P, msg_logging_np.P1, msg_logging_np.P2, msg_logging_np.temperature, msg_logging_np.pressure);
 						combine_msg.mode = MODE_LOG;	// change the mode to mode log, so we do not need to send message anymore	
 						break;
 					}
@@ -384,7 +416,13 @@ int main(int argc, char **argv)
 
 		
 	}
-	
+	/****************************************************************************************
+	* End of Mission phase
+	*****************************************************************************************/
+
+	/****************************************************************************************
+	* Writing log phase
+	*****************************************************************************************/
 	
 	while(true) // start logging 
 	{
@@ -441,6 +479,10 @@ int main(int argc, char **argv)
 		}
 	}
 	fclose(kp);
+
+	/****************************************************************************************
+	* End of Writing log phase
+	*****************************************************************************************/
 	term_puts("\n<exit>\n");
 	term_exitio();
 	rs232_close();
