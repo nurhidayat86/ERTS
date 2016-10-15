@@ -21,12 +21,19 @@
 // #define PC_PROFILE
 #define ENCODE_PC_RECEIVE
 // #define PC_DEBUG
+//#define DRONE_DEBUG
+// #define ENCODE_DEBUG
 
 #define HEART_BEAT 0x77
 
 #define MAX_P 16
 #define MAX_P1 30
 #define MAX_P2 8
+
+#define ACK_OK 0x20
+#define ACK_FIRED 0x22
+#define ACK_RCV 0x24
+#define ACK_NOK 0x26
 
 enum msg_status {
 	UNITINIT,
@@ -45,12 +52,13 @@ enum msg_id{
 	MSG_LOG,
 	MSG_TUNE,
 	MSG_PROFILE,
-	MSG_COMBINE_ALL
+	MSG_COMBINE_ALL,
+	MSG_ACK
 };
 
 // Control
 enum control_mode_t {
-  MODE_SAFE,
+  MODE_SAFE = 0,
   MODE_PANIC,
   MODE_MANUAL,
   MODE_CALIBRATION,

@@ -28,10 +28,6 @@ void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_d
 		checksum2 += checksum1;
 		i++;
 	}
-
-	// Setting the checksum
-	// output_data[i+3] = checksum1;
-	// output_data[i+4] = checksum2;
 	output_data[i+3] = checksum2;
 
 	// Set the output size
