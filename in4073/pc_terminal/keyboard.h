@@ -12,7 +12,9 @@
 #define KEY_INC 64
 
 extern bool stop_sending;
+bool raw_stat;
 
 void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all);
+void initraw_stat();
 
 #endif /* _KEYBOARD_H_ */

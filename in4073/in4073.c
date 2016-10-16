@@ -19,8 +19,9 @@
 // #include "logging_protocol.h"
 
 bool loop;
-uint8_t log_flag = FALSE;
+uint8_t msc_flag = LOG_NO_USE;
 bool update_flag = true;
+bool raw_status;
 
 static void process_bytes(uint8_t byte) {
 	#ifdef DRONE_DEBUG
@@ -46,7 +47,7 @@ static void process_bytes(uint8_t byte) {
 				P = msg_com_all->P;
 				P1 = msg_com_all->P1;
 				P2 = msg_com_all->P2;
-				log_flag = msg_com_all->log_flag;
+				msc_flag = msg_com_all->msc_flag;
 				break;
 			}
 
@@ -58,11 +59,17 @@ static void process_bytes(uint8_t byte) {
 		lost_flag = false;
 	}
 
+	if (msc_flag == RAW_USE)
+		raw_status = true;
+	else if(msc_flag == RAW_NO_USE)
+		raw_status = false;
+
 	set_control_mode(mmode);							// set the mode
 	set_control_command(mthrust, mroll, mpitch, myaw);	// set the control command
+	
 	if ((P<=MAX_P)&&(P1<=MAX_P1)&&(P2<=MAX_P2)) //add safety constraint
 		set_control_gains(P, P1, P2);
-	
+
 	// set_control_mode(msg_com_all->mode);							// set the mode
 	// set_control_command(msg_com_all->thrust, msg_com_all->roll, msg_com_all->pitch, msg_com_all->yaw);	// set the control command
 	// if ((msg_com_all->P<=MAX_P)&&(msg_com_all->P1<=MAX_P1)&&(msg_com_all->P2<=MAX_P2)) //add safety constraint
@@ -76,6 +83,10 @@ static void process_bytes(uint8_t byte) {
  */
 int main(void)
 {
+	///raw toggle variable
+	bool init_raw = false;
+	raw_status = false;
+
 	#ifdef DRONE_DEBUG
 		printf("int_main()\n");
 	#endif
@@ -99,14 +110,11 @@ int main(void)
     printf("%d %d %d", gfsr[0], afsr[0], srfsr[0]);
 
 
+	//kalman variable
     uint16_t c1phi = 10;
 	uint16_t c1theta = 10;
 	uint16_t c2phi = c1phi<<10;
 	uint16_t c2theta = c1theta<10;
-	int16_t estimated_p = 0;
-	int16_t estimated_q = 0;
-	int16_t estimated_phi = 0;
-	int16_t estimated_theta = 0;
 	int16_t bp = 0;
 	int16_t bq = 0;
 	
@@ -117,12 +125,6 @@ int main(void)
 	#endif
 
     // command_init();
-	// msg_tele->update = FALSE;
-	// msg_tele->mode = 0;
-	// msg_tele->thrust = 0;
-	// msg_tele->roll = 0;
- // 	msg_tele->pitch = 0;
- // 	msg_tele->yaw = 0;
 	msg_tele.update = FALSE;
 	msg_tele.mode = 0;
 	msg_tele.thrust = 0;
@@ -165,10 +167,12 @@ int main(void)
 	uint32_t comm_end = 0;
 	uint16_t comm_duration = 0;
 	uint32_t comm_duration_total = 0;
+	uint32_t threshold = 700000;
 	lost_flag = false;
 	#if DRONE_DEBUG
-		uint8_t ack = ACK_FIRED;
+		uint8_t ackfired = ACK_FIRED;
 	#endif
+	uint8_t acklog = ACK_RCV;
 
 
 	//=============================== MODE_START ===================================//
@@ -215,12 +219,12 @@ int main(void)
 		if(comm_duration > 0)
 		{
 			comm_check(comm_duration, &comm_duration_total, &update_flag);
-			if ((comm_duration_total >= 700000) && !lost_flag)
+			if ((comm_duration_total >= threshold) && !lost_flag)
 				{
 					set_control_mode(MODE_PANIC);
 					#ifdef DRONE_DEBUG
 						#ifdef
-							encode_packet((uint8_t *) &ack, sizeof(uint8_t), MSG_ACK, output_data, &output_size);	
+							encode_packet((uint8_t *) &ackfired, sizeof(uint8_t), MSG_ACK, output_data, &output_size);	
 							for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
 						#else
 							printf("communication_fail()\n");
@@ -276,25 +280,13 @@ int main(void)
 					msg_tele.engine[2] = ae[2];
 					msg_tele.engine[3] = ae[3];
 
-					if(control_mode == MODE_RAW)
-					{
-						msg_tele.phi = estimated_phi;
-						msg_tele.theta = estimated_theta;
-						msg_tele.psi = 0;
-						msg_tele.sp = estimated_p;
-						msg_tele.sq = estimated_q; 
-						msg_tele.sr = -(sr-cr); // need result from butterworth
-					}
-					else
-					{
-						msg_tele.phi = phi-cphi;
-						msg_tele.theta = theta-ctheta;
-						msg_tele.psi = -(psi-cpsi);
-						msg_tele.sp = sp-cp;
-						msg_tele.sq = -(sq-cq); 
-						msg_tele.sr = -(sr-cr);				
-					}
-
+					msg_tele.phi = phi-cphi;
+					msg_tele.theta = theta-ctheta;
+					msg_tele.psi = -(psi-cpsi);
+					msg_tele.sp = sp-cp;
+					msg_tele.sq = -(sq-cq); 
+					msg_tele.sr = -(sr-cr);				
+					
 					msg_tele.sax = sax;
 					msg_tele.say = say; 
 					msg_tele.saz = saz;
@@ -336,7 +328,7 @@ int main(void)
 			#ifdef DRONE_PROFILE
 			end = get_time_us();
 			proc_log = end - start;
-			#endif			
+			#endif
 
 			clear_timer_flag();
 		}
@@ -347,20 +339,41 @@ int main(void)
 			start = get_time_us();
 			#endif
 			
-			if (control_mode != MODE_RAW)
+			if ((raw_status == false)&&(init_raw == false))
 			{
 				get_dmp_data();
 			}
 
 			//=============================== RAW  ==============================//
-			if(control_mode == MODE_RAW)
+			if((raw_status == true) &&(init_raw == true))
 			{
 				get_raw_sensor_data();
-				kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &estimated_phi, &estimated_theta, &bp, &bq);
+				kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &sp, &sq, &phi, &theta, &bp, &bq);
 			}
 			//=============================== END RAW =================================//
 
-			if ((status == true) && (log_flag == TRUE))
+			//=============================== TOGGLE RAW  HERE ==============================//
+			if((raw_status == true) && (init_raw == false))
+			{
+				acklog = ACK_RAW_INIT;
+				threshold = 1200000; //1 sec for raw;
+				// encode_ack(acklog, output_data, &output_size);
+				// for(i=0;i<output_size;i++)
+				// 	uart_put(output_data[i]);
+				imu_init(false, 256);
+				init_raw = true;
+			}
+
+			if((raw_status == false) && (init_raw == true))
+			{
+				imu_init(true, 100);
+				init_raw = false;
+				threshold = 700000; //700ms for dmp
+			}
+			//=============================== END TOGGLE RAW =================================//
+
+
+			if ((status == true) && (msc_flag == LOG_USE))
 			{
 				nrf_gpio_pin_clear(GREEN);
 				status = flash_data() ;
@@ -418,12 +431,25 @@ int main(void)
 	//=============================== END MODE_NONESCAPE ===================================//
 
 	//=============================== MODE_LOG ===================================//
-	while(true)
+	//this block is changed due to the previous version does not really exit the program
+	//==========================================================================//
+
+	if((status = read_logs())==true) 
 	{
-		read_logs();
-		printf("Finished");
-		break;	
+		acklog = ACK_RCV;
 	}
+	else
+		acklog = ACK_FIRED;
+	
+	#ifdef ENCODE_PC_RECEIVE
+	encode_ack(acklog, output_data, &output_size);
+	for(i=0;i<output_size;i++)
+	{
+		uart_put(output_data[i]);
+	}
+	#else
+		uart_put(0x77);
+	#endif
 	//=============================== END MODE_LOG ===================================//
 
 	printf("\n\t Goodbye \n\n");

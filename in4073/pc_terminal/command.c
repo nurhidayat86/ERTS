@@ -19,7 +19,7 @@ void InitCommand(struct msg_combine_all_t* combine_msg_all)
 	combine_msg_all->P = 0;
 	combine_msg_all->P1 = 0;
 	combine_msg_all->P2 = 0;
-	combine_msg_all->log_flag = 0;
+	combine_msg_all->msc_flag = 0;
 }
 
 void CombineCommand(struct msg_combine_all_t* combine_msg_all)

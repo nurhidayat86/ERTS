@@ -7,6 +7,11 @@
 
 #include "keyboard.h"
 
+void initraw_stat()
+{
+	raw_stat = false;
+}
+
 void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 {
 	if(combine_msg_all->mode != MODE_SAFE && combine_msg_all->mode != MODE_PANIC){
@@ -118,13 +123,13 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 
 			// additional
 			case 'm': // start flexible logging 
-				if (combine_msg_all->log_flag == FALSE) 
+				if (combine_msg_all->msc_flag == LOG_NO_USE) 
 				{
-					combine_msg_all->log_flag = TRUE;
+					combine_msg_all->msc_flag = LOG_USE;
 					//printf("masuk ke false");
 				}
-				else if (combine_msg_all->log_flag == TRUE) {
-					combine_msg_all->log_flag = FALSE;
+				else if (combine_msg_all->msc_flag == LOG_USE) {
+					combine_msg_all->msc_flag = LOG_NO_USE;
 					//printf("masuk ke true");
 				}
 				combine_msg_all->update = TRUE;
@@ -173,7 +178,19 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 				combine_msg_all->mode = MODE_FULL;
 				break;	
 			case '6': 
-				combine_msg_all->mode = MODE_RAW;
+				//combine_msg_all->mode = MODE_RAW;
+				if (raw_stat == true) 
+				{
+					combine_msg_all->msc_flag = RAW_NO_USE;
+					raw_stat = false;
+					//printf("masuk ke false");
+				}
+				else if (raw_stat == false) 
+				{
+					combine_msg_all->msc_flag = RAW_USE;
+					raw_stat = true;
+					//printf("masuk ke true");
+				}
 				break;	
 			case '7': 
 				combine_msg_all->mode = MODE_HEIGHT;
@@ -184,13 +201,13 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 
 			// additional
 			case 'm': // start flexible logging 
-				if (combine_msg_all->log_flag == FALSE) 
+				if (combine_msg_all->msc_flag == LOG_NO_USE) 
 				{
-					combine_msg_all->log_flag = TRUE;
+					combine_msg_all->msc_flag = LOG_USE;
 					//printf("masuk ke false");
 				}
-				else if (combine_msg_all->log_flag == TRUE) {
-					combine_msg_all->log_flag = FALSE;
+				else if (combine_msg_all->msc_flag == LOG_USE) {
+					combine_msg_all->msc_flag = LOG_NO_USE;
 					//printf("masuk ke true");
 				}
 				combine_msg_all->update = TRUE;

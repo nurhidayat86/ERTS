@@ -14,7 +14,7 @@
 
 #define HDR 0x99
 #define MAX_PAYLOAD 200
-#define HDR_FTR_SIZE 5
+#define HDR_FTR_SIZE 4
 
 #define ENCODE
 // #define DRONE_PROFILE
@@ -34,6 +34,12 @@
 #define ACK_FIRED 0x22
 #define ACK_RCV 0x24
 #define ACK_NOK 0x26
+#define ACK_RAW_INIT 0x28
+
+#define LOG_USE 1
+#define LOG_NO_USE 0
+#define RAW_USE 3
+#define RAW_NO_USE 4
 
 enum msg_status {
 	UNITINIT,
@@ -82,7 +88,7 @@ struct msg_combine_all_t{
 	uint8_t P;
 	uint8_t P1;
 	uint8_t P2;
-	uint8_t log_flag;
+	uint8_t msc_flag;
 }__attribute__((packed));
 
 struct msg_combine_all_compact{
@@ -154,5 +160,6 @@ struct msg_p {
 
 void msg_parse(struct msg_p *msg, uint8_t c);
 void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_data, uint8_t *output_size);
+void encode_ack(uint8_t data, uint8_t *output_data, uint8_t *output_size);
 
 #endif  /* #ifndef _PROTOCOL_H_ */

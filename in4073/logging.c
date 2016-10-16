@@ -37,14 +37,15 @@ bool read_logs() {
 	uint16_t j;	
 	#endif
 	uint16_t i;
-	bool status = true;
+	bool status = false;
 	
 	// printf("%d \n", index_logging);
 	for (i=0; i<index_logging; i++) 
 	{
 		#ifdef ENCODE_PC_RECEIVE
 			// if(flash_read_bytes((uint32_t) i*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t)) == true)
-			if(flash_read_bytes((uint32_t) i*sizeof(struct msg_log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct msg_log_t)) == true)
+			status = flash_read_bytes((uint32_t) i*sizeof(struct msg_log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct msg_log_t));
+			if(status == true)
 			{
 				encode_packet((uint8_t *) &log_msg, sizeof(struct msg_log_t), MSG_LOG, output_data, &output_size);
 				for (j=0; j<output_size; j++) 

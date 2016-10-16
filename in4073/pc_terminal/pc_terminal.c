@@ -195,6 +195,8 @@ int main(int argc, char **argv)
     uint8_t thread_status;
  	int x = 0;
 
+ 	//raw var start
+ 	initraw_stat();
  	//========================================================================================//
  	// ================================ACTIVATE THE HEARTBEAT=================================//
  	//========================================================================================//
@@ -205,7 +207,7 @@ int main(int argc, char **argv)
 	/****************************************************************************************
 	* Mission phase
 	*****************************************************************************************/
-	while(combine_msg_all.mode != MODE_LOG)		// while loop for the mission phase
+	while((combine_msg_all.mode != MODE_LOG) && (combine_msg_all.mode != MODE_FINISH))		// while loop for the mission phase
 	{
 		
 		#ifdef PC_PROFILE 
@@ -214,7 +216,7 @@ int main(int argc, char **argv)
 		// periodically send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time interval
 		end = mon_time_ms();
-		if((((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG)) && (!stop_sending))
+		if((((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg_all.mode != MODE_LOG)) && (!stop_sending))
 		{
 			SendCommandAll(&combine_msg_all);
 
@@ -400,14 +402,22 @@ int main(int argc, char **argv)
 						fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
 						printf("%d %d %d %d |%d %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
 						fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
-						combine_msg.mode = MODE_LOG;	// change the mode to mode log, so we do not need to send message anymore	
+						combine_msg_all.mode = MODE_LOG;	// change the mode to mode log, so we do not need to send message anymore	
 						break;
 					}
 
 					case MSG_ACK:
 					{
 						if (msg.payload[0] == ACK_FIRED)
-							printf("ack fired\n");
+						{
+							printf("exit\n");
+							combine_msg_all.mode = MODE_FINISH; //separated with ESCAPE, because ESCAPE is to acknowledge board, we need something from board that acknowledge no log is written
+						}
+						else if(msg.payload[0] == ACK_RAW_INIT)
+						{
+							printf("enter raw init\n");
+						}
+						break; 
 					}
 
 					default:
@@ -422,7 +432,9 @@ int main(int argc, char **argv)
 					
 				#endif // PC_PROFILE
 			#endif		
-		}	
+		}
+		if(combine_msg_all.mode == MODE_FINISH)
+			break;	
 	}
 	/****************************************************************************************
 	* End of Mission phase
@@ -432,7 +444,7 @@ int main(int argc, char **argv)
 	* Writing log phase
 	*****************************************************************************************/
 	
-	while(true) // start logging 
+	while((combine_msg_all.mode == MODE_LOG) && (combine_msg_all.mode != MODE_FINISH))// start logging 
 	{
 		if (read(fd_RS232, &c, 1)){ 				// if ((c = rs232_getchar_nb()) != -1){		
 			#ifdef ENCODE_PC_RECEIVE				//#ifdef ENCODE
@@ -472,6 +484,17 @@ int main(int argc, char **argv)
 							break;
 						}
 
+						case MSG_ACK:
+						{
+							if (msg.payload[0] == ACK_RCV)
+							{
+								printf("Finished\n");
+								fclose(kp);
+								combine_msg_all.mode = MODE_FINISH;
+							}
+							break;
+						}
+
 						default:
 							break;
 					};
@@ -484,8 +507,10 @@ int main(int argc, char **argv)
 				printf("%c", (uint8_t)c);
 			#endif			
 		}
+		if(combine_msg_all.mode == MODE_FINISH)
+			break;
 	}
-	fclose(kp);
+	
 
 	/****************************************************************************************
 	* End of Writing log phase
