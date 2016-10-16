@@ -100,23 +100,16 @@ int main(int argc, char **argv)
 	#endif
 
 	#ifdef ENCODE_PC_RECEIVE
-	struct msg_p msg;
+	static struct msg_p msg;
+	msg.crc_fails = 0;
 
 	//pointer to receive
 	struct msg_telemetry_t *msg_tele;
 	struct msg_log_t *msg_logging;
 
-	//nonpointer to store
-	struct msg_telemetry_t msg_tele_np;
-	struct msg_log_t msg_logging_np;
-
 		#ifdef DRONE_PROFILE
-
 		//pointer to receive
 		struct msg_profile_t *msg_profile;
-
-		//nonpointer to receive
-		struct msg_profile_t msg_profile_np;
 		#endif
 	#endif
 
@@ -202,6 +195,8 @@ int main(int argc, char **argv)
     uint8_t thread_status;
  	int x = 0;
 
+ 	//raw var start
+ 	initraw_stat();
  	//========================================================================================//
  	// ================================ACTIVATE THE HEARTBEAT=================================//
  	//========================================================================================//
@@ -212,7 +207,7 @@ int main(int argc, char **argv)
 	/****************************************************************************************
 	* Mission phase
 	*****************************************************************************************/
-	while(combine_msg_all.mode != MODE_LOG)		// while loop for the mission phase
+	while((combine_msg_all.mode != MODE_LOG) && (combine_msg_all.mode != MODE_FINISH))		// while loop for the mission phase
 	{
 		
 		#ifdef PC_PROFILE 
@@ -221,7 +216,7 @@ int main(int argc, char **argv)
 		// periodically send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time interval
 		end = mon_time_ms();
-		if((((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG)) && (!stop_sending))
+		if((((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg_all.mode != MODE_LOG)) && (!stop_sending))
 		{
 			SendCommandAll(&combine_msg_all);
 
@@ -323,42 +318,40 @@ int main(int argc, char **argv)
 			start_profile = mon_time_us();
 		#endif
 		
-		if (read(fd_RS232, &c, 1)){
-
-		#ifdef PC_PROFILE
-			end_profile = mon_time_us();
-			proc_read = end_profile - start_profile;	
-		#endif
+		if (read(fd_RS232, &c, 1))
+		{
+			#ifdef PC_PROFILE
+				end_profile = mon_time_us();
+				proc_read = end_profile - start_profile;	
+			#endif
 				
 			#ifdef ENCODE_PC_RECEIVE
-			msg_parse(&msg, (uint8_t)c);
-			if(msg.status == GOT_PACKET) { // We got a valid packet
+			// msg_parse(&msg, (uint8_t) c)
+			msg_parse(&msg, (uint8_t) c);
+				#ifdef ENCODE_DEBUG
+					if (msg.status == UNITINIT) printf("UNITINIT\n");
+					if (msg.status == GOT_HDR) printf("GOT_HDR\n");
+					if (msg.status == GOT_LEN) printf("GOT_LEN\n");
+					if (msg.status == GOT_ID) printf("GOT_ID\n");
+					if (msg.status == GOT_PAYLOAD) printf("GOT_PAYLOAD\n");
+					if (msg.status == GOT_PACKET) printf("GOT_PACKET\n");
+				#endif
+			if(msg.status == GOT_PACKET) { 
+				// We got a valid packet
 				switch(msg.msg_id) {
 					case MSG_TELEMETRY: 
 					{
-						// update the heartbeat flag, indicates the communication is still running
-						heartbeat_flag = true;
-						hb_timer = mon_time_ms();
 						msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-						msg_tele_np = *msg_tele;
-						term_putchar(msg_tele_np.mode);
-						// printf("%d %d %d %d| ", msg_tele_np.engine[0],msg_tele_np.engine[1],msg_tele_np.engine[2],msg_tele_np.engine[3]);
-						// printf("%d %d %d| ",msg_tele_np.phi, msg_tele_np.theta, msg_tele_np.psi);
-						// printf("%d %d %d| ",msg_tele_np.sp, msg_tele_np.sq, msg_tele_np.sr);
-						// printf("%d %d %d| ",msg_tele_np.sax, msg_tele_np.say, msg_tele_np.saz);
-						// printf("%d %d %d %d\n ",msg_tele_np.bat_volt, msg_tele_np.P, msg_tele_np.P1, msg_tele_np.P2);
-						// printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
-						
-						// msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-						// msg_tele_np = *msg_tele;
-						// printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele_np.mode, msg_tele_np.thrust, msg_tele_np.roll, msg_tele_np.pitch, msg_tele_np.yaw);
-						// printf("%d %d %d %d| ", msg_tele_np.engine[0],msg_tele_np.engine[1],msg_tele_np.engine[2],msg_tele_np.engine[3]);
-						// printf("%d %d %d| ",msg_tele_np.phi, msg_tele_np.theta, msg_tele_np.psi);
-						// printf("%d %d %d| ",msg_tele_np.sp, msg_tele_np.sq, msg_tele_np.sr);
-						// printf("%d %d %d| ",msg_tele_np.sax, msg_tele_np.say, msg_tele_np.saz);
-						// printf("%d %d %d %d\n ",msg_tele_np.bat_volt, msg_tele_np.P, msg_tele_np.P1, msg_tele_np.P2);
-						// printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
-						
+						printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+						printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
+						printf("%d %d %d| ",msg_tele->phi, msg_tele->theta, msg_tele->psi);
+						printf("%d %d %d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
+						printf("%d %d %d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
+						printf("%d %d %d %d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
+						#ifdef PC_PROFILE
+							printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
+						#endif
+
 						if((msg_tele->bat_volt<1070) && ((mon_time_ms() - start_batt) > 1000)) 
 						{
 							// printf("\n == The BATTERY is LOW == \n \n");
@@ -381,23 +374,38 @@ int main(int argc, char **argv)
 					case MSG_LOG:
 					{
 						msg_logging = (struct msg_log_t *)&msg.payload[0];
-						msg_logging_np = *msg_logging;
 						kp = fopen("logging.csv","w+");
 						fprintf(kp,"index_log, time_stamp, mode, thrust, roll, pitch, yaw, ae[0], ae[1], ae[2], ae[3], phi, theta, psi, sp, sq, sr, sax, say, saz, bat_volt, P, P1, P2, temperature, pressure\n");
-						printf("%d %d | %d | %d %d %d %d | ", msg_logging_np.index_log, msg_logging_np.time_stamp, msg_logging_np.mode, msg_logging_np.thrust, msg_logging_np.roll, msg_logging_np.pitch, msg_logging_np.yaw);
-						fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging_np.index_log, msg_logging_np.time_stamp, msg_logging_np.mode, msg_logging_np.thrust, msg_logging_np.roll, msg_logging_np.pitch, msg_logging_np.yaw);
-						printf("%d %d %d %d | ", msg_logging_np.ae[0], msg_logging_np.ae[1], msg_logging_np.ae[2], msg_logging_np.ae[3]);
-						fprintf(kp, "%d, %d, %d, %d, ", msg_logging_np.ae[0], msg_logging_np.ae[1], msg_logging_np.ae[2], msg_logging_np.ae[3]);
-						printf("%d %d %d | ", msg_logging_np.phi, msg_logging_np.theta, msg_logging_np.psi);
-						fprintf(kp,"%d, %d, %d, ", msg_logging_np.phi, msg_logging_np.theta, msg_logging_np.psi);
-						printf("%d %d %d | ", msg_logging_np.sp, msg_logging_np.sq, msg_logging_np.sr);
-						fprintf(kp,"%d, %d, %d, ", msg_logging_np.sp, msg_logging_np.sq, msg_logging_np.sr); 
-						printf("%d %d %d | ", msg_logging_np.sax, msg_logging_np.say, msg_logging_np.saz);
-						fprintf(kp,"%d, %d, %d, ", msg_logging_np.sax, msg_logging_np.say, msg_logging_np.saz); 
-						printf("%d %d %d %d |%d %d\n", msg_logging_np.bat_volt, msg_logging_np.P, msg_logging_np.P1, msg_logging_np.P2, msg_logging_np.temperature, msg_logging_np.pressure);
-						fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging_np.bat_volt, msg_logging_np.P, msg_logging_np.P1, msg_logging_np.P2, msg_logging_np.temperature, msg_logging_np.pressure);
-						combine_msg.mode = MODE_LOG;	// change the mode to mode log, so we do not need to send message anymore	
+						printf("%d %d | %d | %d %d %d %d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
+						fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
+						printf("%d %d %d %d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
+						fprintf(kp, "%d, %d, %d, %d, ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
+						printf("%d %d %d | ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
+						fprintf(kp,"%d, %d, %d, ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
+						printf("%d %d %d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
+						fprintf(kp,"%d, %d, %d, ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
+						printf("%d %d %d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
+						fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
+						printf("%d %d %d %d |%d %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
+						fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
+						combine_msg_all.mode = MODE_LOG;	// change the mode to mode log, so we do not need to send message anymore	
 						break;
+					}
+
+					case MSG_ACK:
+					{
+						if (msg.payload[0] == ACK_FIRED)
+						{
+							//separated with ESCAPE, because ESCAPE is to acknowledge board.
+							//This way the program will exit safely without writing log if there is no og to be written
+							printf("exit\n");
+							combine_msg_all.mode = MODE_FINISH; 
+						}
+						else if(msg.payload[0] == ACK_RAW_INIT)
+						{
+							printf("enter raw init\n");
+						}
+						break; 
 					}
 
 					default:
@@ -406,15 +414,15 @@ int main(int argc, char **argv)
 				msg.status = UNITINIT;	// Start to receive a new packet
 				msg.crc_fails = 0;		// reset the crc fail number
 			}
-
+			
 			#else
 				#ifndef PC_PROFILE
-					printf("%c", (uint8_t)c);
+					
 				#endif // PC_PROFILE
 			#endif		
 		}
-
-		
+		if(combine_msg_all.mode == MODE_FINISH)
+			break;	
 	}
 	/****************************************************************************************
 	* End of Mission phase
@@ -424,18 +432,15 @@ int main(int argc, char **argv)
 	* Writing log phase
 	*****************************************************************************************/
 	
-	while(true) // start logging 
+	while((combine_msg_all.mode == MODE_LOG) && (combine_msg_all.mode != MODE_FINISH))// start logging 
 	{
 		if (read(fd_RS232, &c, 1)){ 				// if ((c = rs232_getchar_nb()) != -1){		
 			#ifdef ENCODE_PC_RECEIVE				//#ifdef ENCODE
 				msg_parse(&msg, (uint8_t)c);
 				if(msg.status == GOT_PACKET) { 		// We got a valid packet
-					// printf("got packet");
 					switch(msg.msg_id) {
 						case MSG_TELEMETRY: 
 						{
-							// send again the escape command
-
 							msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
 							printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 							printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
@@ -465,6 +470,18 @@ int main(int argc, char **argv)
 							break;
 						}
 
+						case MSG_ACK:
+						{
+							if (msg.payload[0] == ACK_RCV)
+							{
+								//finish log, file closed
+								printf("Finished\n");
+								fclose(kp);
+								combine_msg_all.mode = MODE_FINISH;
+							}
+							break;
+						}
+
 						default:
 							break;
 					};
@@ -477,8 +494,10 @@ int main(int argc, char **argv)
 				printf("%c", (uint8_t)c);
 			#endif			
 		}
+		if(combine_msg_all.mode == MODE_FINISH)
+			break;
 	}
-	fclose(kp);
+	
 
 	/****************************************************************************************
 	* End of Writing log phase

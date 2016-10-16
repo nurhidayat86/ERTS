@@ -19,10 +19,15 @@
 // #include "logging_protocol.h"
 
 bool loop;
-uint8_t log_flag = FALSE;
+uint8_t msc_flag = LOG_NO_USE;
 bool update_flag = true;
+bool raw_status;
+bool log_status;
 
 static void process_bytes(uint8_t byte) {
+	#ifdef DRONE_DEBUG
+		printf("process_bytes()\n");
+	#endif
 	
 	static struct msg_p msg;		// struct to parse the message
 	struct msg_combine_all_t *msg_com_all; 
@@ -43,7 +48,7 @@ static void process_bytes(uint8_t byte) {
 				P = msg_com_all->P;
 				P1 = msg_com_all->P1;
 				P2 = msg_com_all->P2;
-				log_flag = msg_com_all->log_flag;
+				msc_flag = msg_com_all->msc_flag;
 				break;
 			}
 
@@ -52,14 +57,24 @@ static void process_bytes(uint8_t byte) {
 
 		};
 		msg.status = UNITINIT; // Start to receive a new packet	
-		lost_flag = false; 
+		lost_flag = false;
 	}
+
+	//separate toggle status from miscelanous flag
+	if (msc_flag == RAW_USE)
+		raw_status = true;
+	else if(msc_flag == RAW_NO_USE)
+		raw_status = false;
+	else if(msc_flag == LOG_NO_USE)
+		log_status = false;
+	else if(msc_flag == LOG_USE)
+		log_status = true;
+
+	set_control_mode(mmode);							// set the mode
+	set_control_command(mthrust, mroll, mpitch, myaw);	// set the control command
 	
-	set_control_mode(msg_com_all->mode);							// set the mode
-	set_control_command(msg_com_all->thrust, msg_com_all->roll, msg_com_all->pitch, msg_com_all->yaw);	// set the control command
-	if ((msg_com_all->P<=MAX_P)&&(msg_com_all->P1<=MAX_P1)&&(msg_com_all->P2<=MAX_P2)) //add safety constraint
-		set_control_gains(msg_com_all->P, msg_com_all->P1, msg_com_all->P2);
-				
+	if ((P<=MAX_P)&&(P1<=MAX_P1)&&(P2<=MAX_P2)) //add safety constraint, to prevent use pointer
+		set_control_gains(P, P1, P2);
 }
 
 /*------------------------------------------------------------------
@@ -68,6 +83,13 @@ static void process_bytes(uint8_t byte) {
  */
 int main(void)
 {
+	///raw toggle variable
+	bool init_raw = false;
+	raw_status = false;
+
+	#ifdef DRONE_DEBUG
+		printf("int_main()\n");
+	#endif
 	uart_init();
 	gpio_init();
 	timers_init();
@@ -87,17 +109,19 @@ int main(void)
     mpu_get_sample_rate(srfsr);  
     printf("%d %d %d", gfsr[0], afsr[0], srfsr[0]);
 
-
-    uint16_t c1phi = 10;
-	uint16_t c1theta = 10;
+    //*****************************************************************************/
+	//kalman variable
+	//best performance when c1 phi btween 64 -256.
+	//bigger, more damping ratio.
+	//consider to change to bitwise operation after choosing c
+	//*****************************************************************************/
+    uint16_t c1phi = 128;
+	uint16_t c1theta = 128;
 	uint16_t c2phi = c1phi<<10;
 	uint16_t c2theta = c1theta<10;
-	int16_t estimated_p = 0;
-	int16_t estimated_q = 0;
-	int16_t estimated_phi = 0;
-	int16_t estimated_theta = 0;
 	int16_t bp = 0;
 	int16_t bq = 0;
+	//*****************************************************************************/
 	
 	#ifdef ENCODE_PC_RECEIVE
 	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
@@ -106,12 +130,12 @@ int main(void)
 	#endif
 
     // command_init();
-	msg_tele->update = FALSE;
-	msg_tele->mode = 0;
-	msg_tele->thrust = 0;
-	msg_tele->roll = 0;
- 	msg_tele->pitch = 0;
- 	msg_tele->yaw = 0;
+	msg_tele.update = FALSE;
+	msg_tele.mode = 0;
+	msg_tele.thrust = 0;
+	msg_tele.roll = 0;
+ 	msg_tele.pitch = 0;
+ 	msg_tele.yaw = 0;
 					
  	cphi = ctheta = cpsi = 0;        ///< Calibration values of phi, theta, psi
 	cp = cq = cr = 0;                ///< Calibration valies of p, q and r
@@ -148,12 +172,20 @@ int main(void)
 	uint32_t comm_end = 0;
 	uint16_t comm_duration = 0;
 	uint32_t comm_duration_total = 0;
+	uint32_t threshold = 700000;
 	lost_flag = false;
+	#if DRONE_DEBUG
+		uint8_t ackfired = ACK_FIRED;
+	#endif
+	uint8_t acklog = ACK_RCV;
 
 
 	//=============================== MODE_START ===================================//
 	set_control_mode(MODE_START);
 	printf(" mode start: %d\n", control_mode);
+	#ifdef DRONE_DEBUG
+		printf("mode_start()\n");
+	#endif
 	while(control_mode == MODE_START) // wait until the PC safe to start up 
 	{
 		uart_put(0); 	// there is still a bug here
@@ -166,7 +198,9 @@ int main(void)
 	} 
 	//=============================== END MODE_START ===================================//
 
-
+	#ifdef DRONE_DEBUG
+		printf("mode_nonescape()\n");
+	#endif
 	//=============================== MODE_NONESCAPE ===================================//
 	while((control_mode != ESCAPE))
 	{
@@ -181,6 +215,7 @@ int main(void)
 		if (rx_queue.count) 
 		{
 			process_bytes( dequeue(&rx_queue) ) ;
+			comm_duration_total = 0;
 		}
 
 		if (lost_flag == false)
@@ -189,9 +224,17 @@ int main(void)
 		if(comm_duration > 0)
 		{
 			comm_check(comm_duration, &comm_duration_total, &update_flag);
-			if ((comm_duration_total >= 500000) && !lost_flag)
+			if ((comm_duration_total >= threshold) && !lost_flag)
 				{
-					set_control_mode(MODE_PANIC);
+					if(control_mode != MODE_SAFE) set_control_mode(MODE_PANIC);
+					#ifdef DRONE_DEBUG
+						#ifdef
+							encode_packet((uint8_t *) &ackfired, sizeof(uint8_t), MSG_ACK, output_data, &output_size);	
+							for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
+						#else
+							printf("communication_fail()\n");
+						#endif
+					#endif
 					// set_control_command(400, 0, 0, 0); //--> bug solved due to this dont remove
 					comm_duration_total = 0; // --> to prevent MODE_PANIC triger forever without going to mode_safe.
 				}
@@ -230,54 +273,37 @@ int main(void)
 				start = get_time_us();
 				#endif
 				#ifdef ENCODE_PC_RECEIVE
-					msg_tele->mode = control_mode;
+					msg_tele.mode = control_mode;
 
-					msg_tele->thrust = mthrust;
-					msg_tele->roll = mroll;
-					msg_tele->pitch = mpitch;
-					msg_tele->yaw = myaw;
+					msg_tele.thrust = mthrust;
+					msg_tele.roll = mroll;
+					msg_tele.pitch = mpitch;
+					msg_tele.yaw = myaw;
 
-					msg_tele->engine[0] = ae[0];
-					msg_tele->engine[1] = ae[1];
-					msg_tele->engine[2] = ae[2];
-					msg_tele->engine[3] = ae[3];
+					msg_tele.engine[0] = ae[0];
+					msg_tele.engine[1] = ae[1];
+					msg_tele.engine[2] = ae[2];
+					msg_tele.engine[3] = ae[3];
 
-					if(control_mode == MODE_RAW)
-					{
-						msg_tele->phi = estimated_phi;
-						msg_tele->theta = estimated_theta;
-						msg_tele->psi = 0;
-						msg_tele->sp = estimated_p;
-						msg_tele->sq = estimated_q; 
-						msg_tele->sr = -(sr-cr); // need result from butterworth
-					}
-					else
-					{
-						msg_tele->phi = phi-cphi;
-						msg_tele->theta = theta-ctheta;
-						msg_tele->psi = -(psi-cpsi);
-						msg_tele->sp = sp-cp;
-						msg_tele->sq = -(sq-cq); 
-						msg_tele->sr = -(sr-cr);				
-					}
+					msg_tele.phi = phi-cphi;
+					msg_tele.theta = theta-ctheta;
+					msg_tele.psi = -(psi-cpsi);
+					msg_tele.sp = sp-cp;
+					msg_tele.sq = -(sq-cq); 
+					msg_tele.sr = -(sr-cr);				
+					
+					msg_tele.sax = sax;
+					msg_tele.say = say; 
+					msg_tele.saz = saz;
 
-					msg_tele->sax = sax;
-					msg_tele->say = say; 
-					msg_tele->saz = saz;
+					msg_tele.bat_volt = bat_volt;
+					msg_tele.P = P;
+					msg_tele.P1 = P1;
+					msg_tele.P2 = P2;
 
-					msg_tele->bat_volt = bat_volt;
-					msg_tele->P = P;
-					msg_tele->P1 = P1;
-					msg_tele->P2 = P2;
-
-					// simulate the communication lost by preventing the drone the send the telemetry message 
-					// (by going to the height mode for time being)
-					// if(control_mode != MODE_HEIGHT)
-					// {
-						//nrf_gpio_pin_toggle(YELLOW);
-						encode_packet((uint8_t *) msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
-						for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
-					// }	
+					encode_packet((uint8_t *) &msg_tele, sizeof(struct msg_telemetry_t), MSG_TELEMETRY, output_data, &output_size);	
+					for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
+					// for(i=0; i<output_size; i++) {printf("0x%x||\n",output_data[i]);}
 					
 				#else
 					printf("%d %d %d %d %d %d| ", mmode, control_mode, mthrust, mroll, mpitch, myaw);
@@ -307,7 +333,7 @@ int main(void)
 			#ifdef DRONE_PROFILE
 			end = get_time_us();
 			proc_log = end - start;
-			#endif			
+			#endif
 
 			clear_timer_flag();
 		}
@@ -318,20 +344,41 @@ int main(void)
 			start = get_time_us();
 			#endif
 			
-			if (control_mode != MODE_RAW)
+			if ((raw_status == false)&&(init_raw == false))
 			{
 				get_dmp_data();
 			}
 
 			//=============================== RAW  ==============================//
-			if(control_mode == MODE_RAW)
+			if((raw_status == true) &&(init_raw == true))
 			{
 				get_raw_sensor_data();
-				kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &estimated_phi, &estimated_theta, &bp, &bq);
+				kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &sp, &sq, &phi, &theta, &bp, &bq);
 			}
 			//=============================== END RAW =================================//
 
-			if ((status == true) && (log_flag == TRUE))
+			//=============================== TOGGLE RAW  HERE ==============================//
+			if((raw_status == true) && (init_raw == false))
+			{
+				acklog = ACK_RAW_INIT;
+				threshold = 1200000; //1 sec for raw;
+				// encode_ack(acklog, output_data, &output_size);
+				// for(i=0;i<output_size;i++)
+				// 	uart_put(output_data[i]);
+				imu_init(false, 256);
+				init_raw = true;
+			}
+
+			if((raw_status == false) && (init_raw == true))
+			{
+				imu_init(true, 100);
+				init_raw = false;
+				threshold = 700000; //700ms for dmp
+			}
+			//=============================== END TOGGLE RAW =================================//
+
+
+			if ((status == true) && (log_status == true))
 			{
 				nrf_gpio_pin_clear(GREEN);
 				status = flash_data() ;
@@ -389,12 +436,25 @@ int main(void)
 	//=============================== END MODE_NONESCAPE ===================================//
 
 	//=============================== MODE_LOG ===================================//
-	while(true)
+	//this block is changed due to the previous version does not really exit the program
+	//==========================================================================//
+
+	if((status = read_logs())==true) 
 	{
-		read_logs();
-		printf("Finished");
-		break;	
+		acklog = ACK_RCV;
 	}
+	else
+		acklog = ACK_FIRED;
+	
+	#ifdef ENCODE_PC_RECEIVE
+	encode_ack(acklog, output_data, &output_size);
+	for(i=0;i<output_size;i++)
+	{
+		uart_put(output_data[i]);
+	}
+	#else
+		uart_put(0x77);
+	#endif
 	//=============================== END MODE_LOG ===================================//
 
 	printf("\n\t Goodbye \n\n");
