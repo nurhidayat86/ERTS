@@ -10,6 +10,7 @@
 void initraw_stat()
 {
 	raw_stat = false;
+	log_stat = false;
 }
 
 void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
@@ -123,13 +124,16 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 
 			// additional
 			case 'm': // start flexible logging 
-				if (combine_msg_all->msc_flag == LOG_NO_USE) 
+				if (log_stat == false) 
 				{
 					combine_msg_all->msc_flag = LOG_USE;
+					log_stat = true;
 					//printf("masuk ke false");
 				}
-				else if (combine_msg_all->msc_flag == LOG_USE) {
+				else if (log_stat == true)
+				{
 					combine_msg_all->msc_flag = LOG_NO_USE;
+					log_stat = false;
 					//printf("masuk ke true");
 				}
 				combine_msg_all->update = TRUE;
@@ -176,7 +180,11 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 				break;	
 			case '5': 
 				combine_msg_all->mode = MODE_FULL;
-				break;	
+				break;
+
+			/*****************************************************************
+			* Toggling RAW and DMP_MODE
+			******************************************************************/
 			case '6': 
 				//combine_msg_all->mode = MODE_RAW;
 				if (raw_stat == true) 
@@ -191,7 +199,8 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 					raw_stat = true;
 					//printf("masuk ke true");
 				}
-				break;	
+				break;
+			/*****************************************************************/
 			case '7': 
 				combine_msg_all->mode = MODE_HEIGHT;
 				break;	

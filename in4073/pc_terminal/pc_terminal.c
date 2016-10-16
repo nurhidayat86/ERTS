@@ -341,20 +341,6 @@ int main(int argc, char **argv)
 				switch(msg.msg_id) {
 					case MSG_TELEMETRY: 
 					{
-						// update the heartbeat flag, indicates the communication is still running
-						// heartbeat_flag = true;
-						// hb_timer = mon_time_ms();
-						// msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-						// term_putchar(msg_tele->mode);
-						// printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
-						// printf("%d %d %d| ",msg_tele->phi, msg_tele->theta, msg_tele->psi);
-						// printf("%d %d %d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
-						// printf("%d %d %d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
-						// printf("%d %d %d %d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
-						// #ifdef PC_PROFILE
-						// 	printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
-						// #endif
-
 						msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
 						printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 						printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
@@ -410,8 +396,10 @@ int main(int argc, char **argv)
 					{
 						if (msg.payload[0] == ACK_FIRED)
 						{
+							//separated with ESCAPE, because ESCAPE is to acknowledge board.
+							//This way the program will exit safely without writing log if there is no og to be written
 							printf("exit\n");
-							combine_msg_all.mode = MODE_FINISH; //separated with ESCAPE, because ESCAPE is to acknowledge board, we need something from board that acknowledge no log is written
+							combine_msg_all.mode = MODE_FINISH; 
 						}
 						else if(msg.payload[0] == ACK_RAW_INIT)
 						{
@@ -453,8 +441,6 @@ int main(int argc, char **argv)
 					switch(msg.msg_id) {
 						case MSG_TELEMETRY: 
 						{
-							// send again the escape command
-
 							msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
 							printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 							printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
@@ -488,6 +474,7 @@ int main(int argc, char **argv)
 						{
 							if (msg.payload[0] == ACK_RCV)
 							{
+								//finish log, file closed
 								printf("Finished\n");
 								fclose(kp);
 								combine_msg_all.mode = MODE_FINISH;

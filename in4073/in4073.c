@@ -22,6 +22,7 @@ bool loop;
 uint8_t msc_flag = LOG_NO_USE;
 bool update_flag = true;
 bool raw_status;
+bool log_status;
 
 static void process_bytes(uint8_t byte) {
 	#ifdef DRONE_DEBUG
@@ -59,22 +60,21 @@ static void process_bytes(uint8_t byte) {
 		lost_flag = false;
 	}
 
+	//separate toggle status from miscelanous flag
 	if (msc_flag == RAW_USE)
 		raw_status = true;
 	else if(msc_flag == RAW_NO_USE)
 		raw_status = false;
+	else if(msc_flag == LOG_NO_USE)
+		log_status = false;
+	else if(msc_flag == LOG_USE)
+		log_status = true;
 
 	set_control_mode(mmode);							// set the mode
 	set_control_command(mthrust, mroll, mpitch, myaw);	// set the control command
 	
-	if ((P<=MAX_P)&&(P1<=MAX_P1)&&(P2<=MAX_P2)) //add safety constraint
+	if ((P<=MAX_P)&&(P1<=MAX_P1)&&(P2<=MAX_P2)) //add safety constraint, to prevent use pointer
 		set_control_gains(P, P1, P2);
-
-	// set_control_mode(msg_com_all->mode);							// set the mode
-	// set_control_command(msg_com_all->thrust, msg_com_all->roll, msg_com_all->pitch, msg_com_all->yaw);	// set the control command
-	// if ((msg_com_all->P<=MAX_P)&&(msg_com_all->P1<=MAX_P1)&&(msg_com_all->P2<=MAX_P2)) //add safety constraint
-	// 	set_control_gains(msg_com_all->P, msg_com_all->P1, msg_com_all->P2);
-				
 }
 
 /*------------------------------------------------------------------
@@ -109,14 +109,19 @@ int main(void)
     mpu_get_sample_rate(srfsr);  
     printf("%d %d %d", gfsr[0], afsr[0], srfsr[0]);
 
-
+    //*****************************************************************************/
 	//kalman variable
-    uint16_t c1phi = 10;
-	uint16_t c1theta = 10;
+	//best performance when c1 phi btween 64 -256.
+	//bigger, more damping ratio.
+	//consider to change to bitwise operation after choosing c
+	//*****************************************************************************/
+    uint16_t c1phi = 128;
+	uint16_t c1theta = 128;
 	uint16_t c2phi = c1phi<<10;
 	uint16_t c2theta = c1theta<10;
 	int16_t bp = 0;
 	int16_t bq = 0;
+	//*****************************************************************************/
 	
 	#ifdef ENCODE_PC_RECEIVE
 	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
@@ -221,7 +226,7 @@ int main(void)
 			comm_check(comm_duration, &comm_duration_total, &update_flag);
 			if ((comm_duration_total >= threshold) && !lost_flag)
 				{
-					set_control_mode(MODE_PANIC);
+					if(control_mode != MODE_SAFE) set_control_mode(MODE_PANIC);
 					#ifdef DRONE_DEBUG
 						#ifdef
 							encode_packet((uint8_t *) &ackfired, sizeof(uint8_t), MSG_ACK, output_data, &output_size);	
@@ -373,7 +378,7 @@ int main(void)
 			//=============================== END TOGGLE RAW =================================//
 
 
-			if ((status == true) && (msc_flag == LOG_USE))
+			if ((status == true) && (log_status == true))
 			{
 				nrf_gpio_pin_clear(GREEN);
 				status = flash_data() ;

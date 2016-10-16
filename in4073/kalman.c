@@ -8,26 +8,32 @@ int16_t p2phi(int16_t p) {
 		return p;
 	}
 }
-
-void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, uint16_t c2phi, uint16_t c1theta, uint16_t c2theta, 
-	int16_t *estimated_p, int16_t *estimated_q, int16_t *estimated_phi, int16_t *estimated_theta, int16_t *bp, int16_t *bq) {
+/*************************************************************************************************************************************************
+* Kalman filter
+* p2phi = 5683 >>10
+* frequency sampling = 256 hz arround 3.8 ms
+* best performance at c1 = 64/128/256 (higher --> slower (more damping ratio))
+* c2 = 1024*c1
+* need to perform bitwise operation to make it faster
+**************************************************************************************************************************************************/
+void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, uint32_t c2phi, uint16_t c1theta, uint32_t c2theta, 
+	int16_t *estimated_p, int16_t *estimated_q, int16_t *estimated_phi, int16_t *estimated_theta, int16_t *bp, int16_t *bq) 
+{
 	int16_t ephi, etheta;
 
 	*estimated_p = (sp - *bp);
-	// *estimated_phi = *estimated_phi + ((*estimated_p*5683)>>19);
-	*estimated_phi = *estimated_phi + (*estimated_p>>3);
+	*estimated_phi = *estimated_phi + ((*estimated_p*5683)>>18);
 	ephi = *estimated_phi - say;
 	*estimated_phi = *estimated_phi - (ephi/c1phi);
 	*bp = *bp + (ephi/c2phi);
 
-	//*estimated_q = -(sq - *bq);
 	*estimated_q = (sq - *bq);
-	//*estimated_theta = *estimated_theta + ((*estimated_q*5683)>>19);
-	*estimated_theta = *estimated_theta + (*estimated_q>>3);
+	*estimated_theta = *estimated_theta + ((*estimated_q*5683)>>18);
 	etheta = *estimated_theta - sax;
 	*estimated_theta = *estimated_theta - (etheta/c1theta);
 	*bq = *bq + (etheta/c2theta);
 }
+/***************************************************************************************************************************************************/
 
 int16_t iir_butter_10(int16_t NewSample) {
 
