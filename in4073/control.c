@@ -232,6 +232,7 @@ void run_filters_and_control(void)
         case MODE_PANIC:
             motor_mixing(PANIC_THRUST, 0, 0, 0);
             lost_flag = true;
+            bat_flag = true;
             current_panic = get_time_us() - panic_start;
             if(current_panic > PANIC_TIME) 
             {

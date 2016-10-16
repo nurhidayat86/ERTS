@@ -117,7 +117,8 @@ int main(int argc, char **argv)
 	struct msg_combine_all_t combine_msg_all;
 	
 	// initialize the message by zeroing all value
-	InitCommand(&combine_msg_all);
+	InitCommandUpdate(&combine_msg_all);
+	CommandModeSafe(&combine_msg_all);
 
 	// logging variable
 	FILE *kp;
@@ -229,14 +230,7 @@ int main(int argc, char **argv)
 			{
 				// start panic start, reset the mode to the safe mode
 				panic_start = mon_time_ms();
-				combine_msg_all.mode = MODE_SAFE;
-				combine_msg_all.thrust = 0;	
-				combine_msg_all.roll = 0;
-				combine_msg_all.pitch = 0;
-				combine_msg_all.yaw = 0;
-				combine_msg_all.P = 0;
-				combine_msg_all.P1 = 0;
-				combine_msg_all.P2 = 0;
+				CommandModeSafe(&combine_msg_all);
 			}
 			start = mon_time_ms();
 		}
@@ -404,6 +398,16 @@ int main(int argc, char **argv)
 						else if(msg.payload[0] == ACK_RAW_INIT)
 						{
 							printf("enter raw init\n");
+						}
+						else if (msg.payload[0] == ACK_BAT_LOW)
+						{
+							printf("BAttery Low\n");
+						}
+						else if(msg.payload[0]==ACK_BAT_LOW_EMERGENCY)
+						{
+							printf("Battery low, uplink connection will be disconnected now!\n");
+							stop_sending = true;
+
 						}
 						break; 
 					}

@@ -179,6 +179,20 @@ int main(void)
 	#endif
 	uint8_t acklog = ACK_RCV;
 
+	//to cut communication from the pc in case of emergency panic mode
+	pc_link = true;
+
+	/****************************************************************************
+	* battery check variable
+	*****************************************************************************/
+	bat_flag = false;
+	uint16_t BAT_THRESHOLD = 0; //demo
+	uint8_t bat_counter = 0;
+	uint8_t bat_counter_test = 0;
+	/****************************************************************************
+	* End of battery check variable
+	*****************************************************************************/
+
 
 	//=============================== MODE_START ===================================//
 	set_control_mode(MODE_START);
@@ -198,9 +212,12 @@ int main(void)
 	} 
 	//=============================== END MODE_START ===================================//
 
+
 	#ifdef DRONE_DEBUG
 		printf("mode_nonescape()\n");
 	#endif
+
+
 	//=============================== MODE_NONESCAPE ===================================//
 	while((control_mode != ESCAPE))
 	{
@@ -212,6 +229,7 @@ int main(void)
 
 		//=============================== COMM ROBUST CHECK ==================================//
 		comm_end = get_time_us();
+		if (pc_link != false)
 		if (rx_queue.count) 
 		{
 			process_bytes( dequeue(&rx_queue) ) ;
@@ -226,15 +244,20 @@ int main(void)
 			comm_check(comm_duration, &comm_duration_total, &update_flag);
 			if ((comm_duration_total >= threshold) && !lost_flag)
 				{
-					if(control_mode != MODE_SAFE) set_control_mode(MODE_PANIC);
-					#ifdef DRONE_DEBUG
-						#ifdef
-							encode_packet((uint8_t *) &ackfired, sizeof(uint8_t), MSG_ACK, output_data, &output_size);	
-							for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
-						#else
-							printf("communication_fail()\n");
-						#endif
-					#endif
+					if(control_mode != MODE_SAFE)
+					{
+						set_control_mode(MODE_PANIC);
+						pc_link = false;
+					}
+					// #ifdef DRONE_DEBUG
+					// 	#ifdef ENCODE_PC_RECEIVE
+					// 		encode_packet((uint8_t *) &ackfired, sizeof(uint8_t), MSG_ACK, output_data, &output_size);
+
+					// 		for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
+					// 	#else
+					// 		printf("communication_fail()\n");
+					// 	#endif
+					// #endif
 					// set_control_command(400, 0, 0, 0); //--> bug solved due to this dont remove
 					comm_duration_total = 0; // --> to prevent MODE_PANIC triger forever without going to mode_safe.
 				}
@@ -252,8 +275,55 @@ int main(void)
 			if (counter++%20 == 0) 
 			{
 				nrf_gpio_pin_toggle(BLUE);
-				// uart_put(HEART_BEAT);
-				// counter_link++;		
+				bat_counter_test++;
+				/****************************************************************************
+				* battery check, it has to be 2 sec of bellow any speccified BAT_THRESHOLD
+				*****************************************************************************/
+				if ((bat_volt <= BAT_THRESHOLD)&&(!bat_flag))
+				{
+					if ((bat_counter >=1))
+					{
+						if(control_mode != MODE_SAFE)
+						{
+
+							set_control_mode(MODE_PANIC);
+							#ifdef ENCODE_PC_RECEIVE
+								acklog = ACK_BAT_LOW_EMERGENCY;
+								encode_packet((uint8_t *) &acklog, sizeof(uint8_t), MSG_ACK, output_data, &output_size);
+								for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
+							#else
+								printf("Battery low disconnecting now!\n");
+							#endif
+							pc_link = false;
+						}
+						else
+						{
+							//send acknowledge to pc terminal
+							#ifdef ENCODE_PC_RECEIVE
+								acklog = ACK_BAT_LOW;
+								encode_packet((uint8_t *) &acklog, sizeof(uint8_t), MSG_ACK, output_data, &output_size);
+								for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
+							#else
+								printf("Battery low\n");
+							#endif
+						}
+						BAT_THRESHOLD = 0; //redundant
+					}
+					else if(bat_counter <1)
+					{
+						bat_counter++;
+						#ifdef ENCODE_PC_RECEIVE
+							acklog = ACK_BAT_LOW;
+							encode_packet((uint8_t *) &acklog, sizeof(uint8_t), MSG_ACK, output_data, &output_size);
+							for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
+						#else
+							printf("Battery low\n");
+						#endif
+					}
+				}
+				/****************************************************************************
+				* End of battery check
+				*****************************************************************************/
 			}
 
 
@@ -322,19 +392,24 @@ int main(void)
 				#endif
 
 			}
-			
 
 			// write to FLASH EVERY 50 ms
 			#ifdef DRONE_PROFILE
 			start = get_time_us();
 			#endif
 
+			/***********************battery check debbuging purpose only*****************************/
+			// if(bat_counter_test >= 10)
+			// {
+			// 	BAT_THRESHOLD = 1024;
+			// }
+			/***********************End of battery check debbuging purpose only**********************/
+
 			//profiling
 			#ifdef DRONE_PROFILE
 			end = get_time_us();
 			proc_log = end - start;
 			#endif
-
 			clear_timer_flag();
 		}
 
@@ -361,7 +436,7 @@ int main(void)
 			if((raw_status == true) && (init_raw == false))
 			{
 				acklog = ACK_RAW_INIT;
-				threshold = 1200000; //1 sec for raw;
+				threshold = 700000; //1 sec for raw;
 				// encode_ack(acklog, output_data, &output_size);
 				// for(i=0;i<output_size;i++)
 				// 	uart_put(output_data[i]);

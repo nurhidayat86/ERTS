@@ -35,6 +35,8 @@
 #define ACK_RCV 0x24
 #define ACK_NOK 0x26
 #define ACK_RAW_INIT 0x28
+#define ACK_BAT_LOW 0x2A
+#define ACK_BAT_LOW_EMERGENCY 0x2C
 
 #define LOG_USE 1
 #define LOG_NO_USE 0
