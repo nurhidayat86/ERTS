@@ -132,9 +132,21 @@ void set_control_mode(enum control_mode_t mode) {
             cphi = phi;
             ctheta = theta;
             //cpsi = psi;
-            cp = sp;
-            cq = sq;
-            cr = sr;
+            if(init_raw == false)
+            {   cphi = phi;
+                ctheta = theta;
+                cp = sp;
+                cq = sq;
+                cr = sr;
+            }
+            if(init_raw == true)
+            {
+                cphi = phi;
+                ctheta = theta;
+                cp = sp;
+                cq = sq;
+                cr = sr;
+            }
             break;
 
         /* Full Control Mode */
@@ -257,8 +269,17 @@ void run_filters_and_control(void)
             cphi = phi;
             ctheta = theta;
             // cpsi = psi;
-            cp = sp;
-            cq = sq;
+            if(init_raw == true)
+            {
+                cp = estimated_p;
+                cq = estimated_q;
+            }
+            else
+            {
+                cp = sp;
+                cq = sq;
+            }
+            
             cr = sr;
 
             // calibration();

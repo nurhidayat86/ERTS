@@ -16,7 +16,7 @@ int16_t p2phi(int16_t p) {
 * c2 = 1024*c1
 * need to perform bitwise operation to make it faster
 **************************************************************************************************************************************************/
-void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, uint32_t c2phi, uint16_t c1theta, uint32_t c2theta, 
+void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, uint16_t c2phi, uint16_t c1theta, uint16_t c2theta, 
 	int16_t *estimated_p, int16_t *estimated_q, int16_t *estimated_phi, int16_t *estimated_theta, int16_t *bp, int16_t *bq) 
 {
 	int16_t ephi, etheta;

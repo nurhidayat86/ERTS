@@ -21,7 +21,6 @@
 bool loop;
 uint8_t msc_flag = LOG_NO_USE;
 bool update_flag = true;
-bool raw_status;
 bool log_status;
 
 static void process_bytes(uint8_t byte) {
@@ -84,7 +83,7 @@ static void process_bytes(uint8_t byte) {
 int main(void)
 {
 	///raw toggle variable
-	bool init_raw = false;
+	init_raw = false;
 	raw_status = false;
 
 	#ifdef DRONE_DEBUG
@@ -115,12 +114,14 @@ int main(void)
 	//bigger, more damping ratio.
 	//consider to change to bitwise operation after choosing c
 	//*****************************************************************************/
-    uint16_t c1phi = 128;
-	uint16_t c1theta = 128;
-	uint16_t c2phi = c1phi<<10;
-	uint16_t c2theta = c1theta<10;
-	int16_t bp = 0;
-	int16_t bq = 0;
+    c1phi = 128;
+	c1theta = 128;
+	c2phi = 65535;
+	c2theta = 65535;
+	bp = 0;
+	bq = 0;
+	estimated_p = 0;
+	estimated_q = 0;
 	//*****************************************************************************/
 	
 	#ifdef ENCODE_PC_RECEIVE
@@ -240,7 +241,7 @@ int main(void)
 		if (lost_flag == false)
 			comm_duration = (comm_end - comm_start); //--> prevent loop forever in panic mode
 		
-		if(comm_duration > 0)
+		if(comm_duration > 700000)
 		{
 			comm_check(comm_duration, &comm_duration_total, &update_flag);
 			if ((comm_duration_total >= threshold) && !lost_flag)
@@ -356,11 +357,20 @@ int main(void)
 					msg_tele.engine[2] = ae[2];
 					msg_tele.engine[3] = ae[3];
 
+					if(init_raw == true)
+					{
+						msg_tele.sp = (estimated_p-cp);
+						msg_tele.sq = (estimated_q-cq); 
+					}
+					else
+					{
+						msg_tele.sp = sp-cp;
+						msg_tele.sq = -(sq-cq); 
+					}
+
 					msg_tele.phi = phi-cphi;
 					msg_tele.theta = theta-ctheta;
 					msg_tele.psi = -(psi-cpsi);
-					msg_tele.sp = sp-cp;
-					msg_tele.sq = -(sq-cq); 
 					msg_tele.sr = -(sr-cr);				
 					
 					msg_tele.sax = sax;
@@ -429,7 +439,8 @@ int main(void)
 			if((raw_status == true) &&(init_raw == true))
 			{
 				get_raw_sensor_data();
-				kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &sp, &sq, &phi, &theta, &bp, &bq);
+				// kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
+				kalman(sp, -sq, sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
 			}
 			//=============================== END RAW =================================//
 
