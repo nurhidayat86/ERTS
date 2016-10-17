@@ -114,10 +114,10 @@ int main(void)
 	//bigger, more damping ratio.
 	//consider to change to bitwise operation after choosing c
 	//*****************************************************************************/
-    c1phi = 128;
-	c1theta = 128;
-	c2phi = 65535;
-	c2theta = 65535;
+    c1phi = 7;
+	c1theta = 7;
+	c2phi = 12;
+	c2theta = 12;
 	bp = 0;
 	bq = 0;
 	estimated_p = 0;
