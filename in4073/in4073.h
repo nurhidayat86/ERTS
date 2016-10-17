@@ -34,10 +34,12 @@
 
  // additional
 enum control_mode_t control_mode;
-struct msg_telemetry_t *msg_tele;
+struct msg_telemetry_t msg_tele;
 struct msg_profile_t msg_profile;
 bool lost_flag;
+bool bat_flag;
 bool raw_init_flag;
+bool pc_link;
 
 uint16_t c1phi;
 uint16_t c1theta;
@@ -50,7 +52,7 @@ int16_t estimated_theta;
 int16_t bp;
 int16_t bq;
 
-enum control_mode_t mmode;           			///< mode message from pc
+uint8_t mmode;           			///< mode message from pc
 uint16_t mthrust;           		///< thrust message from pc
 int16_t mroll, mpitch, myaw;        ///< attitude message from pc
 

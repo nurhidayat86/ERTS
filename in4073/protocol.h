@@ -14,19 +14,34 @@
 
 #define HDR 0x99
 #define MAX_PAYLOAD 200
-#define HDR_FTR_SIZE 5
+#define HDR_FTR_SIZE 4
 
 #define ENCODE
 // #define DRONE_PROFILE
 // #define PC_PROFILE
 #define ENCODE_PC_RECEIVE
 // #define PC_DEBUG
+//#define DRONE_DEBUG
+// #define ENCODE_DEBUG
 
 #define HEART_BEAT 0x77
 
 #define MAX_P 16
 #define MAX_P1 30
 #define MAX_P2 8
+
+#define ACK_OK 0x20
+#define ACK_FIRED 0x22
+#define ACK_RCV 0x24
+#define ACK_NOK 0x26
+#define ACK_RAW_INIT 0x28
+#define ACK_BAT_LOW 0x2A
+#define ACK_BAT_LOW_EMERGENCY 0x2C
+
+#define LOG_USE 1
+#define LOG_NO_USE 0
+#define RAW_USE 3
+#define RAW_NO_USE 4
 
 enum msg_status {
 	UNITINIT,
@@ -45,12 +60,13 @@ enum msg_id{
 	MSG_LOG,
 	MSG_TUNE,
 	MSG_PROFILE,
-	MSG_COMBINE_ALL
+	MSG_COMBINE_ALL,
+	MSG_ACK
 };
 
 // Control
 enum control_mode_t {
-  MODE_SAFE,
+  MODE_SAFE = 0,
   MODE_PANIC,
   MODE_MANUAL,
   MODE_CALIBRATION,
@@ -74,7 +90,7 @@ struct msg_combine_all_t{
 	uint8_t P;
 	uint8_t P1;
 	uint8_t P2;
-	uint8_t log_flag;
+	uint8_t msc_flag;
 }__attribute__((packed));
 
 struct msg_combine_all_compact{
@@ -146,5 +162,6 @@ struct msg_p {
 
 void msg_parse(struct msg_p *msg, uint8_t c);
 void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_data, uint8_t *output_size);
+void encode_ack(uint8_t data, uint8_t *output_data, uint8_t *output_size);
 
 #endif  /* #ifndef _PROTOCOL_H_ */

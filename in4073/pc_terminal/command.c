@@ -8,9 +8,20 @@
 #include "keyboard.h"
 #include "serial.h"
 
-void InitCommand(struct msg_combine_all_t* combine_msg_all)
+void InitCommandUpdate(struct msg_combine_all_t* combine_msg_all)
 {
 	combine_msg_all->update = false;
+
+}
+
+void CommandUpdate(struct msg_combine_all_t* combine_msg_all)
+{
+	combine_msg_all->update = true;
+
+}
+
+void CommandModeSafe(struct msg_combine_all_t* combine_msg_all)
+{
 	combine_msg_all->mode = MODE_SAFE;
 	combine_msg_all->thrust = 0;
 	combine_msg_all->roll = 0;
@@ -19,7 +30,7 @@ void InitCommand(struct msg_combine_all_t* combine_msg_all)
 	combine_msg_all->P = 0;
 	combine_msg_all->P1 = 0;
 	combine_msg_all->P2 = 0;
-	combine_msg_all->log_flag = 0;
+	combine_msg_all->msc_flag = 0;
 }
 
 void CombineCommand(struct msg_combine_all_t* combine_msg_all)

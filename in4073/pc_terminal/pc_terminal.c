@@ -83,6 +83,9 @@ void *heartbeat(void* x_void_ptr)
 
 int main(int argc, char **argv)
 {
+	/****************************************************************************************
+	* Variable initiator
+	*****************************************************************************************/
 	// periodic command timer 
 	uint32_t start, end, panic_start, start_batt = 0;
 	
@@ -97,17 +100,15 @@ int main(int argc, char **argv)
 	#endif
 
 	#ifdef ENCODE_PC_RECEIVE
-	struct msg_p msg;
+	static struct msg_p msg;
+	msg.crc_fails = 0;
 
 	//pointer to receive
 	struct msg_telemetry_t *msg_tele;
 	struct msg_log_t *msg_logging;
 
-	//nonpointer to store
-	struct msg_telemetry_t msg_tele;
-	struct msg_log_t msg_logging;
-
 		#ifdef DRONE_PROFILE
+		//pointer to receive
 		struct msg_profile_t *msg_profile;
 		#endif
 	#endif
@@ -116,12 +117,16 @@ int main(int argc, char **argv)
 	struct msg_combine_all_t combine_msg_all;
 	
 	// initialize the message by zeroing all value
-	InitCommand(&combine_msg_all);
+	InitCommandUpdate(&combine_msg_all);
+	CommandModeSafe(&combine_msg_all);
 
 	// logging variable
 	FILE *kp;
 	uint8_t decode_status;
 	bool log_start = TRUE;
+	/****************************************************************************************
+	* Variable initiator end
+	*****************************************************************************************/
 
 	// joystick initialization
 	int fd = 0;
@@ -145,7 +150,9 @@ int main(int argc, char **argv)
 	while ((c = rs232_getchar_nb()) != -1)
 		fputc(c,stderr);
 
-	// check joystick command when start up the system
+	/****************************************************************************************
+	* check joystick command when start up the system
+	*****************************************************************************************/
 	while((!combine_msg_all.update) || (combine_msg_all.thrust != 0) || combine_msg_all.roll != 0 || combine_msg_all.pitch != 0 || combine_msg_all.yaw != 0)
 	{
 		if (read(fd_RS232, &c, 1)){printf("%c", (uint8_t)c);}
@@ -180,19 +187,28 @@ int main(int argc, char **argv)
 		}
 
 	}
+	/****************************************************************************************
+	* End of joystick check end reset
+	*****************************************************************************************/
 
 	/* this variable is our reference to the second thread */
     pthread_t heartbeat_thread;
     uint8_t thread_status;
  	int x = 0;
 
+ 	//raw var start
+ 	initraw_stat();
  	//========================================================================================//
  	// ================================ACTIVATE THE HEARTBEAT=================================//
  	//========================================================================================//
 	// thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
 
-	/* send & receive */	
-	while(combine_msg_all.mode != MODE_LOG)		// while loop for the mission phase
+	/* send & receive */
+
+	/****************************************************************************************
+	* Mission phase
+	*****************************************************************************************/
+	while((combine_msg_all.mode != MODE_LOG) && (combine_msg_all.mode != MODE_FINISH))		// while loop for the mission phase
 	{
 		
 		#ifdef PC_PROFILE 
@@ -201,7 +217,7 @@ int main(int argc, char **argv)
 		// periodically send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time interval
 		end = mon_time_ms();
-		if((((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg.mode != MODE_LOG)) && (!stop_sending))
+		if((((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg_all.mode != MODE_LOG)) && (!stop_sending))
 		{
 			SendCommandAll(&combine_msg_all);
 
@@ -214,14 +230,7 @@ int main(int argc, char **argv)
 			{
 				// start panic start, reset the mode to the safe mode
 				panic_start = mon_time_ms();
-				combine_msg_all.mode = MODE_SAFE;
-				combine_msg_all.thrust = 0;	
-				combine_msg_all.roll = 0;
-				combine_msg_all.pitch = 0;
-				combine_msg_all.yaw = 0;
-				combine_msg_all.P = 0;
-				combine_msg_all.P1 = 0;
-				combine_msg_all.P2 = 0;
+				CommandModeSafe(&combine_msg_all);
 			}
 			start = mon_time_ms();
 		}
@@ -303,23 +312,29 @@ int main(int argc, char **argv)
 			start_profile = mon_time_us();
 		#endif
 		
-		if (read(fd_RS232, &c, 1)){
-
-		#ifdef PC_PROFILE
-			end_profile = mon_time_us();
-			proc_read = end_profile - start_profile;	
-		#endif
+		if (read(fd_RS232, &c, 1))
+		{
+			#ifdef PC_PROFILE
+				end_profile = mon_time_us();
+				proc_read = end_profile - start_profile;	
+			#endif
 				
 			#ifdef ENCODE_PC_RECEIVE
-			msg_parse(&msg, (uint8_t)c);
-			if(msg.status == GOT_PACKET) { // We got a valid packet
+			// msg_parse(&msg, (uint8_t) c)
+			msg_parse(&msg, (uint8_t) c);
+				#ifdef ENCODE_DEBUG
+					if (msg.status == UNITINIT) printf("UNITINIT\n");
+					if (msg.status == GOT_HDR) printf("GOT_HDR\n");
+					if (msg.status == GOT_LEN) printf("GOT_LEN\n");
+					if (msg.status == GOT_ID) printf("GOT_ID\n");
+					if (msg.status == GOT_PAYLOAD) printf("GOT_PAYLOAD\n");
+					if (msg.status == GOT_PACKET) printf("GOT_PACKET\n");
+				#endif
+			if(msg.status == GOT_PACKET) { 
+				// We got a valid packet
 				switch(msg.msg_id) {
 					case MSG_TELEMETRY: 
 					{
-						// update the heartbeat flag, indicates the communication is still running
-						heartbeat_flag = true;
-						hb_timer = mon_time_ms();
-						
 						msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
 						printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 						printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
@@ -327,8 +342,10 @@ int main(int argc, char **argv)
 						printf("%d %d %d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
 						printf("%d %d %d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
 						printf("%d %d %d %d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
-						// printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
-						
+						#ifdef PC_PROFILE
+							printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
+						#endif
+
 						if((msg_tele->bat_volt<1070) && ((mon_time_ms() - start_batt) > 1000)) 
 						{
 							// printf("\n == The BATTERY is LOW == \n \n");
@@ -342,7 +359,8 @@ int main(int argc, char **argv)
 					case MSG_PROFILE: 
 					{
 						msg_profile = (struct msg_profile_t *)&msg.payload[0];
-						printf("\n%d %d %d %d %d %d %d\n", msg_profile->proc_read, msg_profile->proc_adc, msg_profile->proc_send, msg_profile->proc_log, msg_profile->proc_dmp, msg_profile->proc_control,  msg_profile->time_all);
+						msg_profile_np = *msg_profile;
+						printf("\n%d %d %d %d %d %d %d\n", msg_profile_np.proc_read, msg_profile_np.proc_adc, msg_profile_np.proc_send, msg_profile_np.proc_log, msg_profile_np.proc_dmp, msg_profile_np.proc_control,  msg_profile_np.time_all);
 						break;
 					}
 					#endif
@@ -364,8 +382,34 @@ int main(int argc, char **argv)
 						fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
 						printf("%d %d %d %d |%d %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
 						fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
-						combine_msg.mode = MODE_LOG;	// change the mode to mode log, so we do not need to send message anymore	
+						combine_msg_all.mode = MODE_LOG;	// change the mode to mode log, so we do not need to send message anymore	
 						break;
+					}
+
+					case MSG_ACK:
+					{
+						if (msg.payload[0] == ACK_FIRED)
+						{
+							//separated with ESCAPE, because ESCAPE is to acknowledge board.
+							//This way the program will exit safely without writing log if there is no og to be written
+							printf("exit\n");
+							combine_msg_all.mode = MODE_FINISH; 
+						}
+						else if(msg.payload[0] == ACK_RAW_INIT)
+						{
+							printf("enter raw init\n");
+						}
+						else if (msg.payload[0] == ACK_BAT_LOW)
+						{
+							printf("BAttery Low\n");
+						}
+						else if(msg.payload[0]==ACK_BAT_LOW_EMERGENCY)
+						{
+							printf("Battery low, uplink connection will be disconnected now!\n");
+							stop_sending = true;
+
+						}
+						break; 
 					}
 
 					default:
@@ -374,30 +418,33 @@ int main(int argc, char **argv)
 				msg.status = UNITINIT;	// Start to receive a new packet
 				msg.crc_fails = 0;		// reset the crc fail number
 			}
-
+			
 			#else
 				#ifndef PC_PROFILE
-					printf("%c", (uint8_t)c);
+					
 				#endif // PC_PROFILE
 			#endif		
 		}
-
-		
+		if(combine_msg_all.mode == MODE_FINISH)
+			break;	
 	}
+	/****************************************************************************************
+	* End of Mission phase
+	*****************************************************************************************/
+
+	/****************************************************************************************
+	* Writing log phase
+	*****************************************************************************************/
 	
-	
-	while(true) // start logging 
+	while((combine_msg_all.mode == MODE_LOG) && (combine_msg_all.mode != MODE_FINISH))// start logging 
 	{
 		if (read(fd_RS232, &c, 1)){ 				// if ((c = rs232_getchar_nb()) != -1){		
 			#ifdef ENCODE_PC_RECEIVE				//#ifdef ENCODE
 				msg_parse(&msg, (uint8_t)c);
 				if(msg.status == GOT_PACKET) { 		// We got a valid packet
-					// printf("got packet");
 					switch(msg.msg_id) {
 						case MSG_TELEMETRY: 
 						{
-							// send again the escape command
-
 							msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
 							printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 							printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
@@ -427,6 +474,18 @@ int main(int argc, char **argv)
 							break;
 						}
 
+						case MSG_ACK:
+						{
+							if (msg.payload[0] == ACK_RCV)
+							{
+								//finish log, file closed
+								printf("Finished\n");
+								fclose(kp);
+								combine_msg_all.mode = MODE_FINISH;
+							}
+							break;
+						}
+
 						default:
 							break;
 					};
@@ -439,8 +498,14 @@ int main(int argc, char **argv)
 				printf("%c", (uint8_t)c);
 			#endif			
 		}
+		if(combine_msg_all.mode == MODE_FINISH)
+			break;
 	}
-	fclose(kp);
+	
+
+	/****************************************************************************************
+	* End of Writing log phase
+	*****************************************************************************************/
 	term_puts("\n<exit>\n");
 	term_exitio();
 	rs232_close();

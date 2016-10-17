@@ -111,32 +111,17 @@ void set_control_mode(enum control_mode_t mode) {
     control_mode = mode;
     switch(control_mode) {
         case MODE_SAFE:
-        	if (raw_init_flag == true)
-        	{
-        		imu_init(true, 100);
-        		raw_init_flag = false;
-        	}
             P = P1 = P2 = 0;
             break;
 
         /* Mode panic needs the enter time */
         case MODE_PANIC:
-        	if (raw_init_flag == true)
-        	{
-        		imu_init(true, 100);
-        		raw_init_flag = false;
-        	}
             nrf_gpio_pin_toggle(YELLOW);
             panic_start = get_time_us();
             break;
 
         /* Mode manual needs to reset the setpoints */
         case MODE_MANUAL:
-        	if (raw_init_flag == true)
-        	{
-        		imu_init(true, 100);
-        		raw_init_flag = false;
-        	}
             sp_thrust = sp_roll = sp_pitch = sp_yaw = 0;
             break;
 
@@ -152,21 +137,10 @@ void set_control_mode(enum control_mode_t mode) {
 
         /* Full Control Mode */
         case MODE_FULL:
-        	if (raw_init_flag == true)
-        	{
-        		imu_init(true, 100);
-        		raw_init_flag = false;
-        	}
             break;
         
         /* Raw Mode */
-        case MODE_RAW:
-        	if (raw_init_flag == false)
-        	{
-        		imu_init(false, 256);
-        		phi = 0; theta = 0; psi = 0;
-        		raw_init_flag = true;
-        	}         
+        case MODE_RAW:        
             break;
 
         case MODE_START:
@@ -258,6 +232,7 @@ void run_filters_and_control(void)
         case MODE_PANIC:
             motor_mixing(PANIC_THRUST, 0, 0, 0);
             lost_flag = true;
+            bat_flag = true;
             current_panic = get_time_us() - panic_start;
             if(current_panic > PANIC_TIME) 
             {

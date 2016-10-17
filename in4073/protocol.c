@@ -28,14 +28,10 @@ void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_d
 		checksum2 += checksum1;
 		i++;
 	}
-
-	// Setting the checksum
-	// output_data[i+3] = checksum1;
-	// output_data[i+4] = checksum2;
 	output_data[i+3] = checksum2;
 
 	// Set the output size
-	*output_size = len + HDR_FTR_SIZE - 1;
+	*output_size = len + HDR_FTR_SIZE;
 }
 
 void msg_parse(struct msg_p *msg, uint8_t c) {
@@ -119,5 +115,21 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 	}
 }
 
+void encode_ack(uint8_t data, uint8_t *output_data, uint8_t *output_size) {
+	uint8_t checksum1 = 0;
+  	uint8_t checksum2 = 0;
 
+ 	// Setting the header
+	output_data[0] = (uint8_t)0x99;
+	output_data[1] = sizeof(uint8_t);
+	checksum1 = checksum2 = sizeof(uint8_t);
+	output_data[2] = MSG_ACK;
+	checksum1 += MSG_ACK;
+	checksum2 += checksum1;
+	output_data[3] = data;
+	checksum1 += data;
+	checksum2 += checksum1;
+	output_data[4] = checksum2;
+	*output_size = sizeof(uint8_t) + HDR_FTR_SIZE;
+}
 
