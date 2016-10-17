@@ -401,13 +401,12 @@ int main(int argc, char **argv)
 						}
 						else if (msg.payload[0] == ACK_BAT_LOW)
 						{
-							printf("BAttery Low\n");
+							printf("Battery Low\n");
 						}
 						else if(msg.payload[0]==ACK_BAT_LOW_EMERGENCY)
 						{
 							printf("Battery low, uplink connection will be disconnected now!\n");
 							stop_sending = true;
-
 						}
 						break; 
 					}
@@ -437,6 +436,7 @@ int main(int argc, char **argv)
 	*****************************************************************************************/
 	
 	while((combine_msg_all.mode == MODE_LOG) && (combine_msg_all.mode != MODE_FINISH))// start logging 
+	//while(true)
 	{
 		if (read(fd_RS232, &c, 1)){ 				// if ((c = rs232_getchar_nb()) != -1){		
 			#ifdef ENCODE_PC_RECEIVE				//#ifdef ENCODE
@@ -498,18 +498,18 @@ int main(int argc, char **argv)
 				printf("%c", (uint8_t)c);
 			#endif			
 		}
-		if(combine_msg_all.mode == MODE_FINISH)
-			break;
+		//if(combine_msg_all.mode == MODE_FINISH)
+		//	break;
 	}
 	
 
 	/****************************************************************************************
 	* End of Writing log phase
 	*****************************************************************************************/
-	term_puts("\n<exit>\n");
 	term_exitio();
 	rs232_close();
-
+	term_puts("\n<exit>\n");
+	
 	return 0;
 }
 
