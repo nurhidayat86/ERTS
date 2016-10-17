@@ -122,24 +122,6 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 				}
 				break;
 
-			// additional
-			case 'm': // start flexible logging 
-				if (log_stat == false) 
-				{
-					combine_msg_all->msc_flag = LOG_USE;
-					log_stat = true;
-					//printf("masuk ke false");
-				}
-				else if (log_stat == true)
-				{
-					combine_msg_all->msc_flag = LOG_NO_USE;
-					log_stat = false;
-					//printf("masuk ke true");
-				}
-				combine_msg_all->update = TRUE;
-				//printf("masuk update");
-			break;
-
 			case 'n': // toggle the stop sending bool
 				if (stop_sending == FALSE) 
 				{
@@ -208,24 +190,26 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 				combine_msg_all->mode = ESCAPE;
 				break;
 
-			// additional
-			case 'm': // start flexible logging 
-				if (combine_msg_all->msc_flag == LOG_NO_USE) 
-				{
-					combine_msg_all->msc_flag = LOG_USE;
-					//printf("masuk ke false");
-				}
-				else if (combine_msg_all->msc_flag == LOG_USE) {
-					combine_msg_all->msc_flag = LOG_NO_USE;
-					//printf("masuk ke true");
-				}
-				combine_msg_all->update = TRUE;
-				//printf("masuk update");
-			break;
-
-
 			default:
 				break;
 		}
-	}		
+	}	
+
+	switch(c) {
+	// additional
+		case 'm': // start flexible logging 
+			if (combine_msg_all->msc_flag == LOG_NO_USE) 
+			{
+				combine_msg_all->msc_flag = LOG_USE;
+				//printf("masuk ke false");
+			}
+			else if (combine_msg_all->msc_flag == LOG_USE) {
+				combine_msg_all->msc_flag = LOG_NO_USE;
+				//printf("masuk ke true");
+			}
+			combine_msg_all->update = TRUE;
+			//printf("masuk update");
+		break;
+	}
+	
 }

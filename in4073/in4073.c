@@ -38,7 +38,7 @@ static void process_bytes(uint8_t byte) {
 			case MSG_COMBINE_ALL: 		// the message is command message
 			{
 				msg_com_all = (struct msg_combine_all_t *)&msg.payload[0];
-				update_flag = msg_com_all->update;
+				//update_flag = msg_com_all->update;
 				mmode = msg_com_all->mode;
 				mthrust = msg_com_all->thrust;
 				mroll = msg_com_all->roll;
@@ -234,6 +234,7 @@ int main(void)
 		{
 			process_bytes( dequeue(&rx_queue) ) ;
 			comm_duration_total = 0;
+			update_flag = true;
 		}
 
 		if (lost_flag == false)

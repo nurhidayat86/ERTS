@@ -35,14 +35,16 @@
 
 // Fractions
 // CF 4 255 max command from js only contribute 22.5 deg approx (14.4 deg true value) in attitude
-#define ANGLE_SHIFT 4           ///< The control gains fraction in powers of 2
-#define ANGLE_GAIN_SHIFT 3        ///< The control gains fraction in powers of 2
 
-#define RATE_SHIFT 4            ///< The control gains fraction in powers of 2
-#define RATE_GAIN_SHIFT 3         ///< The control gains fraction in powers of 2
-
-#define RATE_SHIFT_YAW 4           ///< The control gains fraction in powers of 2
-#define RATE_GAIN_SHIFT_YAW 0       ///< The control gains fraction in powers of 2
+// P
+#define RATE_SHIFT_YAW 4            ///< yaw rate reading divider                   2047 bit    =   2000 deg/s
+#define RATE_GAIN_SHIFT_YAW 0       ///< yaw gain divider                           1 old step  =   16 current step
+// P1
+#define ANGLE_SHIFT 4               ///< roll and pitch attitude reading divider    1023 bit    =   90 deg
+#define ANGLE_GAIN_SHIFT 3          ///< roll and pitch gain divider                1 old step  =   8 current step
+// P2
+#define RATE_SHIFT 4                ///< roll and pitch rate reading divider        2047 bit    =   2000 deg/s        
+#define RATE_GAIN_SHIFT 0           ///< roll and pitch gain divider                1 old step  =   1/4 current step 
 
 #define Bound(_x, _min, _max) { if (_x > (_max)) _x = (_max); else if (_x < (_min)) _x = (_min); }
 
