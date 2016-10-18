@@ -131,21 +131,21 @@ void set_control_mode(enum control_mode_t mode) {
         case MODE_CALIBRATION:
             // It takes sometimes (~ 6s) until it returns a stable value
             // Also calibrate here (until leave mode)
-            cphi = phi;
-            ctheta = theta;
-            // cpsi = psi;
-            if(init_raw == true)
-            {
-                cp = estimated_p;
-                cq = estimated_q;
-            }
-            else
-            {
-                cp = sp;
-                cq = sq;
-            }
+            // cphi = phi;
+            // ctheta = theta;
+            // // cpsi = psi;
+            // if(init_raw == true)
+            // {
+            //     cp = estimated_p;
+            //     cq = estimated_q;
+            // }
+            // else
+            // {
+            //     cp = sp;
+            //     cq = sq;
+            // }
             
-            cr = sr;
+            // cr = sr;
 
             break;
 
@@ -271,8 +271,12 @@ void run_filters_and_control(void)
             // cpsi = psi;
             if(init_raw == true)
             {
-                cp = estimated_p;
-                cq = estimated_q;
+                // cp = estimated_p;
+                // cq = estimated_q;
+                cp = sp;
+                cq = sq;
+                csax = sax;
+                csay = say;
             }
             else
             {

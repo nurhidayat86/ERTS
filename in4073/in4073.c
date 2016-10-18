@@ -116,8 +116,8 @@ int main(void)
 	//*****************************************************************************/
     c1phi = 7;
 	c1theta = 7;
-	c2phi = 12;
-	c2theta = 12;
+	c2phi = 7;
+	c2theta = 7;
 	bp = 0;
 	bq = 0;
 	estimated_p = 0;
@@ -361,22 +361,22 @@ int main(void)
 					{
 						// msg_tele.sp = (estimated_p-cp);
 						// msg_tele.sq = (estimated_q-cq);
-						msg_tele.sp = (estimated_p-cp);
-						msg_tele.sq = (estimated_q-cq); 
+						msg_tele.sp = (estimated_p);
+						msg_tele.sq = (estimated_q); 
 					}
 					else
 					{
 						msg_tele.sp = sp-cp;
 						msg_tele.sq = -(sq-cq); 
 					}
-
+					msg_tele.sr = -(sr-cr);				
+					
 					msg_tele.phi = phi-cphi;
 					msg_tele.theta = theta-ctheta;
 					msg_tele.psi = -(psi-cpsi);
-					msg_tele.sr = -(sr-cr);				
 					
-					msg_tele.sax = sax;
-					msg_tele.say = say; 
+					msg_tele.sax = sax-csax;
+					msg_tele.say = say-csay; 
 					msg_tele.saz = saz;
 
 					msg_tele.bat_volt = bat_volt;
@@ -442,8 +442,10 @@ int main(void)
 			{
 				get_raw_sensor_data();
 				// kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
-				kalman(sp, -sq, sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
-				// kalman(sp-cq, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
+				// calibrate later after the kalman process, problem with sax and say 
+				// kalman(sp, -sq, sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
+				// calibrate first before going to kalman
+				kalman(sp-cq, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
 			}
 			//=============================== END RAW =================================//
 
