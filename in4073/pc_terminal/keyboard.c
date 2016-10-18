@@ -203,7 +203,7 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 				combine_msg_all->msc_flag = LOG_NO_USE;
 				log_stat = false;
 			}
-			else if (raw_stat == false) {
+			else if (log_stat == false) {
 				combine_msg_all->msc_flag = LOG_USE;
 				log_stat = true;
 			}

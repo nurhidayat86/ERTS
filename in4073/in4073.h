@@ -41,7 +41,7 @@ bool bat_flag;
 bool init_raw;
 bool pc_link;
 bool raw_status;
-
+bool log_status;
 
 uint16_t c1phi;
 uint16_t c1theta;

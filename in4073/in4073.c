@@ -21,7 +21,6 @@
 bool loop;
 uint8_t msc_flag = LOG_NO_USE;
 bool update_flag = true;
-bool log_status;
 
 static void process_bytes(uint8_t byte) {
 	#ifdef DRONE_DEBUG
@@ -85,6 +84,7 @@ int main(void)
 	///raw toggle variable
 	init_raw = false;
 	raw_status = false;
+	log_status = false;
 
 	#ifdef DRONE_DEBUG
 		printf("int_main()\n");
@@ -173,7 +173,7 @@ int main(void)
 	uint32_t comm_end = 0;
 	uint16_t comm_duration = 0;
 	uint32_t comm_duration_total = 0;
-	uint32_t threshold = 700000;
+	uint32_t threshold = 20000000;
 	lost_flag = false;
 	#if DRONE_DEBUG
 		uint8_t ackfired = ACK_FIRED;

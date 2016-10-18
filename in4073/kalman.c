@@ -36,10 +36,6 @@ void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, ui
 /***************************************************************************************************************************************************/
 
 int16_t iir_butter_10(int16_t NewSample) {
-
-//NCoef 2
-//DCgain 8
-
 uint8_t n;
 int16_t ACoef[3], BCoef[3];
 int32_t y[3], x[3];
@@ -146,7 +142,7 @@ for(n=1; n<=2; n++)
 
 y[0] /= BCoef[0];
 
-return (y[0] / 2);
+return (-y[0] /2);
 }
 
 int16_t iir_butter_25(int16_t NewSample) {
