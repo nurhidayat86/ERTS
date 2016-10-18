@@ -182,7 +182,7 @@ int main(int argc, char **argv)
 
 		if(warning)		// print a warning to terminal
 		{
-			printf("WARNING! thrust %d roll %d pitch %d yaw %d \n", combine_msg_all.thrust, combine_msg_all.roll, combine_msg_all.pitch, combine_msg_all.yaw);
+			printf("WARNING! ILLEGAL JOYSTICK POSITION!\nthrust %d roll %d pitch %d yaw %d \n", combine_msg_all.thrust, combine_msg_all.roll, combine_msg_all.pitch, combine_msg_all.yaw);
 			warning = FALSE;	
 		}
 
@@ -408,6 +408,7 @@ int main(int argc, char **argv)
 							printf("Battery low, uplink connection will be disconnected now!\n");
 							stop_sending = true;
 						}
+						
 						break; 
 					}
 

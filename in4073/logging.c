@@ -92,8 +92,10 @@ bool flash_data() {
 	
 	if (init_raw == true)
 	{
-		log_msg.sp = estimated_p-cp;
-		log_msg.sq = (estimated_q-cq);
+		//log_msg.sp = estimated_p-cp;
+		//log_msg.sq = (estimated_q-cq);
+		log_msg.sp = estimated_p;
+		log_msg.sq = estimated_q;
 	}
 	else
 	{

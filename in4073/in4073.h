@@ -58,6 +58,7 @@ int16_t mroll, mpitch, myaw;        ///< attitude message from pc
 
 int16_t cphi, ctheta, cpsi;         ///< Calibration values of phi, theta, psi
 int16_t cp, cq, cr;                ///< Calibration valies of p, q and r
+int16_t csax, csay;                ///< Calibration values of sax, say
 uint8_t P, P1, P2; 
 extern uint8_t log_flag;               
        
@@ -112,7 +113,7 @@ int16_t sp, sq, sr; ///< 131 LSB / (degrees / s)
 int16_t sax, say, saz;
 uint8_t sensor_fifo_count;
 void imu_init(bool dmp, uint16_t interrupt_frequency); // if dmp is true, the interrupt frequency is 100Hz - otherwise 32Hz-8kHz
-//int8_t get_dmp_data(void);
+int8_t get_dmp_data_encode(void);
 void get_raw_sensor_data(void);
 void get_dmp_data(void);
 

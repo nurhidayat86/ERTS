@@ -359,6 +359,8 @@ int main(void)
 
 					if(init_raw == true)
 					{
+						// msg_tele.sp = (estimated_p-cp);
+						// msg_tele.sq = (estimated_q-cq);
 						msg_tele.sp = (estimated_p-cp);
 						msg_tele.sq = (estimated_q-cq); 
 					}
@@ -441,6 +443,7 @@ int main(void)
 				get_raw_sensor_data();
 				// kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
 				kalman(sp, -sq, sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
+				// kalman(sp-cq, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
 			}
 			//=============================== END RAW =================================//
 

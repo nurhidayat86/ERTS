@@ -129,24 +129,24 @@ void set_control_mode(enum control_mode_t mode) {
 
         /* Mode calibration needs to calibrate the drone */
         case MODE_CALIBRATION:
+            // It takes sometimes (~ 6s) until it returns a stable value
+            // Also calibrate here (until leave mode)
             cphi = phi;
             ctheta = theta;
-            //cpsi = psi;
-            if(init_raw == false)
-            {   cphi = phi;
-                ctheta = theta;
-                cp = sp;
-                cq = sq;
-                cr = sr;
-            }
+            // cpsi = psi;
             if(init_raw == true)
             {
-                cphi = phi;
-                ctheta = theta;
+                cp = estimated_p;
+                cq = estimated_q;
+            }
+            else
+            {
                 cp = sp;
                 cq = sq;
-                cr = sr;
             }
+            
+            cr = sr;
+
             break;
 
         /* Full Control Mode */
