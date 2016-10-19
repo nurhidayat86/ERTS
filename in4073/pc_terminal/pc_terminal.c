@@ -327,6 +327,8 @@ int main(int argc, char **argv)
 			if(msg.status == GOT_PACKET) { 
 				// We got a valid packet
 				switch(msg.msg_id) {
+					
+					#ifndef DRONE_PROFILE
 					case MSG_TELEMETRY: 
 					{
 						msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
@@ -349,13 +351,14 @@ int main(int argc, char **argv)
 						// #endif
 						break;
 					}
+					#endif
 
 					#ifdef DRONE_PROFILE
 					case MSG_PROFILE: 
 					{
 						msg_profile = (struct msg_profile_t *)&msg.payload[0];
 						msg_profile_np = *msg_profile;
-						printf("\n%d %d %d %d %d %d %d\n", msg_profile_np.proc_read, msg_profile_np.proc_adc, msg_profile_np.proc_send, msg_profile_np.proc_log, msg_profile_np.proc_dmp, msg_profile_np.proc_control,  msg_profile_np.time_all);
+						printf("%d %d %d %d %d %d %d\n", msg_profile_np.proc_read, msg_profile_np.proc_adc, msg_profile_np.proc_send, msg_profile_np.proc_log, msg_profile_np.proc_dmp, msg_profile_np.proc_control,  msg_profile_np.time_all);
 						break;
 					}
 					#endif
@@ -407,9 +410,14 @@ int main(int argc, char **argv)
 						{
 							printf("fifo error\n");
 						}
+
 						else if(msg.payload[0]==ACK_FLASH)
 						{
 							printf("flash is full\n");
+						}
+						else if(msg.payload[0]==ACK_LOST_COM)
+						{
+							printf("communication is lost\n");
 						}
 
 						break; 

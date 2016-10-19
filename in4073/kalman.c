@@ -30,155 +30,196 @@ void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, ui
 	*estimated_q = (sq - *bq);
 	*estimated_theta = *estimated_theta + ((*estimated_q*177)>>12);
 	etheta = *estimated_theta - sax;
-	*estimated_theta = *estimated_theta - (etheta>>c1theta);
+	*estimated_theta = *estimated_theta - (etheta>>(c1theta-2));
 	// *bq = *bq + (etheta>>c2theta);
 }
 /***************************************************************************************************************************************************/
 
-int16_t iir_butter_10(int16_t NewSample) {
-uint8_t n;
-int16_t ACoef[3], BCoef[3];
-int32_t y[3], x[3];
+int16_t iir_butter_fs256_fc10(int16_t NewSample) {
 
-x[0]=0;x[1]=0;x[2]=0;
-y[0]=0;y[1]=0;y[2]=0;
+	// Noef 2
+	// DCgain 64
 
-ACoef[0] = 8841;
-ACoef[1] = 17682;
-ACoef[2] = 8841;
+	uint8_t n;
+	int16_t ACoef[3], BCoef[3];
+	static int32_t y[3], x[3];
 
-BCoef[0] = 16384;
-BCoef[1] = -18726;
-BCoef[2] = 6763;
+	// b on matlab
+	ACoef[0] = 13409;
+	ACoef[1] = 26819;
+	ACoef[2] = 13409;
 
-//shift the old samples
-for(n=2; n>0; n--) {
-   x[n] = x[n-1];
-   y[n] = y[n-1];
+	// a on matlab
+	BCoef[0] = 16384;
+	BCoef[1] = -27125;
+	BCoef[2] = 11579;
+
+	//shift the old samples
+	for(n=2; n>0; n--) 
+	{
+	   x[n] = x[n-1];
+	   y[n] = y[n-1];
+	}
+
+	//Calculate the new output
+	x[0] = NewSample;
+	y[0] = ACoef[0] * x[0];
+
+	for(n=1; n<=2; n++)
+	    y[0] += ACoef[n] * x[n] - BCoef[n] * y[n];
+
+	y[0] /= BCoef[0];
+
+	return (y[0]>>6);
 }
 
-//Calculate the new output
-x[0] = NewSample;
-y[0] = ACoef[0] * x[0];
 
-for(n=1; n<=2; n++)
-    y[0] += ACoef[n] * x[n] - BCoef[n] * y[n];
+int16_t iir_butter_10(int16_t NewSample)
+{
+	uint8_t n;
+	int16_t ACoef[3], BCoef[3];
+	int32_t y[3], x[3];
 
-y[0] /= BCoef[0];
+	x[0]=0;x[1]=0;x[2]=0;
+	y[0]=0;y[1]=0;y[2]=0;
 
-return (y[0] / 8) <<8;
+	ACoef[0] = 8841;
+	ACoef[1] = 17682;
+	ACoef[2] = 8841;
+
+	BCoef[0] = 16384;
+	BCoef[1] = -18726;
+	BCoef[2] = 6763;
+
+	//shift the old samples
+	for(n=2; n>0; n--) {
+	   x[n] = x[n-1];
+	   y[n] = y[n-1];
+	}
+
+	//Calculate the new output
+	x[0] = NewSample;
+	y[0] = ACoef[0] * x[0];
+
+	for(n=1; n<=2; n++)
+	    y[0] += ACoef[n] * x[n] - BCoef[n] * y[n];
+
+	y[0] /= BCoef[0];
+
+	return (y[0] / 8) <<8;
 }
 
 int16_t iir_butter_15(int16_t NewSample) {
 
-//NCoef 2
-//DCgain 8
+	//NCoef 2
+	//DCgain 8
 
-uint8_t n;
-int16_t ACoef[3], BCoef[3];
-int32_t y[3], x[3];
+	uint8_t n;
+	int16_t ACoef[3], BCoef[3];
+	int32_t y[3], x[3];
 
-x[0]=0;x[1]=0;x[2]=0;
-y[0]=0;y[1]=0;y[2]=0;
+	x[0]=0;x[1]=0;x[2]=0;
+	y[0]=0;y[1]=0;y[2]=0;
 
-ACoef[0] = 8592;
-ACoef[1] = 17184;
-ACoef[2] = 8592;
+	ACoef[0] = 8592;
+	ACoef[1] = 17184;
+	ACoef[2] = 8592;
 
-BCoef[0] = 32768;
-BCoef[1] = -24503;
-BCoef[2] = 8919;
+	BCoef[0] = 32768;
+	BCoef[1] = -24503;
+	BCoef[2] = 8919;
 
-//shift the old samples
-for(n=2; n>0; n--) {
-   x[n] = x[n-1];
-   y[n] = y[n-1];
-}
+	//shift the old samples
+	for(n=2; n>0; n--) {
+	   x[n] = x[n-1];
+	   y[n] = y[n-1];
+	}
 
-//Calculate the new output
-x[0] = NewSample;
-y[0] = ACoef[0] * x[0];
+	//Calculate the new output
+	x[0] = NewSample;
+	y[0] = ACoef[0] * x[0];
 
-for(n=1; n<=2; n++)
-    y[0] += ACoef[n] * x[n] - BCoef[n] * y[n];
+	for(n=1; n<=2; n++)
+	    y[0] += ACoef[n] * x[n] - BCoef[n] * y[n];
 
-y[0] /= BCoef[0];
+	y[0] /= BCoef[0];
 
-return (y[0] / 2);
+	return (y[0] / 2);
 }
 
 int16_t iir_butter_20(int16_t NewSample) {
 
-//NCoef 2
-//DCgain 8
+	//NCoef 2
+	//DCgain 8
 
-uint8_t n;
-int16_t ACoef[3], BCoef[3];
-int32_t y[3], x[3];
+	uint8_t n;
+	int16_t ACoef[3], BCoef[3];
+	int32_t y[3], x[3];
 
-x[0]=0;x[1]=0;x[2]=0;
-y[0]=0;y[1]=0;y[2]=0;
+	x[0]=0;x[1]=0;x[2]=0;
+	y[0]=0;y[1]=0;y[2]=0;
 
-ACoef[0] = 13537;
-ACoef[1] = 27075;
-ACoef[2] = 13537;
+	ACoef[0] = 13537;
+	ACoef[1] = 27075;
+	ACoef[2] = 13537;
 
-BCoef[0] = 32768;
-BCoef[1] = -12108;
-BCoef[2] = 6416;
+	BCoef[0] = 32768;
+	BCoef[1] = -12108;
+	BCoef[2] = 6416;
 
-//shift the old samples
-for(n=2; n>0; n--) {
-   x[n] = x[n-1];
-   y[n] = y[n-1];
-}
+	//shift the old samples
+	for(n=2; n>0; n--) 
+	{
+	   x[n] = x[n-1];
+	   y[n] = y[n-1];
+	}
 
-//Calculate the new output
-x[0] = NewSample;
-y[0] = ACoef[0] * x[0];
+	//Calculate the new output
+	x[0] = NewSample;
+	y[0] = ACoef[0] * x[0];
 
-for(n=1; n<=2; n++)
-    y[0] += ACoef[n] * x[n] - BCoef[n] * y[n];
+	for(n=1; n<=2; n++)
+	    y[0] += ACoef[n] * x[n] - BCoef[n] * y[n];
 
-y[0] /= BCoef[0];
+	y[0] /= BCoef[0];
 
-return (-y[0] /2);
+	return (-y[0] /2);
 }
 
 int16_t iir_butter_25(int16_t NewSample) {
 
-//NCoef 2
-//DCgain 8
+	//NCoef 2
+	//DCgain 8
 
-uint8_t n;
-int16_t ACoef[3], BCoef[3];
-int32_t y[3], x[3];
+	uint8_t n;
+	int16_t ACoef[3], BCoef[3];
+	int32_t y[3], x[3];
 
-x[0]=0;x[1]=0;x[2]=0;
-y[0]=0;y[1]=0;y[2]=0;
+	x[0]=0;x[1]=0;x[2]=0;
+	y[0]=0;y[1]=0;y[2]=0;
 
-ACoef[0] = 9597;
-ACoef[1] = 19195;
-ACoef[2] = 9597;
+	ACoef[0] = 9597;
+	ACoef[1] = 19195;
+	ACoef[2] = 9597;
 
-BCoef[0] = 32768;
-BCoef[1] = 0;
-BCoef[2] = 5622;
+	BCoef[0] = 32768;
+	BCoef[1] = 0;
+	BCoef[2] = 5622;
 
-//shift the old samples
-for(n=2; n>0; n--) {
-   x[n] = x[n-1];
-   y[n] = y[n-1];
-}
+	//shift the old samples
+	for(n=2; n>0; n--) {
+	   x[n] = x[n-1];
+	   y[n] = y[n-1];
+	}
 
-//Calculate the new output
-x[0] = NewSample;
-y[0] = ACoef[0] * x[0];
+	//Calculate the new output
+	x[0] = NewSample;
+	y[0] = ACoef[0] * x[0];
 
-for(n=1; n<=2; n++)
-    y[0] += ACoef[n] * x[n] - BCoef[n] * y[n];
+	for(n=1; n<=2; n++)
+	    y[0] += ACoef[n] * x[n] - BCoef[n] * y[n];
 
-y[0] /= BCoef[0];
+	y[0] /= BCoef[0];
 
-return y[0];
+	return y[0];
 }

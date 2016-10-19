@@ -52,6 +52,8 @@ int16_t estimated_q;
 int16_t bp;
 int16_t bq;
 
+int16_t r_butter;
+
 uint8_t mmode;           			///< mode message from pc
 uint16_t mthrust;           		///< thrust message from pc
 int16_t mroll, mpitch, myaw;        ///< attitude message from pc

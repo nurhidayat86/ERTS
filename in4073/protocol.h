@@ -39,6 +39,7 @@
 #define ACK_BAT_LOW_EMERGENCY 0x2C
 #define ACK_CON 0x2D
 #define ACK_FLASH 0x2E
+#define ACK_LOST_COM 0x2F
 
 #define LOG_USE 1
 #define LOG_NO_USE 0

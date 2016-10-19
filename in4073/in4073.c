@@ -124,6 +124,8 @@ int main(void)
 	bq = 0;
 	estimated_p = 0;
 	estimated_q = 0;
+	// butterworth filter variable
+	r_butter = 0;
 	//*****************************************************************************/
 	
 	#ifdef ENCODE_PC_RECEIVE
@@ -175,7 +177,7 @@ int main(void)
 	uint32_t comm_end = 0;
 	uint16_t comm_duration = 0;
 	uint32_t comm_duration_total = 0;
-	uint32_t threshold = 20000000;
+	uint32_t threshold = 700000;
 	lost_flag = false;
 	#ifdef DRONE_DEBUG
 		uint8_t ackfired = ACK_FIRED;
@@ -246,7 +248,7 @@ int main(void)
 		if (lost_flag == false)
 			comm_duration = (comm_end - comm_start); //--> prevent loop forever in panic mode
 		
-		if(comm_duration > 700000)
+		if(comm_duration > 0)
 		{
 			comm_check(comm_duration, &comm_duration_total, &update_flag);
 			if ((comm_duration_total >= threshold) && !lost_flag)
@@ -254,6 +256,9 @@ int main(void)
 					if(control_mode != MODE_SAFE)
 					{
 						set_control_mode(MODE_PANIC);
+						acklog = ACK_LOST_COM; 
+						encode_ack(acklog, output_data, &output_size);
+						for(i=0;i<output_size;i++){uart_put(output_data[i]);}
 						pc_link = false;
 					}
 					// #ifdef DRONE_DEBUG
@@ -277,7 +282,7 @@ int main(void)
 		proc_read = end - start;
 		#endif
 
-		if (check_timer_flag())
+		if (check_timer_flag())	// 50 ms
 		{
 			if (counter++%20 == 0) 
 			{
@@ -288,7 +293,7 @@ int main(void)
 				*****************************************************************************/
 				if ((bat_volt <= BAT_THRESHOLD)&&(!bat_flag))
 				{
-					if ((bat_counter >=1))
+					if ((bat_counter >=2))
 					{
 						if(control_mode != MODE_SAFE)
 						{
@@ -315,7 +320,7 @@ int main(void)
 						}
 						BAT_THRESHOLD = 0; //redundant
 					}
-					else if(bat_counter <1)
+					else
 					{
 						bat_counter++;
 						#ifdef ENCODE_PC_RECEIVE
@@ -343,7 +348,7 @@ int main(void)
 			proc_adc = end - start;
 			#endif
 
-			if (counter_tele++%2 == 0)		// every 50 ms
+			if (counter_tele++%2 == 0)		// every modulo x50 ms
 			{
 				#ifdef DRONE_PROFILE
 				start = get_time_us();
@@ -367,13 +372,15 @@ int main(void)
 						// msg_tele.sq = (estimated_q-cq);
 						msg_tele.sp = (estimated_p);
 						msg_tele.sq = (estimated_q); 
+						msg_tele.sr = (r_butter); 
 					}
 					else
 					{
 						msg_tele.sp = sp-cp;
 						msg_tele.sq = -(sq-cq); 
+						msg_tele.sr = -(sr-cr);	
 					}
-					msg_tele.sr = -(sr-cr);				
+								
 					
 					msg_tele.phi = phi-cphi;
 					msg_tele.theta = theta-ctheta;
@@ -399,7 +406,6 @@ int main(void)
 					printf("%d %d %d| ", phi-cphi, theta-ctheta, -(psi-cpsi));
 					printf("%d %d %d| ", sp-cp, -(sq-cq), -(sr-cr));
 					printf("%d %d %d| ", sax, say, saz);
-					// printf("%d %d %d| ", sp, -sq, -sr);					
 					printf("%d %d %d %d \n", bat_volt, P, P1, P2);
 				#endif
 
@@ -409,23 +415,12 @@ int main(void)
 				#endif
 			}
 
-			// write to FLASH EVERY 50 ms
-			#ifdef DRONE_PROFILE
-			start = get_time_us();
-			#endif
-
 			/***********************battery check debbuging purpose only*****************************/
 			// if(bat_counter_test >= 10)
 			// {
 			// 	BAT_THRESHOLD = 1024;
 			// }
 			/***********************End of battery check debbuging purpose only**********************/
-
-			//profiling
-			#ifdef DRONE_PROFILE
-			end = get_time_us();
-			proc_log = end - start;
-			#endif
 			clear_timer_flag();
 		}
 
@@ -469,6 +464,8 @@ int main(void)
 				// kalman(sp, -sq, sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
 				/* calibrate first before going to kalman */
 				kalman(sp-cq, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
+				// r_butter = iir_butter_15(-(sr-cr));
+				r_butter = iir_butter_fs256_fc10(-(sr-cr));
 			}
 			//=============================== END RAW =================================//
 
@@ -492,7 +489,15 @@ int main(void)
 			}
 			//=============================== END TOGGLE RAW =================================//
 
+			#ifdef DRONE_PROFILE
+			end = get_time_us();
+			proc_dmp = end - start;
+			#endif
 
+			// write to FLASH EVERY 50 ms
+			#ifdef DRONE_PROFILE
+			start = get_time_us();
+			#endif
 			if ((status == true) && (log_status == true))
 			{
 				nrf_gpio_pin_clear(GREEN);
@@ -509,10 +514,9 @@ int main(void)
  				}	
 			}
 			else {nrf_gpio_pin_set(GREEN);}
-						
 			#ifdef DRONE_PROFILE
 			end = get_time_us();
-			proc_dmp = end - start;
+			proc_log = end - start;
 			#endif
 			
 			#ifdef DRONE_PROFILE
@@ -544,7 +548,7 @@ int main(void)
 		#endif	
 
 		#ifdef DRONE_PROFILE
-		if ( get_time_us() - start_send > 1000000) 
+		if ( get_time_us() - start_send > 1000) 
 		{
 			
 			#ifdef ENCODE_PC_RECEIVE

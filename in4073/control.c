@@ -170,6 +170,7 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
     /* Based on the control mode we need to use it seperately */
     switch(control_mode) {
         case MODE_PANIC:
+            cmd_thrust = thrust;
         	break;
 
         /* Mode manual copies it to the commands */
@@ -237,7 +238,8 @@ void run_filters_and_control(void)
         case MODE_PANIC:
             // nrf_gpio_pin_toggle(YELLOW);
             nrf_gpio_pin_clear(YELLOW);
-            motor_mixing(PANIC_THRUST, 0, 0, 0);
+            if(cmd_thrust > PANIC_THRUST) motor_mixing(PANIC_THRUST, 0, 0, 0);
+            else motor_mixing(cmd_thrust, 0, 0, 0);
             lost_flag = true;
             bat_flag = true;
             current_panic = get_time_us() - panic_start;
@@ -252,30 +254,23 @@ void run_filters_and_control(void)
             motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);    
             break;
 
-        /* Calibration mode (not thrust at all) */
+        /* Calibration mode (no thrust at all) */
         case MODE_CALIBRATION:
             ae[0] = ae[1] = ae[2] = ae[3] = 0;
 
             // It takes sometimes (~ 6s) until it returns a stable value
             // Also calibrate here (until leave mode)
+            
             cphi = phi;
             ctheta = theta;
             // cpsi = psi;
             if(init_raw == true)
             {
-                // cp = estimated_p;
-                // cq = estimated_q;
-                cp = sp;
-                cq = sq;
                 csax = sax;
                 csay = say;
-            }
-            else
-            {
-                cp = sp;
-                cq = sq;
-            }
-            
+            }            
+            cp = sp;
+            cq = sq;
             cr = sr;
 
             // calibration();
@@ -288,7 +283,7 @@ void run_filters_and_control(void)
             if(cmd_thrust > THRUST_MIN_CONTROL)
             {               
                 
-                if(init_raw == true) cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) + ((sr - cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
+                if(init_raw == true) cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) - ((r_butter)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 else cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) + ((sr - cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
             }
@@ -309,7 +304,7 @@ void run_filters_and_control(void)
                 {
                     cmd_roll = (((sp_roll - ((phi - cphi)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((estimated_p)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
                     cmd_pitch = (((sp_pitch - ((theta - ctheta)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((estimated_q)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
-                    cmd_yaw = ((( (sp_yaw>>RATE_SHIFT_YAW)  + ((sr - cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
+                    cmd_yaw = ((( (sp_yaw>>RATE_SHIFT_YAW) - ((r_butter)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 }
                 else
                 {
