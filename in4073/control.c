@@ -30,7 +30,7 @@
 #define MIN_CMD -MAX_CMD                    ///< Minimum roll, pitch, yaw command
 #define PANIC_TIME 2000*1000                ///< Time to keep thrust in panic mode (us)
 #define PANIC_THRUST 0.4*MAX_THRUST_COM     ///< The amount of thrust in panic mode
-#define MAX_YAW_RATE 45*131                 ///< The maximum yaw rate from js (131 LSB / (degrees/s)) = 5895
+#define MAX_YAW_RATE 45*131               ///< The maximum yaw rate from js (131 LSB / (degrees/s)) = 5895
 #define MAX_ANGLE 0                         ///< The maximum angle from js
 
 // Fractions
@@ -283,7 +283,8 @@ void run_filters_and_control(void)
             if(cmd_thrust > THRUST_MIN_CONTROL)
             {               
                 
-                if(init_raw == true) cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) - ((r_butter)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
+                //if(init_raw == true) cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) - ((r_butter)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
+                if(init_raw == true) cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) + ((sr-cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 else cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) + ((sr - cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
             }
@@ -304,7 +305,8 @@ void run_filters_and_control(void)
                 {
                     cmd_roll = (((sp_roll - ((phi - cphi)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((estimated_p)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
                     cmd_pitch = (((sp_pitch - ((theta - ctheta)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((estimated_q)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
-                    cmd_yaw = ((( (sp_yaw>>RATE_SHIFT_YAW) - ((r_butter)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
+                    //cmd_yaw = ((( (sp_yaw>>RATE_SHIFT_YAW) - ((r_butter)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
+                    cmd_yaw = ((( (sp_yaw>>RATE_SHIFT_YAW) + ((sr-cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 }
                 else
                 {

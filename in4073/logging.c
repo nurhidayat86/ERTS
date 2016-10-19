@@ -90,28 +90,29 @@ bool flash_data() {
 	log_msg.theta = theta-ctheta;
 	log_msg.psi = -(psi-cpsi);
 	
-	if (init_raw == true)
-	{
+	//if (init_raw == true)
+	//{
 		// calibrated in the end of process
 		//log_msg.sp = estimated_p-cp;
 		//log_msg.sq = (estimated_q-cq);
-		log_msg.sp = estimated_p;
-		log_msg.sq = estimated_q;
-		log_msg.sq = r_butter;
 		// raw
 		//log_msg.sp = sp;
 		//log_msg.sq = sq;
-	}
-	else
-	{
+	//}
+	//else
+	//{
 		log_msg.sp = sp-cp;
 		log_msg.sq = -(sq-cq);
 		log_msg.sr = -(sr-cr);
-	}
+	//}
 	// log_msg.sr = sr;
+		log_msg.esp = estimated_p;
+		log_msg.esq = estimated_q;
+		log_msg.esr = r_butter;
+	
 
-	log_msg.sax = sax;
-	log_msg.say = say;
+	log_msg.sax = sax-csax;
+	log_msg.say = say-csay;
 	log_msg.saz = saz;
 	
 	log_msg.bat_volt = bat_volt;

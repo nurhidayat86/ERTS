@@ -26,9 +26,11 @@
 
 #define HEART_BEAT 0x77
 
-#define MAX_P 16
+// #define MAX_P 16
+#define MAX_P 26
 #define MAX_P1 30
-#define MAX_P2 14
+//#define MAX_P2 14
+#define MAX_P2 26
 
 #define ACK_OK 0x20
 #define ACK_FIRED 0x22
@@ -145,6 +147,7 @@ struct msg_log_t {
   int16_t ae[4];
   int16_t phi, theta, psi; 
   int16_t sp, sq, sr; 
+  int16_t esp, esq, esr; 
   int16_t sax, say, saz;
   uint16_t bat_volt;
   uint8_t P;

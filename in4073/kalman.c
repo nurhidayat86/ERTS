@@ -24,7 +24,7 @@ void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, ui
 	*estimated_p = (sp - *bp);
 	*estimated_phi = *estimated_phi + ((*estimated_p*177)>>12);
 	ephi = *estimated_phi - say;
-	*estimated_phi = *estimated_phi - (ephi>>c1phi);
+	*estimated_phi = *estimated_phi - (ephi>>(c1phi-2));
 	// *bp = *bp + (ephi>>c2phi);
 
 	*estimated_q = (sq - *bq);

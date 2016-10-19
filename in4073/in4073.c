@@ -194,7 +194,7 @@ int main(void)
 	* battery check variable
 	*****************************************************************************/
 	bat_flag = false;
-	uint16_t BAT_THRESHOLD = 0; //demo
+	uint16_t BAT_THRESHOLD = 1050; //demo
 	uint8_t bat_counter = 0;
 	uint8_t bat_counter_test = 0;
 	/****************************************************************************
@@ -293,7 +293,7 @@ int main(void)
 				*****************************************************************************/
 				if ((bat_volt <= BAT_THRESHOLD)&&(!bat_flag))
 				{
-					if ((bat_counter >=2))
+					if ((bat_counter >=4))
 					{
 						if(control_mode != MODE_SAFE)
 						{
@@ -332,6 +332,8 @@ int main(void)
 						#endif
 					}
 				}
+				else
+				{bat_counter = 0;}
 				/****************************************************************************
 				* End of battery check
 				*****************************************************************************/
@@ -416,9 +418,9 @@ int main(void)
 			}
 
 			/***********************battery check debbuging purpose only*****************************/
-			// if(bat_counter_test >= 10)
+			// if(bat_counter_test >= 15)
 			// {
-			// 	BAT_THRESHOLD = 1024;
+			// 	BAT_THRESHOLD = 1250;
 			// }
 			/***********************End of battery check debbuging purpose only**********************/
 			clear_timer_flag();

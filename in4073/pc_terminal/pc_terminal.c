@@ -170,8 +170,8 @@ int main(int argc, char **argv)
 			}
 		
 			// scale it down to 9 bit signed integer (-255 to 255), make it less sensitive
-			combine_msg_all.roll = axis[0]>>7; 
-			combine_msg_all.pitch = axis[1]>>7;
+			combine_msg_all.roll = axis[0]>>8; 
+			combine_msg_all.pitch = axis[1]>>8;
 			combine_msg_all.yaw = axis[2]>>6;
 			
 			// scale it down from U16 to U12 (4096) we might need to compress it a little bit more
@@ -258,8 +258,8 @@ int main(int argc, char **argv)
 			}
 		
 			// scale it down to 9 bit signed integer (-255 to 255)
-			combine_msg_all.roll = axis[0]>>7; 
-			combine_msg_all.pitch = axis[1]>>7;
+			combine_msg_all.roll = axis[0]>>8; 
+			combine_msg_all.pitch = axis[1]>>8;
 			combine_msg_all.yaw = axis[2]>>6; // make it more sensitive than the others 
 			
 			// scale it down from U16 to U12 (4096) we might need to compress it a little bit more
@@ -367,15 +367,19 @@ int main(int argc, char **argv)
 					{
 						msg_logging = (struct msg_log_t *)&msg.payload[0];
 						kp = fopen("logging.csv","w+");
-						fprintf(kp,"index_log, time_stamp, mode, thrust, roll, pitch, yaw, ae[0], ae[1], ae[2], ae[3], phi, theta, psi, sp, sq, sr, sax, say, saz, bat_volt, P, P1, P2, temperature, pressure\n");
+						fprintf(kp,"index_log, time_stamp, mode, thrust, roll, pitch, yaw, ae[0], ae[1], ae[2], ae[3], phi, theta, psi, sp, sq, sr, esp, esq, esr, sax, say, saz, bat_volt, P, P1, P2, temperature, pressure\n");
 						printf("%4d %9d | %d | %4d %4d %4d %4d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
 						fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
 						printf("%4d %4d %4d %4d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
 						fprintf(kp, "%d, %d, %d, %d, ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
 						printf("%6d %6d %6d | ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
 						fprintf(kp,"%d, %d, %d, ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
+						
 						printf("%6d %6d %6d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
 						fprintf(kp,"%d, %d, %d, ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
+						printf("%6d %6d %6d | ", msg_logging->esp, msg_logging->esq, msg_logging->esr);
+						fprintf(kp,"%d, %d, %d, ", msg_logging->esp, msg_logging->esq, msg_logging->esr); 
+						
 						printf("%6d %6d %6d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
 						fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
 						printf("%4d %2d %2d %2d |%4d %4d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
@@ -501,6 +505,10 @@ int main(int argc, char **argv)
 							fprintf(kp,"%d, %d, %d, ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
 							printf("%6d %6d %6d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
 							fprintf(kp,"%d, %d, %d, ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
+							
+							printf("%6d %6d %6d | ", msg_logging->esp, msg_logging->esq, msg_logging->esr);
+							fprintf(kp,"%d, %d, %d, ", msg_logging->esp, msg_logging->esq, msg_logging->esr); 
+							
 							printf("%6d %6d %6d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
 							fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
 							printf("%4d %2d %2d %2d |%4d %4d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
