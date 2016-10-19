@@ -110,6 +110,7 @@ int main(int argc, char **argv)
 		#ifdef DRONE_PROFILE
 		//pointer to receive
 		struct msg_profile_t *msg_profile;
+		struct msg_profile_t msg_profile_np;
 		#endif
 	#endif
 
@@ -293,14 +294,12 @@ int main(int argc, char **argv)
 			proc_key = end_profile - start_profile;
 			//printf("k %d ", proc_key);
 		#endif
-		CombineCommand(&combine_msg_all);
-		// combine keyboard and joystick
+		
 		#ifdef PC_PROFILE 
 			start_profile = mon_time_us();
 		#endif
-
-
-
+		CombineCommand(&combine_msg_all);
+		// combine keyboard and joystick
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
 			proc_comb = end_profile - start_profile;
@@ -313,12 +312,7 @@ int main(int argc, char **argv)
 		#endif
 		
 		if (read(fd_RS232, &c, 1))
-		{
-			#ifdef PC_PROFILE
-				end_profile = mon_time_us();
-				proc_read = end_profile - start_profile;	
-			#endif
-				
+		{	
 			#ifdef ENCODE_PC_RECEIVE
 			// msg_parse(&msg, (uint8_t) c)
 			msg_parse(&msg, (uint8_t) c);
@@ -336,22 +330,23 @@ int main(int argc, char **argv)
 					case MSG_TELEMETRY: 
 					{
 						msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-						printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-						printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
-						printf("%d %d %d| ",msg_tele->phi, msg_tele->theta, msg_tele->psi);
-						printf("%d %d %d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
-						printf("%d %d %d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
-						printf("%d %d %d %d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
-						#ifdef PC_PROFILE
-							printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
-						#endif
-
-						if((msg_tele->bat_volt<1070) && ((mon_time_ms() - start_batt) > 1000)) 
-						{
-							// printf("\n == The BATTERY is LOW == \n \n");
-							// if(msg_tele->bat_volt<1050){combine_msg.mode = MODE_PANIC;}
-							start_batt = mon_time_ms();
-						}	
+						// printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+						// printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
+						// printf("%d %d %d| ",msg_tele->phi, msg_tele->theta, msg_tele->psi);
+						// printf("%d %d %d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
+						// printf("%d %d %d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
+						// printf("%d %d %d %d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
+						
+						printf("\r%d %4d %4d %4d %4d| ", msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
+						printf("%4d %4d %4d %4d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
+						printf("%6d %6d %6d| ",msg_tele->phi, msg_tele->theta, msg_tele->psi);
+						printf("%6d %6d %6d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
+						printf("%6d %6d %6d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
+						printf("%4d %2d %2d %2d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
+						
+						// #ifdef PC_PROFILE
+						// 	printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
+						// #endif
 						break;
 					}
 
@@ -370,17 +365,17 @@ int main(int argc, char **argv)
 						msg_logging = (struct msg_log_t *)&msg.payload[0];
 						kp = fopen("logging.csv","w+");
 						fprintf(kp,"index_log, time_stamp, mode, thrust, roll, pitch, yaw, ae[0], ae[1], ae[2], ae[3], phi, theta, psi, sp, sq, sr, sax, say, saz, bat_volt, P, P1, P2, temperature, pressure\n");
-						printf("%d %d | %d | %d %d %d %d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
+						printf("%4d %9d | %d | %4d %4d %4d %4d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
 						fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
-						printf("%d %d %d %d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
+						printf("%4d %4d %4d %4d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
 						fprintf(kp, "%d, %d, %d, %d, ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
-						printf("%d %d %d | ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
+						printf("%6d %6d %6d | ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
 						fprintf(kp,"%d, %d, %d, ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
-						printf("%d %d %d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
+						printf("%6d %6d %6d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
 						fprintf(kp,"%d, %d, %d, ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
-						printf("%d %d %d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
+						printf("%6d %6d %6d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
 						fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
-						printf("%d %d %d %d |%d %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
+						printf("%4d %2d %2d %2d |%4d %4d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
 						fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
 						combine_msg_all.mode = MODE_LOG;	// change the mode to mode log, so we do not need to send message anymore	
 						break;
@@ -408,7 +403,15 @@ int main(int argc, char **argv)
 							printf("Battery low, uplink connection will be disconnected now!\n");
 							stop_sending = true;
 						}
-						
+						else if(msg.payload[0]==ACK_CON)
+						{
+							printf("fifo error\n");
+						}
+						else if(msg.payload[0]==ACK_FLASH)
+						{
+							printf("flash is full\n");
+						}
+
 						break; 
 					}
 
@@ -425,8 +428,18 @@ int main(int argc, char **argv)
 				#endif // PC_PROFILE
 			#endif		
 		}
+
+		#ifdef PC_PROFILE
+			end_profile = mon_time_us();
+			proc_read = end_profile - start_profile;	
+		#endif
+
 		if(combine_msg_all.mode == MODE_FINISH)
-			break;	
+			break;
+
+		#ifdef PC_PROFILE
+			printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
+		#endif	
 	}
 	/****************************************************************************************
 	* End of Mission phase
@@ -460,17 +473,29 @@ int main(int argc, char **argv)
 						case MSG_LOG: 
 						{
 							msg_logging = (struct msg_log_t *)&msg.payload[0];
-							printf("%d %d | %d | %d %d %d %d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
+							// printf("%d %d | %d | %d %d %d %d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
+							// fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
+							// printf("%d %d %d %d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
+							// fprintf(kp, "%d, %d, %d, %d, ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
+							// printf("%d %d %d | ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
+							// fprintf(kp,"%d, %d, %d, ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
+							// printf("%d %d %d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
+							// fprintf(kp,"%d, %d, %d, ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
+							// printf("%d %d %d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
+							// fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
+							// printf("%d %d %d %d |%d %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
+							// fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
+							printf("%4d %9d | %d | %4d %4d %4d %4d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
 							fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
-							printf("%d %d %d %d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
+							printf("%4d %4d %4d %4d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
 							fprintf(kp, "%d, %d, %d, %d, ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
-							printf("%d %d %d | ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
+							printf("%6d %6d %6d | ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
 							fprintf(kp,"%d, %d, %d, ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
-							printf("%d %d %d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
+							printf("%6d %6d %6d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
 							fprintf(kp,"%d, %d, %d, ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
-							printf("%d %d %d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
+							printf("%6d %6d %6d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
 							fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
-							printf("%d %d %d %d |%d %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
+							printf("%4d %2d %2d %2d |%4d %4d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
 							fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
 							break;
 						}

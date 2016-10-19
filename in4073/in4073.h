@@ -113,9 +113,10 @@ int16_t sp, sq, sr; ///< 131 LSB / (degrees / s)
 int16_t sax, say, saz;
 uint8_t sensor_fifo_count;
 void imu_init(bool dmp, uint16_t interrupt_frequency); // if dmp is true, the interrupt frequency is 100Hz - otherwise 32Hz-8kHz
+void get_dmp_data(void);
 int8_t get_dmp_data_encode(void);
 void get_raw_sensor_data(void);
-void get_dmp_data(void);
+int8_t get_raw_sensor_data_encode(void);
 
 // Barometer
 int32_t pressure;

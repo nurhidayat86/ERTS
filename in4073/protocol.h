@@ -21,14 +21,14 @@
 // #define PC_PROFILE
 #define ENCODE_PC_RECEIVE
 // #define PC_DEBUG
-//#define DRONE_DEBUG
+// #define DRONE_DEBUG
 // #define ENCODE_DEBUG
 
 #define HEART_BEAT 0x77
 
 #define MAX_P 16
 #define MAX_P1 30
-#define MAX_P2 8
+#define MAX_P2 14
 
 #define ACK_OK 0x20
 #define ACK_FIRED 0x22
@@ -37,6 +37,8 @@
 #define ACK_RAW_INIT 0x28
 #define ACK_BAT_LOW 0x2A
 #define ACK_BAT_LOW_EMERGENCY 0x2C
+#define ACK_CON 0x2D
+#define ACK_FLASH 0x2E
 
 #define LOG_USE 1
 #define LOG_NO_USE 0

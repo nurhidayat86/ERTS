@@ -68,7 +68,8 @@ static void process_bytes(uint8_t byte) {
 	else if(msc_flag == LOG_USE)
 		log_status = true;
 
-	set_control_mode(mmode);							// set the mode
+	//set_control_mode(mmode);							// set the mode
+	set_control_mode(msg_com_all->mode);							// set the mode
 	set_control_command(mthrust, mroll, mpitch, myaw);	// set the control command
 	
 	if ((P<=MAX_P)&&(P1<=MAX_P1)&&(P2<=MAX_P2)) //add safety constraint, to prevent use pointer
@@ -106,7 +107,8 @@ int main(void)
 	mpu_get_gyro_fsr(gfsr);
     mpu_get_accel_fsr(afsr);
     mpu_get_sample_rate(srfsr);  
-    printf("%d %d %d", gfsr[0], afsr[0], srfsr[0]);
+    // printf("%d max gyro, %d max g, %d sample rate", gfsr[0], afsr[0], srfsr[0]);
+    printf("%d %d", gfsr[0], afsr[0]);
 
     //*****************************************************************************/
 	//kalman variable
@@ -143,7 +145,7 @@ int main(void)
 
 	bool status = true;
 	uint32_t counter = 0;
-	uint32_t counter_log = 0;
+	uint32_t counter_tele = 0;
 	// uint32_t counter_link = 0;
 	
 	// profiling
@@ -175,13 +177,16 @@ int main(void)
 	uint32_t comm_duration_total = 0;
 	uint32_t threshold = 20000000;
 	lost_flag = false;
-	#if DRONE_DEBUG
+	#ifdef DRONE_DEBUG
 		uint8_t ackfired = ACK_FIRED;
 	#endif
 	uint8_t acklog = ACK_RCV;
 
 	//to cut communication from the pc in case of emergency panic mode
 	pc_link = true;
+
+	//reading error fifo flag
+	bool read_sensor = false;
 
 	/****************************************************************************
 	* battery check variable
@@ -287,7 +292,6 @@ int main(void)
 					{
 						if(control_mode != MODE_SAFE)
 						{
-
 							set_control_mode(MODE_PANIC);
 							#ifdef ENCODE_PC_RECEIVE
 								acklog = ACK_BAT_LOW_EMERGENCY;
@@ -339,7 +343,7 @@ int main(void)
 			proc_adc = end - start;
 			#endif
 
-			if ((counter_log++%2 == 0));
+			if (counter_tele++%2 == 0)		// every 50 ms
 			{
 				#ifdef DRONE_PROFILE
 				start = get_time_us();
@@ -403,7 +407,6 @@ int main(void)
 				end = get_time_us();
 				proc_send = end - start;
 				#endif
-
 			}
 
 			// write to FLASH EVERY 50 ms
@@ -434,17 +437,37 @@ int main(void)
 			
 			if ((raw_status == false)&&(init_raw == false))
 			{
-				get_dmp_data();
+				// get_dmp_data();
+				read_sensor = get_dmp_data_encode();
+				if(read_sensor)
+				{
+					#ifdef ENCODE_PC_RECEIVE
+						acklog = ACK_CON;
+						encode_ack(acklog, output_data, &output_size);
+						for(i=0;i<output_size;i++){uart_put(output_data[i]);}
+					#else
+						printf("fifo error");
+					#endif
+				}
 			}
 
 			//=============================== RAW  ==============================//
 			if((raw_status == true) &&(init_raw == true))
 			{
-				get_raw_sensor_data();
-				// kalman((sp-cp), -(sq-cq), sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
-				// calibrate later after the kalman process, problem with sax and say 
+				read_sensor = get_raw_sensor_data_encode();
+				if(read_sensor)
+				{
+					#ifdef ENCODE_PC_RECEIVE
+						acklog = ACK_CON;
+						encode_ack(acklog, output_data, &output_size);
+						for(i=0;i<output_size;i++){uart_put(output_data[i]);}
+					#else
+						printf("fifo error");
+					#endif
+				}
+				/* calibrate later after the kalman process, problem with sax and say */ 
 				// kalman(sp, -sq, sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
-				// calibrate first before going to kalman
+				/* calibrate first before going to kalman */
 				kalman(sp-cq, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
 			}
 			//=============================== END RAW =================================//
@@ -474,7 +497,16 @@ int main(void)
 			{
 				nrf_gpio_pin_clear(GREEN);
 				status = flash_data() ;
- 				if((status = write_log()) == false) {printf("failed to write log");}	
+ 				if((status = write_log()) == false) 
+ 				{
+ 					#ifdef ENCODE_PC_RECEIVE
+						acklog = ACK_FLASH;
+						encode_ack(acklog, output_data, &output_size);
+						for(i=0;i<output_size;i++){uart_put(output_data[i]);}
+					#else
+						printf("failed to write log");
+					#endif
+ 				}	
 			}
 			else {nrf_gpio_pin_set(GREEN);}
 						
@@ -512,7 +544,7 @@ int main(void)
 		#endif	
 
 		#ifdef DRONE_PROFILE
-		if ( get_time_us() - start_send > 100000) 
+		if ( get_time_us() - start_send > 1000000) 
 		{
 			
 			#ifdef ENCODE_PC_RECEIVE

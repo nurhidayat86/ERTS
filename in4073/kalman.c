@@ -22,16 +22,16 @@ void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, ui
 	int16_t ephi, etheta;
 
 	*estimated_p = (sp - *bp);
-	*estimated_phi = *estimated_phi + ((*estimated_p*5683)>>18);
+	*estimated_phi = *estimated_phi + ((*estimated_p*177)>>12);
 	ephi = *estimated_phi - say;
 	*estimated_phi = *estimated_phi - (ephi>>c1phi);
-	*bp = *bp + (ephi>>c2phi);
+	// *bp = *bp + (ephi>>c2phi);
 
 	*estimated_q = (sq - *bq);
-	*estimated_theta = *estimated_theta + ((*estimated_q*5683)>>18);
+	*estimated_theta = *estimated_theta + ((*estimated_q*177)>>12);
 	etheta = *estimated_theta - sax;
 	*estimated_theta = *estimated_theta - (etheta>>c1theta);
-	*bq = *bq + (etheta>>c2theta);
+	// *bq = *bq + (etheta>>c2theta);
 }
 /***************************************************************************************************************************************************/
 

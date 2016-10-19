@@ -23,14 +23,14 @@ void CommandUpdate(struct msg_combine_all_t* combine_msg_all)
 void CommandModeSafe(struct msg_combine_all_t* combine_msg_all)
 {
 	combine_msg_all->mode = MODE_SAFE;
-	combine_msg_all->thrust = 0;
-	combine_msg_all->roll = 0;
-	combine_msg_all->pitch = 0;
-	combine_msg_all->yaw = 0;
+	// combine_msg_all->thrust = 0;
+	// combine_msg_all->roll = 0;
+	// combine_msg_all->pitch = 0;
+	// combine_msg_all->yaw = 0;
 	combine_msg_all->P = 0;
 	combine_msg_all->P1 = 0;
 	combine_msg_all->P2 = 0;
-	combine_msg_all->msc_flag = 0;
+	// combine_msg_all->msc_flag = 0;
 }
 
 void CombineCommand(struct msg_combine_all_t* combine_msg_all)
@@ -48,11 +48,6 @@ void CombineCommand(struct msg_combine_all_t* combine_msg_all)
 	// reset the combine command if the mode is safe mode
 	if(combine_msg_all->mode == MODE_SAFE) 
 	{
-		// combine_msg_all->thrust = 0;
-		// combine_msg_all->roll = 0;
-		// combine_msg_all->pitch = 0;
-		// combine_msg_all->yaw = 0;
-
 		combine_msg_all->P = 0;
 		combine_msg_all->P1 = 0;
 		combine_msg_all->P2 = 0;

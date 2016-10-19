@@ -96,13 +96,16 @@ bool flash_data() {
 		//log_msg.sq = (estimated_q-cq);
 		log_msg.sp = estimated_p;
 		log_msg.sq = estimated_q;
+		//log_msg.sp = sp;
+		//log_msg.sq = sq;
 	}
 	else
 	{
 		log_msg.sp = sp-cp;
 		log_msg.sq = -(sq-cq);
 	}
-	log_msg.sr = -(sr-cr);
+	// log_msg.sr = -(sr-cr);
+	log_msg.sr = sr;
 
 	log_msg.sax = sax;
 	log_msg.say = say;

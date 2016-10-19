@@ -87,6 +87,24 @@ void get_raw_sensor_data(void){
 	else printf("Error reading sensor fifo: %d\n", read_stat);
 }
 
+int8_t get_raw_sensor_data_encode(void){
+		
+	int8_t read_stat;
+	uint8_t sensors;
+	int16_t gyro[3], accel[3];
+
+	if (!(read_stat = mpu_read_fifo(gyro, accel, NULL, &sensors, &sensor_fifo_count)))
+	{
+		sax = accel[0];
+		say = accel[1];
+		saz = accel[2];
+		sp = gyro[0];
+		sq = gyro[1];
+		sr = gyro[2];
+	}
+	return read_stat;
+}
+
 void imu_init(bool dmp, uint16_t freq)
 {
 	static int8_t gyro_orientation[9] = {1, 0, 0,
