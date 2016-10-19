@@ -53,13 +53,13 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 				}
 				break;
 			
-			case 68: // left arrow = roll up
+			case 67: // right arrow = roll up
 				if (combine_msg_all->roll < MAX_ATTITUDE_COM) {
 					combine_msg_all->roll+=KEY_INC;
 				}
 				break;
 
-			case 67: // right arrow = roll down
+			case 68: // left arrow = roll down
 				if (combine_msg_all->roll > MIN_ATTITUDE_COM) {
 					combine_msg_all->roll-=KEY_INC;
 				}
