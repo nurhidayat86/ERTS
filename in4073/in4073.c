@@ -118,8 +118,8 @@ int main(void)
 	//*****************************************************************************/
     c1phi = 7;
 	c1theta = 7;
-	c2phi = 7;
-	c2theta = 7;
+	c2phi = c1phi + 7;
+	c2theta = c1theta + 7;
 	bp = 0;
 	bq = 0;
 	estimated_p = 0;
@@ -370,24 +370,24 @@ int main(void)
 
 					if(init_raw == true)
 					{
-						// msg_tele.sp = (estimated_p-cp);
-						// msg_tele.sq = (estimated_q-cq);
+						/***********************************************************************
+						* calibration is done before entering filter, no need to calibrate again
+						***********************************************************************/
 						msg_tele.sp = (estimated_p);
 						msg_tele.sq = (estimated_q); 
-						msg_tele.sr = (r_butter); 
+						msg_tele.sr = (r_butter);
+						msg_tele.phi = phi;
+						msg_tele.theta = theta; 
 					}
 					else
 					{
 						msg_tele.sp = sp-cp;
 						msg_tele.sq = -(sq-cq); 
-						msg_tele.sr = -(sr-cr);	
+						msg_tele.sr = -(sr-cr);
+						msg_tele.phi = phi-cphi;
+						msg_tele.theta = theta-ctheta;
 					}
-								
-					
-					msg_tele.phi = phi-cphi;
-					msg_tele.theta = theta-ctheta;
 					msg_tele.psi = -(psi-cpsi);
-					
 					msg_tele.sax = sax-csax;
 					msg_tele.say = say-csay; 
 					msg_tele.saz = saz;
@@ -462,12 +462,22 @@ int main(void)
 						printf("fifo error");
 					#endif
 				}
-				/* calibrate later after the kalman process, problem with sax and say */ 
-				// kalman(sp, -sq, sax, say, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
+
+				/***************************************************************************
+				* filter before kalman, if needed.
+				****************************************************************************/
+				// sp = iir_butter_10_256_8b(sp);
+				// sr = iir_butter_10_256_8b(sr);
+
 				/* calibrate first before going to kalman */
-				kalman(sp-cq, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta, &bp, &bq);
-				// r_butter = iir_butter_15(-(sr-cr));
-				r_butter = iir_butter_fs256_fc10(-(sr-cr));
+				kalman(sp-cq, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta);
+				r_butter = iir_butter_10_256_8b(-(sr-cr));
+
+				/***************************************************************************
+				* filter after kalman, if needed.
+				****************************************************************************/
+				// estimated_p = iir_butter_10_256_8b(estimated_p);
+				// estimated_q = iir_butter_10_256_8b(estimated_q);
 			}
 			//=============================== END RAW =================================//
 
