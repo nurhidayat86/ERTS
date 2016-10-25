@@ -175,9 +175,9 @@ int main(void)
 	//communication lost
 	uint32_t comm_start = 0;
 	uint32_t comm_end = 0;
-	uint16_t comm_duration = 0;
+	int16_t comm_duration = 0;
 	uint32_t comm_duration_total = 0;
-	uint32_t threshold = 700000;
+	uint32_t threshold = 1000000;
 	lost_flag = false;
 	#ifdef DRONE_DEBUG
 		uint8_t ackfired = ACK_FIRED;
@@ -486,7 +486,7 @@ int main(void)
 			if((raw_status == true) && (init_raw == false))
 			{
 				acklog = ACK_RAW_INIT;
-				threshold = 700000; //1 sec for raw;
+				threshold = 900000; // 700000; //1 sec for raw;
 				// encode_ack(acklog, output_data, &output_size);
 				// for(i=0;i<output_size;i++)
 				// uart_put(output_data[i]);
@@ -498,7 +498,7 @@ int main(void)
 			{
 				imu_init(true, 100);
 				init_raw = false;
-				threshold = 700000; //700ms for dmp
+				threshold = 900000; // 700000; //700ms for dmp
 			}
 			//=============================== END TOGGLE RAW =================================//
 

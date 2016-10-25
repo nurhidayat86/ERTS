@@ -132,22 +132,28 @@ void CombineCommandAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_
 	// reset the combine command if the mode is safe mode
 	if(combine_msg_all->mode == MODE_SAFE) 
 	{	
-		// update the command to keep the track of current thrust from joystick
-		combine_msg_all->thrust = joystick_msg->thrust;
-		combine_msg_all->roll = joystick_msg->roll;
-		combine_msg_all->pitch = joystick_msg->pitch;
-		combine_msg_all->yaw = joystick_msg->yaw;
 		
-		// reset the trimming if we are in the safe mode
-		keyboard_msg->thrust = 0;
-		keyboard_msg->roll = 0;
-		keyboard_msg->pitch = 0;
-		keyboard_msg->yaw = 0;
+		combine_msg_all->thrust = joystick_msg->thrust + keyboard_msg->thrust;
+		combine_msg_all->roll = joystick_msg->roll + keyboard_msg->roll;
+		combine_msg_all->pitch = joystick_msg->pitch + keyboard_msg->pitch;
+		combine_msg_all->yaw = joystick_msg->yaw + keyboard_msg->yaw;
 
-		// reset the control gains
-		combine_msg_all->P = keyboard_msg->P = 0;
-		combine_msg_all->P1 = keyboard_msg->P1 = 0;
-		combine_msg_all->P2 = keyboard_msg->P2 = 0;
+		// // update the command to keep the track of current thrust from joystick
+		// combine_msg_all->thrust = joystick_msg->thrust;
+		// combine_msg_all->roll = joystick_msg->roll;
+		// combine_msg_all->pitch = joystick_msg->pitch;
+		// combine_msg_all->yaw = joystick_msg->yaw;
+		
+		// // reset the trimming if we are in the safe mode
+		// keyboard_msg->thrust = 0;
+		// keyboard_msg->roll = 0;
+		// keyboard_msg->pitch = 0;
+		// keyboard_msg->yaw = 0;
+
+		// // reset the control gains
+		// combine_msg_all->P = keyboard_msg->P = 0;
+		// combine_msg_all->P1 = keyboard_msg->P1 = 0;
+		// combine_msg_all->P2 = keyboard_msg->P2 = 0;
 	}
 	
 	// always update the flag and gain
