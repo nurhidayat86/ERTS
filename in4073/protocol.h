@@ -98,6 +98,32 @@ struct msg_combine_all_t{
 	uint8_t msc_flag;
 }__attribute__((packed));
 
+struct msg_joystick_t{
+	bool update;
+	uint8_t mode;
+	uint16_t thrust;
+	int16_t roll;
+ 	int16_t pitch;
+ 	int16_t yaw;
+	uint8_t P;
+	uint8_t P1;
+	uint8_t P2;
+	uint8_t msc_flag;
+}__attribute__((packed));
+
+struct msg_keyboard_t{
+ 	bool update;
+	uint8_t mode;
+	uint16_t thrust;
+	int16_t roll;
+ 	int16_t pitch;
+ 	int16_t yaw;
+	uint8_t P;
+	uint8_t P1;
+	uint8_t P2;
+	uint8_t msc_flag;
+}__attribute__((packed));
+
 struct msg_combine_all_compact{
  	uint8_t mode;
 	uint8_t thrust;

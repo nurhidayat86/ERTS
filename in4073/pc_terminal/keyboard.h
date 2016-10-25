@@ -15,6 +15,7 @@ extern bool stop_sending;
 bool raw_stat;
 bool log_stat;
 
+void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg);
 void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all);
 void initraw_stat(); //initiate raw_stat value
 

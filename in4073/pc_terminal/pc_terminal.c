@@ -26,12 +26,6 @@
 #include <time.h>
 #include <assert.h>
 
-#define REFRESH_TIME 200
-pthread_mutex_t lock_send;
-bool heartbeat_flag;
-struct msg_combine_all_t combine_msg;
-void *heartbeat(void* x_void_ptr);
-uint32_t hb_timer, print_warning_start;
 bool stop_sending = FALSE;
 
 unsigned int mon_time_ms(void)
@@ -56,29 +50,6 @@ uint32_t mon_time_us(void)
    
     us = tv.tv_usec;
     return us;
-}
-
-void *heartbeat(void* x_void_ptr)
-{
-    while(combine_msg.mode != MODE_LOG)
-    {
-        if(mon_time_ms() - hb_timer > 500)
-        {
-	        pthread_mutex_lock( &lock_send );
-	        if(!heartbeat_flag) combine_msg.mode = MODE_PANIC;
-	        if(mon_time_ms() - print_warning_start > 1000) 
-	        {
-	        	printf("Communication link is lost, try to reconnect\n ");
-	        	print_warning_start = mon_time_ms();	
-	        }
-	        // usleep(REFRESH_TIME*1000); // 200ms
-        	heartbeat_flag = false;
-	        pthread_mutex_unlock( &lock_send );
-		}
-        
-    }
-    /* the function must return something - NULL will do */
-    return NULL;
 }
 
 int main(int argc, char **argv)
@@ -116,10 +87,14 @@ int main(int argc, char **argv)
 
 	// message struck
 	struct msg_combine_all_t combine_msg_all;
-	
+	struct msg_joystick_t joystick_msg;
+	struct msg_keyboard_t keyboard_msg;
+
 	// initialize the message by zeroing all value
-	InitCommandUpdate(&combine_msg_all);
-	CommandModeSafe(&combine_msg_all);
+	// InitCommandUpdate(&combine_msg_all);
+	InitCommandAll(&joystick_msg, &keyboard_msg, &combine_msg_all);
+	// CommandModeSafe(&combine_msg_all);
+	CommandModeSafeAll(&joystick_msg, &keyboard_msg, &combine_msg_all);
 
 	// logging variable
 	FILE *kp;
@@ -192,20 +167,10 @@ int main(int argc, char **argv)
 	* End of joystick check end reset
 	*****************************************************************************************/
 
-	/* this variable is our reference to the second thread */
-    pthread_t heartbeat_thread;
-    uint8_t thread_status;
- 	int x = 0;
-
  	//raw var start
  	initraw_stat();
- 	//========================================================================================//
- 	// ================================ACTIVATE THE HEARTBEAT=================================//
- 	//========================================================================================//
-	// thread_status = pthread_create(&heartbeat_thread, NULL, heartbeat, (void*)&x);
-
-	/* send & receive */
-
+ 	
+ 	/* send & receive */
 	/****************************************************************************************
 	* Mission phase
 	*****************************************************************************************/
@@ -231,7 +196,8 @@ int main(int argc, char **argv)
 			{
 				// start panic start, reset the mode to the safe mode
 				panic_start = mon_time_ms();
-				CommandModeSafe(&combine_msg_all);
+				// CommandModeSafe(&combine_msg_all);
+				CommandModeSafeAll(&joystick_msg, &keyboard_msg, &combine_msg_all);
 			}
 			start = mon_time_ms();
 		}
@@ -258,20 +224,20 @@ int main(int argc, char **argv)
 			}
 		
 			// scale it down to 9 bit signed integer (-255 to 255)
-			combine_msg_all.roll = axis[0]>>8; 
-			combine_msg_all.pitch = axis[1]>>8;
-			combine_msg_all.yaw = axis[2]>>6; // make it more sensitive than the others 
+			joystick_msg.roll = axis[0]>>8; 
+			joystick_msg.pitch = axis[1]>>8;
+			joystick_msg.yaw = axis[2]>>6; // make it more sensitive than the others 
 			
 			// scale it down from U16 to U12 (4096) we might need to compress it a little bit more
-			combine_msg_all.thrust = (JOY_THRUST_OFF - axis[3])>>4;
-			if(combine_msg_all.thrust > 30) combine_msg_all.thrust = (((combine_msg_all.thrust)*11)>>4)+1280;
+			joystick_msg.thrust = (JOY_THRUST_OFF - axis[3])>>4;
+			if(joystick_msg.thrust > 30) joystick_msg.thrust = (((joystick_msg.thrust)*11)>>4)+1280;
 			// assign the fire button
 			if(button[0]) 
 			{
-				if((combine_msg_all.mode != MODE_SAFE) && (combine_msg_all.mode != MODE_PANIC)) combine_msg_all.mode = MODE_PANIC;
-				else if (combine_msg_all.mode == MODE_SAFE) combine_msg_all.mode = ESCAPE;
+				if((joystick_msg.mode != MODE_SAFE) && (joystick_msg.mode != MODE_PANIC)) joystick_msg.mode = MODE_PANIC;
+				else if (joystick_msg.mode == MODE_SAFE) joystick_msg.mode = ESCAPE;
 			}	
-			combine_msg_all.update = true;
+			joystick_msg.update = true;
 		}
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
@@ -286,8 +252,8 @@ int main(int argc, char **argv)
 			start_profile = mon_time_us();
 		#endif
 		if ((c = term_getchar_nb()) != -1){
-			KeyboardCommand(c, &combine_msg_all);
-			combine_msg_all.update = true;
+			KeyboardCommandSplit(c, &joystick_msg, &keyboard_msg);
+			keyboard_msg.update = true;
 		}
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
@@ -298,7 +264,12 @@ int main(int argc, char **argv)
 		#ifdef PC_PROFILE 
 			start_profile = mon_time_us();
 		#endif
-		CombineCommand(&combine_msg_all);
+
+		combine_msg_all.update = (joystick_msg.update || keyboard_msg.update); 
+		if(combine_msg_all.update)
+		{
+			CombineCommandAll(&joystick_msg, &keyboard_msg, &combine_msg_all);
+		}
 		// combine keyboard and joystick
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();

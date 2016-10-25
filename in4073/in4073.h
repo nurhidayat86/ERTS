@@ -71,6 +71,8 @@ void set_control_gains(uint8_t yaw_d, uint8_t g_angle, uint8_t g_rate);
 void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw);
 void run_filters_and_control(void);
 
+void calibration(void);
+
 // Timers
 #define TIMER_PERIOD	50000 //50000us=50ms=20Hz (MAX 16bit, 65ms)
 void timers_init(void);

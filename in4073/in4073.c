@@ -194,7 +194,8 @@ int main(void)
 	* battery check variable
 	*****************************************************************************/
 	bat_flag = false;
-	uint16_t BAT_THRESHOLD = 1050; //demo
+	// uint16_t BAT_THRESHOLD = 1050; //demo
+	uint16_t BAT_THRESHOLD = 0; //demo
 	uint8_t bat_counter = 0;
 	uint8_t bat_counter_test = 0;
 	/****************************************************************************
@@ -488,7 +489,7 @@ int main(void)
 				threshold = 700000; //1 sec for raw;
 				// encode_ack(acklog, output_data, &output_size);
 				// for(i=0;i<output_size;i++)
-				// 	uart_put(output_data[i]);
+				// uart_put(output_data[i]);
 				imu_init(false, 256);
 				init_raw = true;
 			}

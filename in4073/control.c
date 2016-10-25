@@ -257,6 +257,7 @@ void run_filters_and_control(void)
         /* Calibration mode (no thrust at all) */
         case MODE_CALIBRATION:
             ae[0] = ae[1] = ae[2] = ae[3] = 0;
+            // static reading[100];
 
             // It takes sometimes (~ 6s) until it returns a stable value
             // Also calibrate here (until leave mode)
@@ -303,8 +304,8 @@ void run_filters_and_control(void)
             {               
                 if(init_raw == true) 
                 {
-                    cmd_roll = (((sp_roll - ((phi - cphi)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((estimated_p)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
-                    cmd_pitch = (((sp_pitch - ((theta - ctheta)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((estimated_q)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
+                    cmd_roll = (((sp_roll - ((phi)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((estimated_p)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
+                    cmd_pitch = (((sp_pitch - ((theta)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((estimated_q)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
                     //cmd_yaw = ((( (sp_yaw>>RATE_SHIFT_YAW) - ((r_butter)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                     cmd_yaw = ((( (sp_yaw>>RATE_SHIFT_YAW) + ((sr-cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 }
@@ -342,16 +343,26 @@ void run_filters_and_control(void)
 void calibration(void)
 {
     int16_t samples = 100;
-    int16_t sum1, sum2, sum3, sum4, sum5, sum6;
+    int32_t sum1, sum2, sum3, sum4, sum5, sum6, sum7, sum8;
     uint8_t i = 0, j = 0;
     
-    for(i=0, sum1=0, sum2=0, sum3=0, sum4=0, sum5=0, sum6=0; i<samples; i++) 
+    for(i=0, sum1=0, sum2=0, sum3=0, sum4=0, sum5=0, sum6=0, sum7=0, sum8=0; i<samples; i++) 
     {
       if (check_sensor_int_flag()) 
       {
-        get_dmp_data();
-        j++;  // number of samples taken
-        clear_sensor_int_flag();
+        
+        if(init_raw ==  true)
+        {
+            get_dmp_data();
+            j++;  // number of samples taken
+            clear_sensor_int_flag();
+        }
+        else
+        {
+            get_dmp_data();
+            j++;  // number of samples taken
+            clear_sensor_int_flag();
+        }
       }
 /****************************************************/
       sum1 += phi;
@@ -366,7 +377,14 @@ void calibration(void)
 /****************************************************/
       sum6 += sp;
 
-      nrf_delay_ms(10);
+    if(init_raw == true)
+    {
+        sum7 += sax;
+        sum8 += say;
+    }
+
+
+        nrf_delay_ms(10);
     }
     printf("%d samples taken \n", j);
     cphi = sum1/samples;
@@ -375,5 +393,12 @@ void calibration(void)
     cp = sum4/samples;
     cq = sum5/samples;
     cr = sum6/samples;
+
+    if(init_raw == true)
+    {
+        csax = sum7/samples;
+        csay = sum8/samples;
+    }
+
 }
  
