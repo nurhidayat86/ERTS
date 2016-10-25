@@ -249,7 +249,7 @@ int main(void)
 		if (lost_flag == false)
 			comm_duration = (comm_end - comm_start); //--> prevent loop forever in panic mode
 		
-		if(comm_duration > 0)
+		if((comm_duration > 0)&&(control_mode!=MODE_CALIBRATION))
 		{
 			comm_check(comm_duration, &comm_duration_total, &update_flag);
 			if ((comm_duration_total >= threshold) && !lost_flag)

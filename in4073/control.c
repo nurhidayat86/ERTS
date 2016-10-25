@@ -181,6 +181,13 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
             cmd_yaw = yaw;
             break;
 
+        // case MODE_CALIBRATION:
+        //     cmd_thrust = 0;
+        //     cmd_roll = 0;
+        //     cmd_pitch = 0;
+        //     cmd_yaw = 0;
+        //     break;
+
         /* Mode yaw sets the yaw setpoint and the rest as commands */
         case MODE_YAW:
             cmd_thrust = thrust;
@@ -262,19 +269,19 @@ void run_filters_and_control(void)
             // It takes sometimes (~ 6s) until it returns a stable value
             // Also calibrate here (until leave mode)
             
-            cphi = phi;
-            ctheta = theta;
-            // cpsi = psi;
-            if(init_raw == true)
-            {
-                csax = sax;
-                csay = say;
-            }            
-            cp = sp;
-            cq = sq;
-            cr = sr;
+            // cphi = phi;
+            // ctheta = theta;
+            // // cpsi = psi;
+            // if(init_raw == true)
+            // {
+            //     csax = sax;
+            //     csay = say;
+            // }            
+            // cp = sp;
+            // cq = sq;
+            // cr = sr;
 
-            // calibration();
+            calibration();
             break;
 
         /* Yaw rate controlled mode */
@@ -340,65 +347,97 @@ void run_filters_and_control(void)
     update_motors();
 }
 
+// void calibration(void)
+// {
+//     int16_t samples = 100;
+//     int32_t sum1, sum2, sum3, sum4, sum5, sum6, sum7, sum8;
+//     uint8_t i = 0, j = 0;
+    
+//     for(i=0, sum1=0, sum2=0, sum3=0, sum4=0, sum5=0, sum6=0, sum7=0, sum8=0; i<samples; i++) 
+//     {
+//       if (check_sensor_int_flag()) 
+//       {
+        
+//         if(init_raw ==  true)
+//         {
+//             get_dmp_data();
+//             j++;  // number of samples taken
+//             clear_sensor_int_flag();
+//         }
+//         else
+//         {
+//             get_dmp_data();
+//             j++;  // number of samples taken
+//             clear_sensor_int_flag();
+//         }
+//       }
+// /****************************************************/
+//       sum1 += phi;
+// **************************************************
+//       sum2 += theta;
+// /****************************************************/
+//       sum3 += psi;
+// /****************************************************/
+//       sum4 += sp;
+// /****************************************************/
+//       sum5 += sp;
+// /****************************************************/
+//       sum6 += sp;
+
+//     if(init_raw == true)
+//     {
+//         sum7 += sax;
+//         sum8 += say;
+//     }
+
+
+//         nrf_delay_ms(10);
+//     }
+//     printf("%d samples taken \n", j);
+//     cphi = sum1/samples;
+//     ctheta = sum2/samples;
+//     cpsi = sum3/samples;
+//     cp = sum4/samples;
+//     cq = sum5/samples;
+//     cr = sum6/samples;
+
+//     if(init_raw == true)
+//     {
+//         csax = sum7/samples;
+//         csay = sum8/samples;
+//     }
+
+// }
+
 void calibration(void)
 {
-    int16_t samples = 100;
-    int32_t sum1, sum2, sum3, sum4, sum5, sum6, sum7, sum8;
-    uint8_t i = 0, j = 0;
-    
-    for(i=0, sum1=0, sum2=0, sum3=0, sum4=0, sum5=0, sum6=0, sum7=0, sum8=0; i<samples; i++) 
-    {
-      if (check_sensor_int_flag()) 
-      {
-        
-        if(init_raw ==  true)
-        {
-            get_dmp_data();
-            j++;  // number of samples taken
-            clear_sensor_int_flag();
-        }
-        else
-        {
-            get_dmp_data();
-            j++;  // number of samples taken
-            clear_sensor_int_flag();
-        }
-      }
-/****************************************************/
-      sum1 += phi;
-/****************************************************/
-      sum2 += theta;
-/****************************************************/
-      sum3 += psi;
-/****************************************************/
-      sum4 += sp;
-/****************************************************/
-      sum5 += sp;
-/****************************************************/
-      sum6 += sp;
+    uint8_t i;
+    static int16_t cal_phi[16], cal_theta[16], cal_sax[16], cal_say[16], cal_sp[16], cal_sq[16], cal_sr[16];
+    int32_t sum_phi=0, sum_theta=0, sum_sax=0, sum_say=0, sum_sp=0, sum_sq=0, sum_sr = 0;
 
-    if(init_raw == true)
+    //shift the value by one;
+    for (i=0;i<15;i++)
     {
-        sum7 += sax;
-        sum8 += say;
+        cal_phi[i] = cal_phi[i+1];
+        cal_theta[i] = cal_theta[i+1];
+        cal_sax[i] = cal_sax[i+1];
+        cal_say[i] = cal_say[i+1];
+        cal_sp[i] = cal_sp[i+1];
+        cal_sq[i] = cal_sq[i+1];
+        cal_sr[i] = cal_sr[i+1];
+
     }
 
+    //pushing new value;
+    cal_phi[15] = phi; cal_theta[15] = theta; cal_sax[15] = sax; cal_say[15] = say; cal_sp[15] = sp; cal_sq[15] = sq; cal_sr[15]=sr;
 
-        nrf_delay_ms(10);
-    }
-    printf("%d samples taken \n", j);
-    cphi = sum1/samples;
-    ctheta = sum2/samples;
-    cpsi = sum3/samples;
-    cp = sum4/samples;
-    cq = sum5/samples;
-    cr = sum6/samples;
-
-    if(init_raw == true)
+    //summing the input data
+    for (i=0;i<16;i++)
     {
-        csax = sum7/samples;
-        csay = sum8/samples;
+        sum_phi += cal_phi[i]; sum_theta += cal_theta[i]; sum_sax += cal_sax[i]; sum_say += cal_say[i]; sum_sp += cal_sp[i]; sum_sq += cal_sq[i]; sum_sr += cal_sr[i];
     }
 
+    //averaging data
+    cphi = sum_phi>>4; ctheta = sum_theta>>4; csax = sum_sax>>4; csay = sum_say>>4; cp = sum_sp>>4; cq = sum_sq>>4; cr = sum_sr>>4;
 }
  
