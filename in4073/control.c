@@ -26,12 +26,8 @@
 #define MIN_ATTITUDE_COM -MAX_ATTITUDE_COM
 
 #define MAX_MOTOR 1000                      ///< Maximum PWM signal (1000us is added)
-#define MAX_CMD 1024                        ///< Maximum thrust, roll, pitch and yaw command
-#define MIN_CMD -MAX_CMD                    ///< Minimum roll, pitch, yaw command
 #define PANIC_TIME 2000*1000                ///< Time to keep thrust in panic mode (us)
 #define PANIC_THRUST 0.4*MAX_THRUST_COM     ///< The amount of thrust in panic mode
-#define MAX_YAW_RATE 45*131               ///< The maximum yaw rate from js (131 LSB / (degrees/s)) = 5895
-#define MAX_ANGLE 0                         ///< The maximum angle from js
 
 // Fractions
 // CF 4 255 max command from js only contribute 22.5 deg approx (14.4 deg true value) in attitude
@@ -55,11 +51,6 @@ static int16_t cmd_roll, cmd_pitch, cmd_yaw = 0;  ///< The roll, pitch, yaw comm
 static uint16_t sp_thrust = 0;                    ///< The thrust setpoint
 static int16_t sp_roll, sp_pitch, sp_yaw = 0;     ///< The roll, pitch, yaw setpoint
 
-//static int16_t cmd_roll_rate, cmd_pitch_rate = 0;     ///< The roll, pitch, yaw setpoint
-//static int16_t cphi, ctheta, cpsi = 0;                ///< Calibration values of phi, theta, psi
-//static int16_t cp, cq, cr = 0;                        ///< Calibration valies of p, q and r
-//static uint16_t groll_p, groll_i, groll_d = 0;        ///< The roll control gains (2^CONTROL_FRAC)
-//static uint16_t gpitch_p, gpitch_i, gpitch_d = 0;     ///< The pitch control gains (2^CONTROL_FRAC)
 static uint8_t gyaw_d = 0;                              ///< The yaw control gains (2^CONTROL_FRAC)
 static uint8_t g_angle_d = 0;                           ///< The yaw control gains (2^CONTROL_FRAC)
 static uint8_t g_rate_d = 0;                            ///< The yaw control gains (2^CONTROL_FRAC)
@@ -181,13 +172,6 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
             cmd_yaw = yaw;
             break;
 
-        // case MODE_CALIBRATION:
-        //     cmd_thrust = 0;
-        //     cmd_roll = 0;
-        //     cmd_pitch = 0;
-        //     cmd_yaw = 0;
-        //     break;
-
         /* Mode yaw sets the yaw setpoint and the rest as commands */
         case MODE_YAW:
             cmd_thrust = thrust;
@@ -243,7 +227,6 @@ void run_filters_and_control(void)
 
         /* Panic mode (PANIC_THRUST of thrust for PANIC_TIME seconds, then safe mode) */
         case MODE_PANIC:
-            // nrf_gpio_pin_toggle(YELLOW);
             nrf_gpio_pin_clear(YELLOW);
             if(cmd_thrust > PANIC_THRUST) motor_mixing(PANIC_THRUST, 0, 0, 0);
             else motor_mixing(cmd_thrust, 0, 0, 0);
@@ -347,6 +330,38 @@ void run_filters_and_control(void)
     update_motors();
 }
 
+void calibration(void)
+{
+    uint8_t i;
+    static int16_t cal_phi[16], cal_theta[16], cal_sax[16], cal_say[16], cal_sp[16], cal_sq[16], cal_sr[16];
+    int32_t sum_phi=0, sum_theta=0, sum_sax=0, sum_say=0, sum_sp=0, sum_sq=0, sum_sr = 0;
+
+    //shift the value by one;
+    for (i=0;i<15;i++)
+    {
+        cal_phi[i] = cal_phi[i+1];
+        cal_theta[i] = cal_theta[i+1];
+        cal_sax[i] = cal_sax[i+1];
+        cal_say[i] = cal_say[i+1];
+        cal_sp[i] = cal_sp[i+1];
+        cal_sq[i] = cal_sq[i+1];
+        cal_sr[i] = cal_sr[i+1];
+
+    }
+
+    //pushing new value;
+    cal_phi[15] = phi; cal_theta[15] = theta; cal_sax[15] = sax; cal_say[15] = say; cal_sp[15] = sp; cal_sq[15] = sq; cal_sr[15]=sr;
+
+    //summing the input data
+    for (i=0;i<16;i++)
+    {
+        sum_phi += cal_phi[i]; sum_theta += cal_theta[i]; sum_sax += cal_sax[i]; sum_say += cal_say[i]; sum_sp += cal_sp[i]; sum_sq += cal_sq[i]; sum_sr += cal_sr[i];
+    }
+
+    //averaging data
+    cphi = sum_phi>>4; ctheta = sum_theta>>4; csax = sum_sax>>4; csay = sum_say>>4; cp = sum_sp>>4; cq = sum_sq>>4; cr = sum_sr>>4;
+}
+ 
 // void calibration(void)
 // {
 //     int16_t samples = 100;
@@ -408,36 +423,3 @@ void run_filters_and_control(void)
 //     }
 
 // }
-
-void calibration(void)
-{
-    uint8_t i;
-    static int16_t cal_phi[16], cal_theta[16], cal_sax[16], cal_say[16], cal_sp[16], cal_sq[16], cal_sr[16];
-    int32_t sum_phi=0, sum_theta=0, sum_sax=0, sum_say=0, sum_sp=0, sum_sq=0, sum_sr = 0;
-
-    //shift the value by one;
-    for (i=0;i<15;i++)
-    {
-        cal_phi[i] = cal_phi[i+1];
-        cal_theta[i] = cal_theta[i+1];
-        cal_sax[i] = cal_sax[i+1];
-        cal_say[i] = cal_say[i+1];
-        cal_sp[i] = cal_sp[i+1];
-        cal_sq[i] = cal_sq[i+1];
-        cal_sr[i] = cal_sr[i+1];
-
-    }
-
-    //pushing new value;
-    cal_phi[15] = phi; cal_theta[15] = theta; cal_sax[15] = sax; cal_say[15] = say; cal_sp[15] = sp; cal_sq[15] = sq; cal_sr[15]=sr;
-
-    //summing the input data
-    for (i=0;i<16;i++)
-    {
-        sum_phi += cal_phi[i]; sum_theta += cal_theta[i]; sum_sax += cal_sax[i]; sum_say += cal_say[i]; sum_sp += cal_sp[i]; sum_sq += cal_sq[i]; sum_sr += cal_sr[i];
-    }
-
-    //averaging data
-    cphi = sum_phi>>4; ctheta = sum_theta>>4; csax = sum_sax>>4; csay = sum_say>>4; cp = sum_sp>>4; cq = sum_sq>>4; cr = sum_sr>>4;
-}
- 

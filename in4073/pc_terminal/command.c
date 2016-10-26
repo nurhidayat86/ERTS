@@ -66,19 +66,19 @@ void CommandModeSafe(struct msg_combine_all_t* combine_msg_all)
 void CommandModeSafeAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
 {
 	combine_msg_all->mode = MODE_SAFE;
-	combine_msg_all->P = 0;
-	combine_msg_all->P1 = 0;
-	combine_msg_all->P2 = 0;
+	// combine_msg_all->P = 0;
+	// combine_msg_all->P1 = 0;
+	// combine_msg_all->P2 = 0;
 	
 	keyboard_msg->mode = MODE_SAFE;
-	keyboard_msg->P = 0;
-	keyboard_msg->P1 = 0;
-	keyboard_msg->P2 = 0;
+	// keyboard_msg->P = 0;
+	// keyboard_msg->P1 = 0;
+	// keyboard_msg->P2 = 0;
 	
 	joystick_msg->mode = MODE_SAFE;
-	joystick_msg->P = 0;
-	joystick_msg->P1 = 0;
-	joystick_msg->P2 = 0;
+	// joystick_msg->P = 0;
+	// joystick_msg->P1 = 0;
+	// joystick_msg->P2 = 0;
 }
 
 
@@ -138,6 +138,11 @@ void CombineCommandAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_
 		combine_msg_all->pitch = joystick_msg->pitch + keyboard_msg->pitch;
 		combine_msg_all->yaw = joystick_msg->yaw + keyboard_msg->yaw;
 
+		Bound(combine_msg_all->thrust, MIN_THRUST_COM, MAX_THRUST_COM);
+		Bound(combine_msg_all->roll, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
+		Bound(combine_msg_all->pitch, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
+		Bound(combine_msg_all->yaw, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
+		
 		// // update the command to keep the track of current thrust from joystick
 		// combine_msg_all->thrust = joystick_msg->thrust;
 		// combine_msg_all->roll = joystick_msg->roll;

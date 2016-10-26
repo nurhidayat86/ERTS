@@ -23,6 +23,7 @@
 // #define PC_DEBUG
 // #define DRONE_DEBUG
 // #define ENCODE_DEBUG
+// #define SIMULATE_BATTERY
 
 #define HEART_BEAT 0x77
 
@@ -42,6 +43,8 @@
 #define ACK_CON 0x2D
 #define ACK_FLASH 0x2E
 #define ACK_LOST_COM 0x2F
+
+#define ACK_BAT_LOW_EMER_SAFE 0x10
 
 #define LOG_USE 1
 #define LOG_NO_USE 0

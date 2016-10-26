@@ -58,8 +58,9 @@ int main(int argc, char **argv)
 	* Variable initiator
 	*****************************************************************************************/
 	// periodic command timer 
-	uint32_t start, end, panic_start, start_batt = 0;
-	
+	uint32_t start, end, panic_start = 0; 
+	bool resend_flag = false;
+
 	// profile timer
 	#ifdef PC_PROFILE 
 	uint32_t start_profile, end_profile = 0;
@@ -98,8 +99,6 @@ int main(int argc, char **argv)
 
 	// logging variable
 	FILE *kp;
-	uint8_t decode_status;
-	bool log_start = TRUE;
 	/****************************************************************************************
 	* Variable initiator end
 	*****************************************************************************************/
@@ -183,13 +182,26 @@ int main(int argc, char **argv)
 		// periodically send the command to the board
 		// check panic time as well, do not send anything if we are in the panic time interval
 		end = mon_time_ms();
-		if((((end-start) > PERIODIC_COM) && ((mon_time_ms() - panic_start) > PANIC_TIME_MS) && (combine_msg_all.mode != MODE_LOG)) && (!stop_sending))
+		
+		if((((end-start) > PERIODIC_COM) && (combine_msg_all.mode != MODE_LOG))) //&& (!stop_sending)
 		{
-			SendCommandAll(&combine_msg_all);
+			
+			// print to terminal to indicate the panic button was succesfully pressed
+			if(combine_msg_all.mode == MODE_PANIC) printf("\nPANIC MODE from PC\n");
+			
+			// stop sending a command if the we are still in panic period
+			if(!stop_sending) SendCommandAll(&combine_msg_all);
+			// check the panic time, to reset the stop flag so we can reestablish the communication
+			else if((mon_time_ms() - panic_start) > PANIC_TIME_MS)
+			{
+				stop_sending = false;
+			}
 
-			// check if panic_mode happened
+			// check if panic_mode happened and the mode of drone also already in panic mode
+			// it is indicated by resend flag
+			// if we dont need to resend the flag, reset the mode to safe mode
 			#ifdef ENCODE_PC_RECEIVE
-			if(combine_msg_all.mode == MODE_PANIC || (msg.crc_fails > 4)) 
+			if( (combine_msg_all.mode == MODE_PANIC && (!resend_flag) ) || (msg.crc_fails > 4)) 
 			#else
 			if(combine_msg_all.mode == MODE_PANIC) 
 			#endif
@@ -197,7 +209,9 @@ int main(int argc, char **argv)
 				// start panic start, reset the mode to the safe mode
 				panic_start = mon_time_ms();
 				// CommandModeSafe(&combine_msg_all);
-				CommandModeSafeAll(&joystick_msg, &keyboard_msg, &combine_msg_all);
+				CommandModeSafeAll(&joystick_msg, &keyboard_msg, &combine_msg_all); 
+				// stop sending the command
+				stop_sending = true;
 			}
 			start = mon_time_ms();
 		}
@@ -265,12 +279,12 @@ int main(int argc, char **argv)
 			start_profile = mon_time_us();
 		#endif
 
+		// combine keyboard and joystick
 		combine_msg_all.update = (joystick_msg.update || keyboard_msg.update); 
 		if(combine_msg_all.update)
 		{
 			CombineCommandAll(&joystick_msg, &keyboard_msg, &combine_msg_all);
 		}
-		// combine keyboard and joystick
 		#ifdef PC_PROFILE
 			end_profile = mon_time_us();
 			proc_comb = end_profile - start_profile;
@@ -317,6 +331,10 @@ int main(int argc, char **argv)
 						printf("%6d %6d %6d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
 						printf("%4d %2d %2d %2d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
 						
+						// check drone mode, resend if it is still not in the panic mode
+						if(combine_msg_all.mode == MODE_PANIC && msg_tele->mode != MODE_PANIC) resend_flag = true;
+						// neither on the panic mode or the panic mode succesfully sent anc accepted by the drone
+						else resend_flag = false;
 						// #ifdef PC_PROFILE
 						// 	printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
 						// #endif
@@ -374,12 +392,17 @@ int main(int argc, char **argv)
 						}
 						else if (msg.payload[0] == ACK_BAT_LOW)
 						{
-							printf("Battery Low\n");
+							printf("warning battery low\n");
 						}
 						else if(msg.payload[0]==ACK_BAT_LOW_EMERGENCY)
 						{
 							printf("Battery low, uplink connection will be disconnected now!\n");
-							stop_sending = true;
+							// stop_sending = true;
+							combine_msg_all.mode = MODE_PANIC;
+						}
+						else if (msg.payload[0] == ACK_BAT_LOW_EMER_SAFE)
+						{
+							printf("Battery low, change the battery now!\n");
 						}
 						else if(msg.payload[0]==ACK_CON)
 						{
@@ -421,7 +444,7 @@ int main(int argc, char **argv)
 			break;
 
 		#ifdef PC_PROFILE
-			printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
+			printf("per: %d s:%d j:%d k:%d c:%d r:%d\n ",periodic ,proc_send, proc_joy, proc_key, proc_comb, proc_read);
 		#endif	
 	}
 	/****************************************************************************************
@@ -433,7 +456,6 @@ int main(int argc, char **argv)
 	*****************************************************************************************/
 	
 	while((combine_msg_all.mode == MODE_LOG) && (combine_msg_all.mode != MODE_FINISH))// start logging 
-	//while(true)
 	{
 		if (read(fd_RS232, &c, 1)){ 				// if ((c = rs232_getchar_nb()) != -1){		
 			#ifdef ENCODE_PC_RECEIVE				//#ifdef ENCODE

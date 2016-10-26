@@ -100,6 +100,7 @@ int main(void)
 	spi_flash_init();
 	//	ble_init();
 
+	// get imu setting
 	unsigned short gfsr[0];
 	unsigned char afsr[0];
 	unsigned short srfsr[0];
@@ -107,7 +108,6 @@ int main(void)
 	mpu_get_gyro_fsr(gfsr);
     mpu_get_accel_fsr(afsr);
     mpu_get_sample_rate(srfsr);  
-    // printf("%d max gyro, %d max g, %d sample rate", gfsr[0], afsr[0], srfsr[0]);
     printf("%d %d", gfsr[0], afsr[0]);
 
     //*****************************************************************************/
@@ -177,14 +177,14 @@ int main(void)
 	uint32_t comm_end = 0;
 	int16_t comm_duration = 0;
 	uint32_t comm_duration_total = 0;
-	uint32_t threshold = 1000000;
+	uint32_t threshold = 700000;
 	lost_flag = false;
 	#ifdef DRONE_DEBUG
 		uint8_t ackfired = ACK_FIRED;
 	#endif
 	uint8_t acklog = ACK_RCV;
 
-	//to cut communication from the pc in case of emergency panic mode
+	//to cut communication from the pc in case of emergency panic mode because of lost of communication
 	pc_link = true;
 
 	//reading error fifo flag
@@ -194,10 +194,15 @@ int main(void)
 	* battery check variable
 	*****************************************************************************/
 	bat_flag = false;
-	// uint16_t BAT_THRESHOLD = 1050; //demo
-	uint16_t BAT_THRESHOLD = 0; //demo
+	
+	#ifdef SIMULATE_BATTERY
+	uint8_t bat_counter_test = 0;		// counter to simulate battery drop after some interval
+	uint16_t BAT_THRESHOLD = 0; 		// testing without battery
+	#else
+	uint16_t BAT_THRESHOLD = 0; 	// demo
+	#endif
+	
 	uint8_t bat_counter = 0;
-	uint8_t bat_counter_test = 0;
 	/****************************************************************************
 	* End of battery check variable
 	*****************************************************************************/
@@ -211,8 +216,8 @@ int main(void)
 	#endif
 	while(control_mode == MODE_START) // wait until the PC safe to start up 
 	{
-		uart_put(0); 	// there is still a bug here
-		if (rx_queue.count) 				// the count is not detected if the print is commented
+		uart_put(0); 	
+		if (rx_queue.count) // check the buffer whether there are RX data comes from PC
 		{
 			process_bytes( dequeue(&rx_queue) );
 			set_control_mode(MODE_SAFE);
@@ -246,6 +251,7 @@ int main(void)
 			update_flag = true;
 		}
 
+		// do not compute the duration if indeed we are lost the flag due to the panic mode interval
 		if (lost_flag == false)
 			comm_duration = (comm_end - comm_start); //--> prevent loop forever in panic mode
 		
@@ -262,16 +268,6 @@ int main(void)
 						for(i=0;i<output_size;i++){uart_put(output_data[i]);}
 						pc_link = false;
 					}
-					// #ifdef DRONE_DEBUG
-					// 	#ifdef ENCODE_PC_RECEIVE
-					// 		encode_packet((uint8_t *) &ackfired, sizeof(uint8_t), MSG_ACK, output_data, &output_size);
-
-					// 		for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
-					// 	#else
-					// 		printf("communication_fail()\n");
-					// 	#endif
-					// #endif
-					// set_control_command(400, 0, 0, 0); //--> bug solved due to this dont remove
 					comm_duration_total = 0; // --> to prevent MODE_PANIC triger forever without going to mode_safe.
 				}
 		}
@@ -288,14 +284,24 @@ int main(void)
 			if (counter++%20 == 0) 
 			{
 				nrf_gpio_pin_toggle(BLUE);
+				
+				#ifdef SIMULATE_BATTERY
 				bat_counter_test++;
+				#endif
 				/****************************************************************************
-				* battery check, it has to be 2 sec of bellow any speccified BAT_THRESHOLD
+				* battery check, it has to be higher than specified BAT_THRESHOLD and the it happen more than counter limit 
 				*****************************************************************************/
-				if ((bat_volt <= BAT_THRESHOLD)&&(!bat_flag))
+				            
+				// check whether the battery is low and check also the flag
+				// we dont need to recheck the battery when we are in panic mode
+				// panic mode is indicated by the lost flag = true
+				//if ((bat_volt <= BAT_THRESHOLD)&&(!bat_flag))
+				if ((bat_volt <= BAT_THRESHOLD)&&(!lost_flag))
 				{
+					// count until we got repetitive battery low
 					if ((bat_counter >=4))
 					{
+						// go to panic mode if the drone are not in the safe mode
 						if(control_mode != MODE_SAFE)
 						{
 							set_control_mode(MODE_PANIC);
@@ -306,21 +312,25 @@ int main(void)
 							#else
 								printf("Battery low disconnecting now!\n");
 							#endif
-							pc_link = false;
+							// bat_flag = true;
+							// pc_link = false;
 						}
+						// send a warning to user when the battery is low but we are in safe mode
 						else
 						{
 							//send acknowledge to pc terminal
+							// no need to go to panic mode because we are in safe mode
 							#ifdef ENCODE_PC_RECEIVE
-								acklog = ACK_BAT_LOW;
+								acklog = ACK_BAT_LOW_EMER_SAFE;
 								encode_packet((uint8_t *) &acklog, sizeof(uint8_t), MSG_ACK, output_data, &output_size);
 								for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
 							#else
-								printf("Battery low\n");
+								printf("Battery low, change the battery now!\n");
 							#endif
 						}
-						BAT_THRESHOLD = 0; //redundant
+						// BAT_THRESHOLD = 0; //redundant
 					}
+					// increase the counter to make sure the bat is indeed low 
 					else
 					{
 						bat_counter++;
@@ -329,10 +339,11 @@ int main(void)
 							encode_packet((uint8_t *) &acklog, sizeof(uint8_t), MSG_ACK, output_data, &output_size);
 							for(i=0; i<output_size; i++) {uart_put(output_data[i]);}
 						#else
-							printf("Battery low\n");
+							printf("warning battery low\n");
 						#endif
 					}
 				}
+				// reset the bat counter if the bat low is just undershoot/momentary
 				else
 				{bat_counter = 0;}
 				/****************************************************************************
@@ -419,10 +430,16 @@ int main(void)
 			}
 
 			/***********************battery check debbuging purpose only*****************************/
-			// if(bat_counter_test >= 15)
-			// {
-			// 	BAT_THRESHOLD = 1250;
-			// }
+			#ifdef SIMULATE_BATTERY
+			if(bat_counter_test >= 15)
+			{
+				BAT_THRESHOLD = 1250;
+			}
+			if(bat_counter_test >= 30)
+			{
+				BAT_THRESHOLD = 0;
+			}
+			#endif
 			/***********************End of battery check debbuging purpose only**********************/
 			clear_timer_flag();
 		}
@@ -435,7 +452,6 @@ int main(void)
 			
 			if ((raw_status == false)&&(init_raw == false))
 			{
-				// get_dmp_data();
 				read_sensor = get_dmp_data_encode();
 				if(read_sensor)
 				{
@@ -471,7 +487,7 @@ int main(void)
 				// sr = iir_butter_10_256_8b(sr);
 
 				/* calibrate first before going to kalman */
-				kalman(sp-cq, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta);
+				kalman(sp-cp, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta);
 				r_butter = iir_butter_10_256_8b(-(sr-cr));
 
 				/***************************************************************************
@@ -486,7 +502,7 @@ int main(void)
 			if((raw_status == true) && (init_raw == false))
 			{
 				acklog = ACK_RAW_INIT;
-				threshold = 900000; // 700000; //1 sec for raw;
+				threshold = 700000; // 700000; //1 sec for raw;
 				// encode_ack(acklog, output_data, &output_size);
 				// for(i=0;i<output_size;i++)
 				// uart_put(output_data[i]);
@@ -498,7 +514,7 @@ int main(void)
 			{
 				imu_init(true, 100);
 				init_raw = false;
-				threshold = 900000; // 700000; //700ms for dmp
+				threshold = 700000; // 700000; //700ms for dmp
 			}
 			//=============================== END TOGGLE RAW =================================//
 

@@ -78,7 +78,6 @@ void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct ms
 				if(keyboard_msg->mode == MODE_YAW || keyboard_msg->mode == MODE_FULL)
 				{
 					if (keyboard_msg->P < MAX_P) {keyboard_msg->P+=1;}
-					keyboard_msg->update = TRUE;
 				}
 				break;
 
@@ -86,7 +85,6 @@ void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct ms
 				if(keyboard_msg->mode == MODE_YAW || keyboard_msg->mode == MODE_FULL)
 				{	
 					if (keyboard_msg->P > 0) {keyboard_msg->P-=1;}
-					keyboard_msg->update = TRUE;
 				}
 				break;
 			
@@ -94,7 +92,6 @@ void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct ms
 				if(keyboard_msg->mode == MODE_FULL)
 				{	
 					if (keyboard_msg->P1 < MAX_P1) {keyboard_msg->P1+=1;}
-					keyboard_msg->update = TRUE;
 				}
 				break;
 
@@ -102,7 +99,6 @@ void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct ms
 				if(keyboard_msg->mode == MODE_FULL)
 				{	
 					if (keyboard_msg->P1 > 0) {keyboard_msg->P1-=1;}
-					keyboard_msg->update = TRUE;
 				}
 				break;
 	
@@ -110,7 +106,6 @@ void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct ms
 				if(keyboard_msg->mode == MODE_FULL)
 				{	
 					if (keyboard_msg->P2 < MAX_P2) {keyboard_msg->P2+=1;}
-					keyboard_msg->update = TRUE;
 				}
 				break;
 
@@ -118,7 +113,6 @@ void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct ms
 				if(keyboard_msg->mode == MODE_FULL)
 				{
 					if (keyboard_msg->P2 > 0) {keyboard_msg->P2-=1;}
-					keyboard_msg->update = TRUE;
 				}
 				break;
 
@@ -168,18 +162,17 @@ void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct ms
 			* Toggling RAW and DMP_MODE
 			******************************************************************/
 			case '6': 
-				//keyboard_msg->mode = MODE_RAW;
 				if (raw_stat == true) 
 				{
 					keyboard_msg->msc_flag = RAW_NO_USE;
 					raw_stat = false;
-					//printf("masuk ke false");
+					printf("\nDMP MODE\n");
 				}
 				else if (raw_stat == false) 
 				{
 					keyboard_msg->msc_flag = RAW_USE;
 					raw_stat = true;
-					//printf("masuk ke true");
+					printf("\nRAW MODE\n");
 				}
 				break;
 			/*****************************************************************/
@@ -195,8 +188,8 @@ void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct ms
 		}
 	}	
 
+	// additional and unconditional, regardless the mode of the drone
 	switch(c) {
-	// additional
 		case 'm': // start flexible logging 
 			if (log_stat == true) 
 			{
