@@ -22,25 +22,25 @@ void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, ui
 	int32_t temp_estimated_p,  temp_estimated_q,  temp_sp, temp_sq, temp_sax, temp_say;
 	static int32_t bp, bq, ephi, temp_estimated_phi, temp_estimated_theta, etheta;
 
-	temp_sp = sp<<16;
-	temp_say = say<<16;
+	temp_sp = sp<<0;
+	temp_say = say<<0;
 	temp_estimated_p = (temp_sp - bp);
 	temp_estimated_phi = temp_estimated_phi + ((temp_estimated_p*177)>>12);
 	ephi = temp_estimated_phi - temp_say;
 	temp_estimated_phi = temp_estimated_phi - (ephi>>c1phi);
-	bp = bp + (ephi>>c2phi);
-	*estimated_phi = temp_estimated_phi >> 16;
-	*estimated_p = temp_estimated_p >> 16;
+	bp = 0 ; // bp + (ephi>>c2phi);
+	*estimated_phi = temp_estimated_phi >> 0;
+	*estimated_p = temp_estimated_p >> 0;
 
-	temp_sq = sq<<16;
-	temp_sax = sax<<16;
+	temp_sq = sq<<0;
+	temp_sax = sax<<0;
 	temp_estimated_q = (temp_sq-bq);
 	temp_estimated_theta = temp_estimated_theta + ((temp_estimated_q*177)>>12);
 	etheta = temp_estimated_theta - temp_sax;
 	temp_estimated_theta = temp_estimated_theta - (etheta>>c1theta);
-	bq = bq + (etheta>>c2theta);
-	*estimated_theta = temp_estimated_theta >> 16;
-	*estimated_q = temp_estimated_q >> 16;
+	bq = 0 ; //bq + (etheta>>c2theta);
+	*estimated_theta = temp_estimated_theta >> 0;
+	*estimated_q = temp_estimated_q >> 0;
 }
 /***************************************************************************************************************************************************/
 

@@ -9,7 +9,7 @@
 #define MAX_ATTITUDE_COM 8192
 #define MIN_ATTITUDE_COM -MAX_ATTITUDE_COM
 
-#define KEY_INC 64
+#define KEY_INC 16
 
 extern bool stop_sending;
 bool raw_stat;

@@ -116,16 +116,19 @@ int main(void)
 	//bigger, more damping ratio.
 	//consider to change to bitwise operation after choosing c
 	//*****************************************************************************/
-    c1phi = 7;
-	c1theta = 7;
-	c2phi = c1phi + 7;
-	c2theta = c1theta + 7;
+    c1phi = 5;
+	c1theta = 5;
+	c2phi = c1phi + 10;
+	c2theta = c1theta + 10;
 	bp = 0;
 	bq = 0;
 	estimated_p = 0;
 	estimated_q = 0;
 	// butterworth filter variable
 	r_butter = 0;
+	int16_t isay = 0;
+	int16_t isax = 0;
+
 	//*****************************************************************************/
 	
 	#ifdef ENCODE_PC_RECEIVE
@@ -199,7 +202,7 @@ int main(void)
 	uint8_t bat_counter_test = 0;		// counter to simulate battery drop after some interval
 	uint16_t BAT_THRESHOLD = 0; 		// testing without battery
 	#else
-	uint16_t BAT_THRESHOLD = 0; 	// demo
+	uint16_t BAT_THRESHOLD = 1040; 	// demo
 	#endif
 	
 	uint8_t bat_counter = 0;
@@ -487,8 +490,14 @@ int main(void)
 				// sr = iir_butter_10_256_8b(sr);
 
 				/* calibrate first before going to kalman */
-				kalman(sp-cp, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta);
-				// r_butter = iir_butter_10_256_8b(-(sr-cr));
+				// isax = filter_avg(sax-csax);
+				// isay = filter_avg(say-csay);
+				isax = iir_butter_10_256_8b(sax-csax);
+				isay = iir_butter_10_256_8b(say-csay);
+				kalman(sp-cp, -(sq-cq), isax, isay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta);
+				
+				// kalman(sp-cp, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta);
+				//r_butter = iir_butter_10_256_8b(-(sr-cr));
 				r_butter = filter_avg(-(sr-cr));
 
 				/***************************************************************************

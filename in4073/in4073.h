@@ -53,6 +53,8 @@ int16_t bp;
 int16_t bq;
 
 int16_t r_butter;
+int16_t isay;
+int16_t isax;
 
 uint8_t mmode;           			///< mode message from pc
 uint16_t mthrust;           		///< thrust message from pc
