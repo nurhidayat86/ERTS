@@ -488,7 +488,8 @@ int main(void)
 
 				/* calibrate first before going to kalman */
 				kalman(sp-cp, -(sq-cq), sax-csax, say-csay, c1phi, c2phi, c1theta, c2theta, &estimated_p, &estimated_q, &phi, &theta);
-				r_butter = iir_butter_10_256_8b(-(sr-cr));
+				// r_butter = iir_butter_10_256_8b(-(sr-cr));
+				r_butter = filter_avg(-(sr-cr));
 
 				/***************************************************************************
 				* filter after kalman, if needed.

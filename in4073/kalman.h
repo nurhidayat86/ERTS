@@ -10,3 +10,4 @@ void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, ui
 int16_t iir_butter_fs256_fc10(int16_t NewSample);
 int16_t iir_butter_10_256_8b(int16_t NewSample);
 int16_t iir_butter_10_256_16b(int16_t NewSample);
+int16_t filter_avg(int16_t NewSample);

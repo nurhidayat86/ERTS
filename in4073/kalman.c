@@ -143,3 +143,28 @@ y[0] /= BCoef[0];
 
 return (y[0] >>6);
 }
+
+int16_t filter_avg(int16_t NewSample)
+{
+    uint8_t i, size = 16, root=4;
+    static int16_t x_shift[100];
+    int32_t sum_x=0;
+
+    //shift the value by one;
+    for (i=0;i<(size-1);i++)
+    {
+        x_shift[i] = x_shift[i+1];
+    }
+
+    //pushing new value;
+    x_shift[size-1] = NewSample;
+
+    //summing the input data
+    for (i=0;i<size;i++)
+    {
+        sum_x += x_shift[i];
+    }
+
+    //averaging data
+    return (sum_x>>root);
+}

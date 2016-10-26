@@ -235,7 +235,8 @@ void run_filters_and_control(void)
             current_panic = get_time_us() - panic_start;
             if(current_panic > PANIC_TIME) 
             {
-                set_control_mode(MODE_SAFE);         
+                set_control_mode(MODE_SAFE);
+                pc_link = true;         
             }
             break;
 
