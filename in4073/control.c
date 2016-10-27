@@ -29,9 +29,6 @@
 #define PANIC_TIME 2000*1000                ///< Time to keep thrust in panic mode (us)
 #define PANIC_THRUST 0.4*MAX_THRUST_COM     ///< The amount of thrust in panic mode
 
-// Fractions
-// CF 4 255 max command from js only contribute 22.5 deg approx (14.4 deg true value) in attitude
-
 // P
 #define RATE_SHIFT_YAW 4            ///< yaw rate reading divider                   2047 bit    =   2000 deg/s
 #define RATE_GAIN_SHIFT_YAW 0       ///< yaw gain divider                           1 old step  =   16 current step

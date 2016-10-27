@@ -7,11 +7,24 @@
 
 #include "keyboard.h"
 
+/*------------------------------------------------------------------
+ *  arif
+ *  function
+ *	adapted from where
+ -------------------------------------------------------------------
+*/
 void initraw_stat()
 {
 	raw_stat = false;
 	log_stat = false;
 }
+
+/*------------------------------------------------------------------
+ *  angga
+ *  function
+ *	adapted from where
+ -------------------------------------------------------------------
+*/
 
 void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg)
 {
@@ -204,6 +217,12 @@ void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct ms
 	}	
 }
 
+/*------------------------------------------------------------------
+ *  angga
+ *  function
+ *	adapted from where
+ -------------------------------------------------------------------
+*/
 
 void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 {

@@ -7,6 +7,13 @@
 
 #include "joystick_interface.h"
 
+/*------------------------------------------------------------------
+ *  author
+ *  function
+ *	adapted from where
+ -------------------------------------------------------------------
+*/
+
 void init_joystick(int* fd)
 {
 	unsigned char axes = 2;
