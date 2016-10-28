@@ -7,6 +7,13 @@
 
 struct termios 	savetty;
 
+/*------------------------------------------------------------
+ * 
+ * Author: Generic program from the example
+ * Adapted from : 
+ *------------------------------------------------------------
+ */
+
 void	term_initio()
 {
 	struct termios tty;
@@ -56,3 +63,6 @@ int	term_getchar()
                 ;
         return c;
 }
+
+ /*-------------------------------------------------------------------
+*/

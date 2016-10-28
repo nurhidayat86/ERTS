@@ -10,6 +10,12 @@
 int serial_device = 0;
 int fd_RS232;
 
+/*------------------------------------------------------------------
+ *  Modified by: Angga Irawan
+ *  function: Communication initiation, use full nonblocking mode, to reduce delay (VTIME = 0, VMIN = 0)
+ *	adapted from: Generic example code
+ -------------------------------------------------------------------
+*/
 void rs232_open(void)
 {
   	char 		*name;
@@ -48,8 +54,16 @@ void rs232_open(void)
 
 	tcflush(fd_RS232, TCIOFLUSH); /* flush I/O buffer */
 }
+ /*-------------------------------------------------------------------
+*/
 
 
+/*------------------------------------------------------------------
+ *  Generic example code
+ *  function: initiation
+ *	adapted from: Generic example code
+ -------------------------------------------------------------------
+*/
 void rs232_close(void)
 {
   	int 	result;
@@ -114,3 +128,5 @@ uint8_t	rs232_getchar_nb_u8()
 		return c;
 	}
 }
+ /*-------------------------------------------------------------------
+*/

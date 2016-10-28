@@ -53,7 +53,7 @@ static uint8_t g_angle_d = 0;                           ///< The yaw control gai
 static uint8_t g_rate_d = 0;                            ///< The yaw control gains (2^CONTROL_FRAC)
 static uint32_t current_panic = 0;
 
-
+//Generic function
 void update_motors(void)
 {
 	NRF_TIMER1->CC[0] = 1000 + ae[0];

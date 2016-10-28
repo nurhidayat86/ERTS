@@ -7,11 +7,11 @@
 
 #include "keyboard.h"
 
-/*------------------------------------------------------------------
- *  arif
- *  function
- *	adapted from where
- -------------------------------------------------------------------
+/*------------------------------------------------------------
+ * Author		: Arif Nurhidayat
+ * Adapted from : 
+ * Funtionalty	: Raw mode flag
+ *------------------------------------------------------------*/
 */
 void initraw_stat()
 {
@@ -19,12 +19,15 @@ void initraw_stat()
 	log_stat = false;
 }
 
-/*------------------------------------------------------------------
- *  angga
- *  function
- *	adapted from where
- -------------------------------------------------------------------
-*/
+/*------------------------------------------------------------*/
+
+
+
+/*------------------------------------------------------------
+ * Author		: Angga Irawan
+ * Adapted from : 
+ * Funtionalty	: Write to the keyboard message based on the pressed key. It can be done in any mode
+ *------------------------------------------------------------*/
 
 void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg)
 {
@@ -216,13 +219,15 @@ void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct ms
 		break;
 	}	
 }
+/*------------------------------------------------------------*/
 
-/*------------------------------------------------------------------
- *  angga
- *  function
- *	adapted from where
- -------------------------------------------------------------------
-*/
+
+
+/*------------------------------------------------------------
+ * Author		: Angga Irawan
+ * Adapted from : 
+ * Funtionalty	: Write to the keyboard message based on the pressed key. It can be done only from safe mode
+ *------------------------------------------------------------*/
 
 void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 {
@@ -422,3 +427,4 @@ void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)
 	}
 	
 }
+/*------------------------------------------------------------*/

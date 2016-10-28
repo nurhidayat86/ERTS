@@ -8,9 +8,9 @@
 #include "joystick_interface.h"
 
 /*------------------------------------------------------------------
- *  author
- *  function
- *	adapted from where
+ *  Generic example code
+ *  function: Joystick initiation
+ *	adapted from: Generic example code
  -------------------------------------------------------------------
 */
 
@@ -38,3 +38,5 @@ void init_joystick(int* fd)
 
 	fcntl(*fd, F_SETFL, O_NONBLOCK);
 }
+/*-------------------------------------------------------------------
+*/

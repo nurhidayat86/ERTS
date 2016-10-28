@@ -135,7 +135,7 @@ void CommandModeSafeAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard
 
 /*------------------------------------------------------------
  * void CommandModeSafeAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
- * Author			: Angga Irawan
+ * Author			: Arif nurhidayat
  * Adapted from 	:
  * Functionality	: This function will mark the joystick and keyboard mode to the safe mode, to prevent one of them updating to other mode.
  *------------------------------------------------------------*/
@@ -207,23 +207,6 @@ void CombineCommandAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_
 		Bound(combine_msg_all->roll, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
 		Bound(combine_msg_all->pitch, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
 		Bound(combine_msg_all->yaw, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
-		
-		// // update the command to keep the track of current thrust from joystick
-		// combine_msg_all->thrust = joystick_msg->thrust;
-		// combine_msg_all->roll = joystick_msg->roll;
-		// combine_msg_all->pitch = joystick_msg->pitch;
-		// combine_msg_all->yaw = joystick_msg->yaw;
-		
-		// // reset the trimming if we are in the safe mode
-		// keyboard_msg->thrust = 0;
-		// keyboard_msg->roll = 0;
-		// keyboard_msg->pitch = 0;
-		// keyboard_msg->yaw = 0;
-
-		// // reset the control gains
-		// combine_msg_all->P = keyboard_msg->P = 0;
-		// combine_msg_all->P1 = keyboard_msg->P1 = 0;
-		// combine_msg_all->P2 = keyboard_msg->P2 = 0;
 	}
 	
 	// always update the flag and gain

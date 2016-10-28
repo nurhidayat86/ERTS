@@ -10,6 +10,50 @@
  *  Embedded Software Lab
  *
  *  June 2016
+
+PROGRAM FLOW:
+
+=================================================================================
+| BEFORE MISSION START:															|
+| This mode is waiting for the first											|
+| data send by the joystick from PC terminal									|
+=================================================================================
+				  					 ||
+				  					 ||	
+									 \/
+=============================================================================================================================
+| ON MISSION: This is loop process until user decide to escape the mission by pressing fire button on MODE_SAFE or ESCAPE   |																										|
+| 																															|
+| 1. Capture the bytes received from PC terminal, and process the data (change control parameter, flags, etc)				|																		|
+| 2. Check the communication based on the timer, whether it receives new data before the deadline or not, if so:			|
+|    --> Go to the panic mode.																								|
+| 	 Otherwise:																												|						
+|	 --> Continue the programs.																								|
+|																															|
+| In timer interrupt loop:																									|
+| 3. For every 1 second:																									|
+|    Battery check, if the battery is low in 4 consecutive reading: --> go to panic mode.									| 
+|    Otherwise: --> Continue mission  																						|
+| 4. For every 50 ms:																										|
+|    Send the telemetry data periodically every 50 ms.																		|
+| 																															|
+| In sensor interrupt loop (in DMP mode 100 Hz, in RAW mode 256 Hz)															|																												| 5. Read DMP / RAW sensor data (depends on RAW flag is triggered or not).													|
+| 6. Performs filtering for RAW data (kalman, averaging filter or butterworth)												|
+| 7. Switch from DMP to RAW, vice versa based on the flag (triggered by keyboard command which is sent by PC terminal)		|
+| 8. Write to flash memory if the log flag is triggered (using keyboard key 'm')											|
+=============================================================================================================================
+									||
+									||
+									\/
+=================================================================================
+| END MISSION:																	|
+| 9. If the log is written to the flash memory:									|
+|    --> Send the log message to PC terminal   									|
+|	 Otherwise:                                                                 |
+|	 --> Exit the program														|
+| data send by the joystick from PC terminal									|
+=================================================================================
+
  *------------------------------------------------------------------
  */
 
@@ -22,6 +66,12 @@ bool loop;
 uint8_t msc_flag = LOG_NO_USE;
 bool update_flag = true;
 
+
+/*------------------------------------------------------------------
+ *  Modified by: Arif Nurhidayat
+ *  function: Process the bytes received from the pc terminal.
+ *	adapted from: Generic example code
+ -------------------------------------------------------------------*/
 static void process_bytes(uint8_t byte) {
 	#ifdef DRONE_DEBUG
 		printf("process_bytes()\n");
@@ -76,6 +126,12 @@ static void process_bytes(uint8_t byte) {
 		set_control_gains(P, P1, P2);
 }
 
+
+ /*------------------------------------------------------------------
+ *  Modified by: Angga Irawan
+ *  function: Main board program flows.
+ *	adapted from: Generic example code
+ -------------------------------------------------------------------*/
 /*------------------------------------------------------------------
  * main -- do the test
  *------------------------------------------------------------------
@@ -364,7 +420,9 @@ int main(void)
 			end = get_time_us();
 			proc_adc = end - start;
 			#endif
-
+			/********************************************************************************
+			* 	Telemetry 																	
+			*********************************************************************************/
 			if (counter_tele++%2 == 0)		// every modulo x50 ms
 			{
 				#ifdef DRONE_PROFILE
