@@ -12,7 +12,6 @@
  * Adapted from : 
  * Funtionalty	: Raw mode flag
  *------------------------------------------------------------*/
-*/
 void initraw_stat()
 {
 	raw_stat = false;

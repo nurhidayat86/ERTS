@@ -21,7 +21,7 @@ void init_joystick(int* fd)
 	int version = 0x000800;
 	char name[NAME_LENGTH] = "Unknown";
 
-	if ((*fd = open("/dev/input/js0", O_RDONLY)) < 0) 
+	if ((*fd = open("/dev/input/js1", O_RDONLY)) < 0) 
 	{
 		perror("joystick");
 		exit(1);
