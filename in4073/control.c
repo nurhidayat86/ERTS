@@ -53,7 +53,7 @@ static uint8_t g_angle_d = 0;                           ///< The yaw control gai
 static uint8_t g_rate_d = 0;                            ///< The yaw control gains (2^CONTROL_FRAC)
 static uint32_t current_panic = 0;
 
-/* Set the motor commands */
+
 void update_motors(void)
 {
 	NRF_TIMER1->CC[0] = 1000 + ae[0];
@@ -62,7 +62,14 @@ void update_motors(void)
 	NRF_TIMER1->CC[3] = 1000 + ae[3];
 }
 
-/* Calculate the motor commands from thrust, roll, pitch and yaw commands */
+
+/*------------------------------------------------------------
+ * void update_motors(void)
+ * Author		: Angga Irawan
+ * Adapted from :
+ * Funtionalty	: Calculate the motor commands from thrust, roll, pitch and yaw commands
+ *------------------------------------------------------------*/
+
 static void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw) {
     
     /* 
@@ -100,8 +107,17 @@ static void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
     ae[3] = ae[3]>>PRESCALE;
     Bound(ae[3], 0, MAX_MOTOR);
 }
+/*---------------------------------------------------------------------------*/
 
-/* Change the control mode */
+
+
+/*------------------------------------------------------------
+ * void set_control_mode(enum control_mode_t mode)
+ * Author		: Arif Nurhidayat
+ * Adapted from :
+ * Funtionalty	: Change the control mode, and set intermediate action if it is needed
+ *------------------------------------------------------------*/
+/*  */
 void set_control_mode(enum control_mode_t mode) {
     /* Certain modes require to reset variables */
     control_mode = mode;
@@ -145,15 +161,32 @@ void set_control_mode(enum control_mode_t mode) {
             break;
     };
 }
+/*---------------------------------------------------------------------------*/
 
-/* Set the control gains */
+
+
+
+/*------------------------------------------------------------
+ * void update_motors(void)
+ * Author		: Reggie
+ * Adapted from :
+ * Funtionalty	: Set the control gain
+ *------------------------------------------------------------*/
 void set_control_gains(uint8_t yaw_d, uint8_t g_angle, uint8_t g_rate) {
     gyaw_d = yaw_d;
     g_angle_d = g_angle;
     g_rate_d = g_rate;
 }
+/*-------------------------------------------------------------*/
 
-/* Set the control commands (from joystick or keyboard) */
+
+/*------------------------------------------------------------
+ * void set_control_mode(enum control_mode_t mode)
+ * Author		: Arif Nurhidayat
+ * Adapted from :
+ * Funtionalty	: Set the control commands (from joystick or keyboard)
+ *------------------------------------------------------------*/
+
 void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw) {
     /* Based on the control mode we need to use it seperately */
     switch(control_mode) {
@@ -210,8 +243,15 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
             break;
     }
 }
+/*-------------------------------------------------------------*/
 
-/* Run the filters and control */
+
+/*------------------------------------------------------------
+ * void update_motors(void)
+ * Author		: Angga Irawan
+ * Adapted from : Generic program given by example
+ * Funtionalty	: Run the filters and control
+ *------------------------------------------------------------*/
 void run_filters_and_control(void)
 {
     /* Based on the control mode execute commands */
@@ -326,7 +366,15 @@ void run_filters_and_control(void)
     /* Update the motor commands */
     update_motors();
 }
+/*-------------------------------------------------------------*/
 
+
+/*------------------------------------------------------------
+ * void calibration(void)
+ * Author		: Reggie
+ * Adapted from :
+ * Funtionalty	: Performing calibration by averaging last 16 values from the sensors
+ *------------------------------------------------------------*/
 void calibration(void)
 {
     uint8_t i;
@@ -358,65 +406,4 @@ void calibration(void)
     //averaging data
     cphi = sum_phi>>4; ctheta = sum_theta>>4; csax = sum_sax>>4; csay = sum_say>>4; cp = sum_sp>>4; cq = sum_sq>>4; cr = sum_sr>>4;
 }
- 
-// void calibration(void)
-// {
-//     int16_t samples = 100;
-//     int32_t sum1, sum2, sum3, sum4, sum5, sum6, sum7, sum8;
-//     uint8_t i = 0, j = 0;
-    
-//     for(i=0, sum1=0, sum2=0, sum3=0, sum4=0, sum5=0, sum6=0, sum7=0, sum8=0; i<samples; i++) 
-//     {
-//       if (check_sensor_int_flag()) 
-//       {
-        
-//         if(init_raw ==  true)
-//         {
-//             get_dmp_data();
-//             j++;  // number of samples taken
-//             clear_sensor_int_flag();
-//         }
-//         else
-//         {
-//             get_dmp_data();
-//             j++;  // number of samples taken
-//             clear_sensor_int_flag();
-//         }
-//       }
-// /****************************************************/
-//       sum1 += phi;
-// **************************************************
-//       sum2 += theta;
-// /****************************************************/
-//       sum3 += psi;
-// /****************************************************/
-//       sum4 += sp;
-// /****************************************************/
-//       sum5 += sp;
-// /****************************************************/
-//       sum6 += sp;
-
-//     if(init_raw == true)
-//     {
-//         sum7 += sax;
-//         sum8 += say;
-//     }
-
-
-//         nrf_delay_ms(10);
-//     }
-//     printf("%d samples taken \n", j);
-//     cphi = sum1/samples;
-//     ctheta = sum2/samples;
-//     cpsi = sum3/samples;
-//     cp = sum4/samples;
-//     cq = sum5/samples;
-//     cr = sum6/samples;
-
-//     if(init_raw == true)
-//     {
-//         csax = sum7/samples;
-//         csay = sum8/samples;
-//     }
-
-// }
+/*------------------------------------------------------------*/

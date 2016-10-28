@@ -1,13 +1,21 @@
 /*------------------------------------------------------------
  * Command combination
- *
- * 
+ * Author: Angga Irawan
+ * Adapted from : 
  *------------------------------------------------------------
  */
 #include "command.h"
 #include "keyboard.h"
 #include "serial.h"
+ /*---------------------------------------------------------------*/
+ 
 
+/*------------------------------------------------------------
+ * void InitCommandAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
+ * Author			: Angga Irawan
+ * Adapted from 	:
+ * Functionality	: This function set all variable (joystick & keyboard) to zero (initial state).
+ *------------------------------------------------------------*/
 void InitCommandAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
 {
 	combine_msg_all->update = false;
@@ -43,17 +51,49 @@ void InitCommandAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* 
 	keyboard_msg->P2 = 0;
 	keyboard_msg->msc_flag = 0;
 }
+/*---------------------------------------------------------------*/
+
+
+/*------------------------------------------------------------
+ * void InitCommandUpdate(struct msg_combine_all_t* combine_msg_all)
+ * Author			: Angga Irawan
+ * Adapted from 	:
+ * Functionality	: This function marks that the input either from keyboard / joystick has been combined into combined massage that to be sent to the board side.
+ *------------------------------------------------------------
+ */
 
 void InitCommandUpdate(struct msg_combine_all_t* combine_msg_all)
 {
 	combine_msg_all->update = false;
 }
+/*---------------------------------------------------------------*/
+
+
+
+/*------------------------------------------------------------
+ * void CommandUpdate(struct msg_combine_all_t* combine_msg_all)
+ * Author			: Angga Irawan
+ * Adapted from 	:
+ * Functionality	: This function marks that There is new input either from joystick or keyboard.
+ *------------------------------------------------------------
+ */
 
 void CommandUpdate(struct msg_combine_all_t* combine_msg_all)
 {
 	combine_msg_all->update = true;
 
 }
+/*---------------------------------------------------------------*/
+
+
+
+/*------------------------------------------------------------
+ * void CommandModeSafe(struct msg_combine_all_t* combine_msg_all)
+ * Author			: Angga Irawan
+ * Adapted from 	:
+ * Functionality	: This function will change the current mode to the safe mode
+ *------------------------------------------------------------
+ */
 
 void CommandModeSafe(struct msg_combine_all_t* combine_msg_all)
 {
@@ -62,6 +102,16 @@ void CommandModeSafe(struct msg_combine_all_t* combine_msg_all)
 	combine_msg_all->P1 = 0;
 	combine_msg_all->P2 = 0;
 }
+/*---------------------------------------------------------------*/
+
+
+
+/*------------------------------------------------------------
+ * void CommandModeSafeAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
+ * Author			: Angga Irawan
+ * Adapted from 	:
+ * Functionality	: This function will mark the joystick and keyboard mode to the safe mode, to prevent one of them updating to other mode.
+ *------------------------------------------------------------*/
 
 void CommandModeSafeAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
 {
@@ -80,8 +130,15 @@ void CommandModeSafeAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard
 	// joystick_msg->P1 = 0;
 	// joystick_msg->P2 = 0;
 }
+/*---------------------------------------------------------------*/
 
 
+/*------------------------------------------------------------
+ * void CommandModeSafeAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
+ * Author			: Angga Irawan
+ * Adapted from 	:
+ * Functionality	: This function will mark the joystick and keyboard mode to the safe mode, to prevent one of them updating to other mode.
+ *------------------------------------------------------------*/
 void CombineCommand(struct msg_combine_all_t* combine_msg_all)
 {
 	// combine the message if the mode are neither safe mode nor panic mode 
@@ -105,7 +162,15 @@ void CombineCommand(struct msg_combine_all_t* combine_msg_all)
 	// update the flag, it indicates the message has been updated
 	combine_msg_all->update=FALSE;
 }
+/*---------------------------------------------------------------*/
 
+
+/*------------------------------------------------------------
+ * void CombineCommandAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
+ * Author			: Angga Irawan
+ * Adapted from 	:
+ * Functionality	: This function combines joystick and keyboard command.
+ *------------------------------------------------------------*/
 void CombineCommandAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
 {
 	// set the mode depend on the update from keyboard or joystick
@@ -172,7 +237,15 @@ void CombineCommandAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_
 	joystick_msg->update=FALSE;
 	keyboard_msg->update=FALSE;	
 }
+/*---------------------------------------------------------------*/
 
+
+/*------------------------------------------------------------
+ * void SendCommandAll(struct msg_combine_all_t* combine_msg_all)
+ * Author			: Angga Irawan
+ * Adapted from 	:
+ * Functionality	: This function encode the combined message to the protocol and sends the message to the board.
+ *------------------------------------------------------------*/
 void SendCommandAll(struct msg_combine_all_t* combine_msg_all)
 {
 	uint8_t output_data[MAX_PAYLOAD+HDR_FTR_SIZE];
@@ -185,3 +258,4 @@ void SendCommandAll(struct msg_combine_all_t* combine_msg_all)
 		rs232_putchar((char) output_data[i]);
 	}
 }
+/*---------------------------------------------------------------*/

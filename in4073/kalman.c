@@ -2,11 +2,16 @@
 
 /*************************************************************************************************************************************************
 * Kalman filter
-* p2phi = 5683 >>10
+ * void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, uint16_t c2phi, uint16_t c1theta, uint16_t c2theta, 
+	int16_t *estimated_p, int16_t *estimated_q, int16_t *estimated_phi, int16_t *estimated_theta) 
+ * Author		: Arif Nurhidayat
+ * Adapted from : 
+ * Funtionalty	: Kalman filter
+* p2phi = 177 >> 4
 * frequency sampling = 256 hz arround 3.8 ms
-* best performance at c1 = 64/128/256 (higher --> slower (more damping ratio))
-* c2 = 1024*c1
-* need to perform bitwise operation to make it faster
+* best performance at c1 = 5-7 shift right operation (higher --> slower (more damping ratio))
+* c2 = shift right (10 + c1)
+* need to perform bitwise operation to make it faster, untested with motor noises
 **************************************************************************************************************************************************/
 void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, uint16_t c2phi, uint16_t c1theta, uint16_t c2theta, 
 	int16_t *estimated_p, int16_t *estimated_q, int16_t *estimated_phi, int16_t *estimated_theta) 
@@ -14,28 +19,35 @@ void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, ui
 	int32_t temp_estimated_p,  temp_estimated_q,  temp_sp, temp_sq, temp_sax, temp_say;
 	static int32_t bp, bq, ephi, temp_estimated_phi, temp_estimated_theta, etheta;
 
-	temp_sp = sp<<0;
-	temp_say = say<<0;
+	temp_sp = sp<<8;
+	temp_say = say<<8;
 	temp_estimated_p = (temp_sp - bp);
 	temp_estimated_phi = temp_estimated_phi + ((temp_estimated_p*177)>>12);
 	ephi = temp_estimated_phi - temp_say;
 	temp_estimated_phi = temp_estimated_phi - (ephi>>c1phi);
-	bp = 0 ; // bp + (ephi>>c2phi);
+	bp + (ephi>>c2phi);
 	*estimated_phi = temp_estimated_phi >> 0;
 	*estimated_p = temp_estimated_p >> 0;
 
-	temp_sq = sq<<0;
-	temp_sax = sax<<0;
+	temp_sq = sq<<8;
+	temp_sax = sax<<8;
 	temp_estimated_q = (temp_sq-bq);
 	temp_estimated_theta = temp_estimated_theta + ((temp_estimated_q*177)>>12);
 	etheta = temp_estimated_theta - temp_sax;
 	temp_estimated_theta = temp_estimated_theta - (etheta>>c1theta);
-	bq = 0 ; //bq + (etheta>>c2theta);
+	bq + (etheta>>c2theta);
 	*estimated_theta = temp_estimated_theta >> 0;
 	*estimated_q = temp_estimated_q >> 0;
 }
 /***************************************************************************************************************************************************/
 
+
+/*------------------------------------------------------------
+ * void calibration(void)
+ * Author		: Reggie
+ * Adapted from : The coefficient is generated with external application (winfilter32), verified with Matlab
+ * Funtionalty	: Butterworth filter, with 16 bit resolution
+ *------------------------------------------------------------*/
 int16_t iir_butter_fs256_fc10(int16_t NewSample) {
 
 	// Noef 2
@@ -73,7 +85,16 @@ int16_t iir_butter_fs256_fc10(int16_t NewSample) {
 
 	return (y[0]>>6);
 }
+/*------------------------------------------------------------*/
 
+
+
+/*------------------------------------------------------------
+ * int16_t iir_butter_10_256_8b(int16_t NewSample)
+ * Author		: Reggie
+ * Adapted from : The coefficient is generated with external application (winfilter32), verified with Matlab
+ * Funtionalty	: Butterworth filter, with 8 bit resolution (Backup if we have overflow in the intermediate operation)
+ *------------------------------------------------------------*/
 int16_t iir_butter_10_256_8b(int16_t NewSample) {
 uint8_t n;
 int16_t ACoef[3], BCoef[3];
@@ -104,7 +125,17 @@ y[0] /= BCoef[0];
 
 return (y[0] >>6);
 }
+/*------------------------------------------------------------*/
 
+
+
+
+/*------------------------------------------------------------
+ * int16_t iir_butter_10_256_16b(int16_t NewSample) 
+ * Author		: Reggie
+ * Adapted from : The coefficient is generated with external application (winfilter32), verified with Matlab
+ * Funtionalty	: Butterworth filter, with 16 bit resolution (Redundant)
+ *------------------------------------------------------------*/
 int16_t iir_butter_10_256_16b(int16_t NewSample) {
 uint8_t n;
 int16_t ACoef[3], BCoef[3];
@@ -135,11 +166,20 @@ y[0] /= BCoef[0];
 
 return (y[0] >>6);
 }
+/*-------------------------------------------------------------*/
 
+
+
+/*------------------------------------------------------------
+ * int16_t filter_avg(int16_t NewSample)
+ * Author		: Reggie
+ * Adapted from : 
+ * Funtionalty	: Averaging filter, taken from last 16 values
+ *------------------------------------------------------------*/
 int16_t filter_avg(int16_t NewSample)
 {
     uint8_t i, size = 16, root=4;
-    static int16_t x_shift[100];
+    static int16_t x_shift[100]; //must use exact size due to static variable
     int32_t sum_x=0;
 
     //shift the value by one;
@@ -160,3 +200,4 @@ int16_t filter_avg(int16_t NewSample)
     //averaging data
     return (sum_x>>root);
 }
+/*-------------------------------------------------------------*/

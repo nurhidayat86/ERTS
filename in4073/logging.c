@@ -1,11 +1,3 @@
-/*------------------------------------------------------------------
- *  logging.c
- *
- *
- *
- *------------------------------------------------------------------
- */
-
 #include "in4073.h"
 #include "logging.h"
 // #include "logging_protocol.h"
@@ -14,6 +6,12 @@ struct msg_log_t *msg_logging;
 struct msg_log_t log_msg;
 static uint16_t index_logging;
 
+
+/*------------------------------------------------------------
+ * Author		: Arif Nurhidayat
+ * Adapted from : 
+ * Funtionalty	: Write to flash memory, gives false status if it failes.
+ *------------------------------------------------------------*/
 bool write_log() {
 	bool status;
 	// status = flash_write_bytes((uint32_t) index_logging*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t));
@@ -28,7 +26,15 @@ bool write_log() {
 	index_logging+=1;
 	return status;
 }
+/*------------------------------------------------------------*/
 
+
+
+/*------------------------------------------------------------
+ * Author		: Arif Nurhidayat
+ * Adapted from : 
+ * Funtionalty	: Read from flash memory, gives false status if it failes.
+ *------------------------------------------------------------*/
 bool read_logs() {
 	
 	#ifdef ENCODE_PC_RECEIVE
@@ -69,7 +75,15 @@ bool read_logs() {
 	}
 	return status;
 }
+/*------------------------------------------------------------*/
 
+
+
+/*------------------------------------------------------------
+ * Author		: Reggie
+ * Adapted from : 
+ * Funtionalty	: Writes all needed parameters (sensors, cotrollers, etc) to the logging variable.
+ *------------------------------------------------------------*/
 bool flash_data() {
 	
 	log_msg.index_log = index_logging;
@@ -121,3 +135,4 @@ bool flash_data() {
 	
 	return true;
 }
+/*------------------------------------------------------------*/
