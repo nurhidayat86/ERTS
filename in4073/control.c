@@ -12,45 +12,42 @@
 
 #include "in4073.h"
  #include "protocol.h"
-//#include "control.h"
 
+#define PRESCALE 3                      // shift the control output result so that it will be suitable with rotor PWM scale
+#define THRUST_MIN 200<<3               // minimal thrust in motor mixing function so that it will continue to rotate (prevent the stall) in extreme control output 
+#define THRUST_MIN_CONTROL 300<<3       // minimal thrust must be provided by PC so that the drone can do the manuver at the enough amount of thrust
 
-#define PRESCALE 3
-#define THRUST_MIN 200<<3
-#define AE_MIN 200<<3
-#define THRUST_MIN_CONTROL 300<<3
+#define MAX_THRUST_COM 8192                 // max thrust command that drone can get from the PC, it correspond with max PWM (1000) in motor part
+#define MIN_THRUST_COM 0                    // PWM 0
+#define MAX_ATTITUDE_COM 1024               // max attitude command that the drone can get from PC
+#define MIN_ATTITUDE_COM -MAX_ATTITUDE_COM  // min attitude command (same value different rotation direction)
 
-#define MAX_THRUST_COM 8192
-#define MIN_THRUST_COM 0
-#define MAX_ATTITUDE_COM 8192
-#define MIN_ATTITUDE_COM -MAX_ATTITUDE_COM
-
-#define MAX_MOTOR 1000                      ///< Maximum PWM signal (1000us is added)
-#define PANIC_TIME 2000*1000                ///< Time to keep thrust in panic mode (us)
-#define PANIC_THRUST 0.4*MAX_THRUST_COM     ///< The amount of thrust in panic mode
+#define MAX_MOTOR 1000                      // Maximum PWM signal (1000us is added)
+#define PANIC_TIME 2000*1000                // Time to keep thrust in panic mode (us)
+#define PANIC_THRUST 0.4*MAX_THRUST_COM     // The amount of thrust in panic mode
 
 // P
-#define RATE_SHIFT_YAW 4            ///< yaw rate reading divider                   2047 bit    =   2000 deg/s
-#define RATE_GAIN_SHIFT_YAW 0       ///< yaw gain divider                           1 old step  =   16 current step
+#define RATE_SHIFT_YAW 4            // yaw rate reading divider                   2047 bit    =   2000 deg/s
+#define RATE_GAIN_SHIFT_YAW 0       // yaw gain divider                           does not need divider
 // P1
-#define ANGLE_SHIFT 4               ///< roll and pitch attitude reading divider    1023 bit    =   90 deg
-#define ANGLE_GAIN_SHIFT 3          ///< roll and pitch gain divider                1 old step  =   8 current step
+#define ANGLE_SHIFT 4               // roll and pitch attitude reading divider    1023 bit    =   90 deg
+#define ANGLE_GAIN_SHIFT 3          // roll and pitch gain divider                give 1/8 step for gain multiplication
 // P2
-#define RATE_SHIFT 4                ///< roll and pitch rate reading divider        2047 bit    =   2000 deg/s        
-#define RATE_GAIN_SHIFT 1          ///< roll and pitch gain divider                 1 old step  =   1/2 current step 
+#define RATE_SHIFT 4                // roll and pitch rate reading divider        2047 bit    =   2000 deg/s        
+#define RATE_GAIN_SHIFT 1           // roll and pitch gain divider                give 1/2 step for gain multiplication
 
 #define Bound(_x, _min, _max) { if (_x > (_max)) _x = (_max); else if (_x < (_min)) _x = (_min); }
 
 /* Local variables */
-static uint32_t panic_start = 0;                  ///< Time at which panic mode is entered
-static uint16_t cmd_thrust = 0;                   ///< The thrust command
-static int16_t cmd_roll, cmd_pitch, cmd_yaw = 0;  ///< The roll, pitch, yaw command
-static uint16_t sp_thrust = 0;                    ///< The thrust setpoint
-static int16_t sp_roll, sp_pitch, sp_yaw = 0;     ///< The roll, pitch, yaw setpoint
+static uint32_t panic_start = 0;                    // Time at which panic mode is entered
+static uint16_t cmd_thrust = 0;                     // The thrust command
+static int16_t cmd_roll, cmd_pitch, cmd_yaw = 0;    // The roll, pitch, yaw command
+static uint16_t sp_thrust = 0;                      // The thrust setpoint
+static int16_t sp_roll, sp_pitch, sp_yaw = 0;       // The roll, pitch, yaw setpoint
 
-static uint8_t gyaw_d = 0;                              ///< The yaw control gains (2^CONTROL_FRAC)
-static uint8_t g_angle_d = 0;                           ///< The yaw control gains (2^CONTROL_FRAC)
-static uint8_t g_rate_d = 0;                            ///< The yaw control gains (2^CONTROL_FRAC)
+static uint8_t gyaw_d = 0;                          // The yaw rate control gains
+static uint8_t g_angle_d = 0;                       // The attitude control gains
+static uint8_t g_rate_d = 0;                        // The attitude rate control gains
 static uint32_t current_panic = 0;
 
 //Generic function
@@ -284,23 +281,6 @@ void run_filters_and_control(void)
         /* Calibration mode (no thrust at all) */
         case MODE_CALIBRATION:
             ae[0] = ae[1] = ae[2] = ae[3] = 0;
-            // static reading[100];
-
-            // It takes sometimes (~ 6s) until it returns a stable value
-            // Also calibrate here (until leave mode)
-            
-            // cphi = phi;
-            // ctheta = theta;
-            // // cpsi = psi;
-            // if(init_raw == true)
-            // {
-            //     csax = sax;
-            //     csay = say;
-            // }            
-            // cp = sp;
-            // cq = sq;
-            // cr = sr;
-
             calibration();
             break;
 
@@ -312,7 +292,6 @@ void run_filters_and_control(void)
             {               
                 
                 if(init_raw == true) cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) - ((r_butter)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
-                //if(init_raw == true) cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) + ((sr-cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 else cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) + ((sr - cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
             }
@@ -324,19 +303,21 @@ void run_filters_and_control(void)
             break;
 
         case MODE_FULL:
-            // rate = y and z have the opposite sign 
-            // attitude angle = z has the opposite sign 
+            // notes for DMP mode, sensor reading sign convention
+            // rate = y and z have the opposite sign with the convention
+            // attitude angle = z has the opposite sign with the convention
             // P1 angle, P2 rate
-            if(cmd_thrust > THRUST_MIN_CONTROL)
+            if(cmd_thrust > THRUST_MIN_CONTROL)     // do the control if the thrust is enough
             {               
+                // use different signal type and also signal sign for raw mode 
                 if(init_raw == true) 
                 {
                     cmd_roll = (((sp_roll - ((phi)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((estimated_p)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
                     cmd_pitch = (((sp_pitch - ((theta)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((estimated_q)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
                     cmd_yaw = ((( (sp_yaw>>RATE_SHIFT_YAW) - ((r_butter)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
-                    // cmd_yaw = ((( (sp_yaw>>RATE_SHIFT_YAW) + ((sr-cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 }
                 else
+                // do the dmp control
                 {
                     cmd_roll = (((sp_roll - ((phi - cphi)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) - ((((sp - cp)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
                     cmd_pitch = (((sp_pitch - ((theta - ctheta)>>ANGLE_SHIFT))*g_angle_d)>>ANGLE_GAIN_SHIFT) + ((((sq - cq)>>RATE_SHIFT)*g_rate_d)>>RATE_GAIN_SHIFT);
@@ -344,7 +325,8 @@ void run_filters_and_control(void)
                 }
                 motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);            
             }
-            else
+            // just do the thrust command
+            else    
             {
                 motor_mixing(cmd_thrust, 0, 0, 0);
             }
@@ -357,13 +339,13 @@ void run_filters_and_control(void)
         case MODE_HEIGHT:
             break;
 
-        /* Just in case an invalid mode is selected go to SAFE */
+        // prevent the invalid mode
         default:
             control_mode = MODE_SAFE;
             break;
     };
 
-    /* Update the motor commands */
+    // update motors command
     update_motors();
 }
 /*-------------------------------------------------------------*/
