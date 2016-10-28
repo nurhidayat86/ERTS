@@ -19,6 +19,7 @@ void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, ui
 	int32_t temp_estimated_p,  temp_estimated_q,  temp_sp, temp_sq, temp_sax, temp_say;
 	static int32_t bp, bq, ephi, temp_estimated_phi, temp_estimated_theta, etheta;
 
+	//sp and say is multiplied by 256, so that we do not need to scale down bp.
 	temp_sp = sp<<8;
 	temp_say = say<<8;
 	temp_estimated_p = (temp_sp - bp);
@@ -26,9 +27,10 @@ void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, ui
 	ephi = temp_estimated_phi - temp_say;
 	temp_estimated_phi = temp_estimated_phi - (ephi>>c1phi);
 	bp + (ephi>>c2phi);
-	*estimated_phi = temp_estimated_phi >> 0;
-	*estimated_p = temp_estimated_p >> 0;
+	*estimated_phi = temp_estimated_phi >> 8; //scale down estimated_phi to the original value
+	*estimated_p = temp_estimated_p >> 8; //scale down estimated_p to the original value
 
+	//sq and sax is multiplied by 256, so that we do not need to scale down bq.
 	temp_sq = sq<<8;
 	temp_sax = sax<<8;
 	temp_estimated_q = (temp_sq-bq);
@@ -36,8 +38,8 @@ void kalman(int16_t sp, int16_t sq, int16_t sax, int16_t say, uint16_t c1phi, ui
 	etheta = temp_estimated_theta - temp_sax;
 	temp_estimated_theta = temp_estimated_theta - (etheta>>c1theta);
 	bq + (etheta>>c2theta);
-	*estimated_theta = temp_estimated_theta >> 0;
-	*estimated_q = temp_estimated_q >> 0;
+	*estimated_theta = temp_estimated_theta >> 8; //scale down estimated_theta to the original value
+	*estimated_q = temp_estimated_q >> 8; //scale down estimated_q to the original value
 }
 /***************************************************************************************************************************************************/
 

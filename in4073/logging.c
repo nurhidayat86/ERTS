@@ -14,15 +14,7 @@ static uint16_t index_logging;
  *------------------------------------------------------------*/
 bool write_log() {
 	bool status;
-	// status = flash_write_bytes((uint32_t) index_logging*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t));
-	// status = flash_write_bytes((uint32_t) index_logging*sizeof(struct msg_log_t), (uint8_t *) msg_logging, (uint32_t) sizeof(struct msg_log_t));
 	status = flash_write_bytes((uint32_t) index_logging*sizeof(struct msg_log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct msg_log_t));
-	
-	// printf("%c", HDR);
-	// printf("%c", index_logging);
-	// printf("%d ", log_msg.phi);
-	// printf("%d ", log_msg.theta);
-	// printf("%d \n", log_msg.psi);
 	index_logging+=1;
 	return status;
 }
@@ -49,7 +41,7 @@ bool read_logs() {
 	for (i=0; i<index_logging; i++) 
 	{
 		#ifdef ENCODE_PC_RECEIVE
-			// if(flash_read_bytes((uint32_t) i*sizeof(struct log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t)) == true)
+			// The log mmessage is encoded before sending
 			status = flash_read_bytes((uint32_t) i*sizeof(struct msg_log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct msg_log_t));
 			if(status == true)
 			{
@@ -62,7 +54,7 @@ bool read_logs() {
 			}
 			
 		#else
-			// status = flash_read_bytes((uint32_t) i*sizeof(struct msg_log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct log_t));
+			// The log mmessage is sent without encoding
 			status = flash_read_bytes((uint32_t) i*sizeof(struct msg_log_t), (uint8_t *) &log_msg, (uint32_t) sizeof(struct msg_log_t));
 			printf("%d %ld | %d | %d %d %d %d | ", i, log_msg.time_stamp, log_msg.mode, log_msg.thrust, log_msg.roll, log_msg.pitch, log_msg.yaw);
 			printf("%d %d %d %d | ", log_msg.ae[0], log_msg.ae[1], log_msg.ae[2], log_msg.ae[3] );
@@ -85,7 +77,7 @@ bool read_logs() {
  * Funtionalty	: Writes all needed parameters (sensors, cotrollers, etc) to the logging variable.
  *------------------------------------------------------------*/
 bool flash_data() {
-	
+	//Save sensors value to log message structure, before this message structure is written to the memory.
 	log_msg.index_log = index_logging;
 	log_msg.time_stamp = get_time_us();
 	log_msg.mode = control_mode;
