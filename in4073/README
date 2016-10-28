@@ -1,5 +1,5 @@
 /*README*/
-1. Before starting the programs change the joystick setting in /in4073/pc_terminal/joystick.c:
+1. Before start the programs change the joystick setting in /in4073/pc_terminal/joystick.c:
 	"/dev/input/js0"
    prior to your own input device.
 
