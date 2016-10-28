@@ -10,6 +10,7 @@ PROGRAM FLOW:
 
 =================================================================================
 | BEFORE MISSION START:															|
+| Initialization 																|
 | This mode is waiting for the first											|
 | data send by the joystick from PC terminal									|
 =================================================================================
@@ -17,36 +18,31 @@ PROGRAM FLOW:
 				  					 ||	
 									 \/
 =============================================================================================================================
-| ON MISSION: This is loop process until user decide to escape the mission by pressing fire button on MODE_SAFE or ESCAPE   |																										|
+| ON MISSION: This is loop process until user decide to escape the mission by pressing fire button or ESCAPE MODE_SAFE 		|																										|
 | 																															|
-| 1. Capture the bytes received from PC terminal, and process the data (change control parameter, flags, etc)				|																		|
-| 2. Check the communication based on the timer, whether it receives new data before the deadline or not, if so:			|
-|    --> Go to the panic mode.																								|
+| 1. Send command to Drone periodically																						|
+| 2. Check the mode from the message, if it is panic mode and the drone mode also panic mode 								|
+|	(obtain drone mode from the telemetry data):																			|
+|    --> Go to the panic mode. Stop sending the message	until panic time is ended											|
 | 	 Otherwise:																												|						
-|	 --> Continue the programs.																								|
-|																															|
-| In timer interrupt loop:																									|
-| 3. For every 1 second:																									|
-|    Battery check, if the battery is low in 4 consecutive reading: --> go to panic mode.									| 
-|    Otherwise: --> Continue mission  																						|
-| 4. For every 50 ms:																										|
-|    Send the telemetry data periodically every 50 ms.																		|
-| 																															|
-| In sensor interrupt loop (in DMP mode 100 Hz, in RAW mode 256 Hz)															|																												| 5. Read DMP / RAW sensor data (depends on RAW flag is triggered or not).													|
-| 6. Performs filtering for RAW data (kalman, averaging filter or butterworth)												|
-| 7. Switch from DMP to RAW, vice versa based on the flag (triggered by keyboard command which is sent by PC terminal)		|
-| 8. Write to flash memory if the log flag is triggered (using keyboard key 'm')											|
-=============================================================================================================================
+|	 --> Continue the programs.																								|																														|
+| 3. Read joystick event:																									|
+|    thrust, roll, pitch, yaw, and fire button 																				|
+| 4. Read keyboard event:																									|
+|    thrust, roll, pitch, yaw, and mode 																					|
+|	 gains, log stat																										|
+| 5. Combine joystick and keyboard command	 																				|																														|
+| 6. Read telemetry data															 										|
+| ===========================================================================================================================
 									||
 									||
 									\/
 =================================================================================
 | END MISSION:																	|
-| 9. If the log is written to the flash memory:									|
-|    --> Send the log message to PC terminal   									|
+| 7. If the the Drone send the log message:										|
+|    --> Read the log message and write it to a file   							|
 |	 Otherwise:                                                                 |
 |	 --> Exit the program														|
-| data send by the joystick from PC terminal									|
 =================================================================================
  */
 
@@ -57,13 +53,6 @@ PROGRAM FLOW:
 #include "joystick_interface.h"
 #include "command.h"
 #include <pthread.h>
-
-// #include "../logging_protocol.h"
-// #include "log_terminal.h"
-
-
-
-
 
 #include <time.h>
 #include <assert.h>
@@ -99,7 +88,6 @@ uint32_t mon_time_us(void)
     return us;
 }
 /*--------------------------------------------------------------------*/
-
 
  /*------------------------------------------------------------------
  *  Modified by: Angga Irawan
@@ -150,9 +138,7 @@ int main(int argc, char **argv)
 	struct msg_keyboard_t keyboard_msg;
 
 	// initialize the message by zeroing all value
-	// InitCommandUpdate(&combine_msg_all);
 	InitCommandAll(&joystick_msg, &keyboard_msg, &combine_msg_all);
-	// CommandModeSafe(&combine_msg_all);
 	CommandModeSafeAll(&joystick_msg, &keyboard_msg, &combine_msg_all);
 
 	// logging variable
@@ -201,13 +187,16 @@ int main(int argc, char **argv)
 					break;
 			}
 		
-			// scale it down to 9 bit signed integer (-255 to 255), make it less sensitive
+			// scale it down to 9 bit signed integer (-127 to 127)
 			combine_msg_all.roll = axis[0]>>8; 
 			combine_msg_all.pitch = axis[1]>>8;
+			// make yaw more sensitive than the others (-511 to 511)
 			combine_msg_all.yaw = axis[2]>>6;
-			
-			// scale it down from U16 to U12 (4096) we might need to compress it a little bit more
+			// scale it down to 9 bit signed integer (0 to 4095)
 			combine_msg_all.thrust = (JOY_THRUST_OFF - axis[3])>>4;
+			// make a big step in small joystick position
+			// thrust 4095 -> 511 us in PWM
+			// thrust 30   -> 160 us in PWM (almost rotating)
 			if(combine_msg_all.thrust > 30) combine_msg_all.thrust = (((combine_msg_all.thrust)*11)>>4)+1280;
 			combine_msg_all.update = true;
 			warning = TRUE;	
@@ -241,10 +230,10 @@ int main(int argc, char **argv)
 		// check panic time as well, do not send anything if we are in the panic time interval
 		end = mon_time_ms();
 		
-		if((((end-start) > PERIODIC_COM) && (combine_msg_all.mode != MODE_LOG))) //&& (!stop_sending)
+		if((((end-start) > PERIODIC_COM) && (combine_msg_all.mode != MODE_LOG)))
 		{
 			
-			// print to terminal to indicate the panic button was succesfully pressed
+			// print to terminal to indicate the panic mode command will be sent
 			if(combine_msg_all.mode == MODE_PANIC) printf("\nPANIC MODE from PC\n");
 			
 			// stop sending a command if the we are still in panic period
@@ -266,7 +255,6 @@ int main(int argc, char **argv)
 			{
 				// start panic start, reset the mode to the safe mode
 				panic_start = mon_time_ms();
-				// CommandModeSafe(&combine_msg_all);
 				CommandModeSafeAll(&joystick_msg, &keyboard_msg, &combine_msg_all); 
 				// stop sending the command
 				stop_sending = true;
@@ -279,7 +267,6 @@ int main(int argc, char **argv)
 			//printf("s %d ", proc_send);
 		#endif
 
-		// JoystickCommand(fd, js, &joystick_msg);
 		// Read the joystick event
 		#ifdef PC_PROFILE 
 			start_profile = mon_time_us();
@@ -295,13 +282,16 @@ int main(int argc, char **argv)
 					break;
 			}
 		
-			// scale it down to 9 bit signed integer (-255 to 255)
+			// scale it down to 9 bit signed integer (-127 to 127)
 			joystick_msg.roll = axis[0]>>8; 
 			joystick_msg.pitch = axis[1]>>8;
-			joystick_msg.yaw = axis[2]>>6; // make it more sensitive than the others 
-			
-			// scale it down from U16 to U12 (4096) we might need to compress it a little bit more
+			// make yaw more sensitive than the others (-511 to 511)
+			joystick_msg.yaw = axis[2]>>6; 
+			// scale it down to 9 bit signed integer (0 to 4095)
 			joystick_msg.thrust = (JOY_THRUST_OFF - axis[3])>>4;
+			// make a big step in small joystick position
+			// thrust 4095 -> 511 us in PWM
+			// thrust 30   -> 160 us in PWM (almost rotating)
 			if(joystick_msg.thrust > 30) joystick_msg.thrust = (((joystick_msg.thrust)*11)>>4)+1280;
 			// assign the fire button
 			if(button[0]) 
@@ -319,7 +309,7 @@ int main(int argc, char **argv)
 
 		
 		// read the keyboard
-		// it is also used to update the tuning gain
+		// it is also used to update the control gains
 		#ifdef PC_PROFILE 
 			start_profile = mon_time_us();
 		#endif
@@ -357,7 +347,6 @@ int main(int argc, char **argv)
 		if (read(fd_RS232, &c, 1))
 		{	
 			#ifdef ENCODE_PC_RECEIVE
-			// msg_parse(&msg, (uint8_t) c)
 			msg_parse(&msg, (uint8_t) c);
 				#ifdef ENCODE_DEBUG
 					if (msg.status == UNITINIT) printf("UNITINIT\n");
@@ -375,13 +364,6 @@ int main(int argc, char **argv)
 					case MSG_TELEMETRY: 
 					{
 						msg_tele = (struct msg_telemetry_t *)&msg.payload[0];
-						// printf("%d %d %d %d %d %d| ", msg.crc_fails, msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
-						// printf("%d %d %d %d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
-						// printf("%d %d %d| ",msg_tele->phi, msg_tele->theta, msg_tele->psi);
-						// printf("%d %d %d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
-						// printf("%d %d %d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
-						// printf("%d %d %d %d\n ",msg_tele->bat_volt, msg_tele->P, msg_tele->P1, msg_tele->P2);
-						
 						printf("\r%d %4d %4d %4d %4d| ", msg_tele->mode, msg_tele->thrust, msg_tele->roll, msg_tele->pitch, msg_tele->yaw);
 						printf("%4d %4d %4d %4d| ", msg_tele->engine[0],msg_tele->engine[1],msg_tele->engine[2],msg_tele->engine[3]);
 						printf("%6d %6d %6d| ",msg_tele->phi, msg_tele->theta, msg_tele->psi);
@@ -455,7 +437,6 @@ int main(int argc, char **argv)
 						else if(msg.payload[0]==ACK_BAT_LOW_EMERGENCY)
 						{
 							printf("Battery low, uplink connection will be disconnected now!\n");
-							// stop_sending = true;
 							combine_msg_all.mode = MODE_PANIC;
 						}
 						else if (msg.payload[0] == ACK_BAT_LOW_EMER_SAFE)
@@ -515,8 +496,8 @@ int main(int argc, char **argv)
 	
 	while((combine_msg_all.mode == MODE_LOG) && (combine_msg_all.mode != MODE_FINISH))// start logging 
 	{
-		if (read(fd_RS232, &c, 1)){ 				// if ((c = rs232_getchar_nb()) != -1){		
-			#ifdef ENCODE_PC_RECEIVE				//#ifdef ENCODE
+		if (read(fd_RS232, &c, 1)){ 					
+			#ifdef ENCODE_PC_RECEIVE
 				msg_parse(&msg, (uint8_t)c);
 				if(msg.status == GOT_PACKET) { 		// We got a valid packet
 					switch(msg.msg_id) {
@@ -529,25 +510,12 @@ int main(int argc, char **argv)
 							printf("%d %d %d| ",msg_tele->sp, msg_tele->sq, msg_tele->sr);
 							printf("%d %d %d| ",msg_tele->sax, msg_tele->say, msg_tele->saz);
 							printf("%d\n ",msg_tele->bat_volt);
-							// printf("s:%d j:%d k:%d c:%d r:%d\n ",proc_send, proc_joy, proc_key, proc_comb, proc_read);
 							break;
 						}
 
 						case MSG_LOG: 
 						{
 							msg_logging = (struct msg_log_t *)&msg.payload[0];
-							// printf("%d %d | %d | %d %d %d %d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
-							// fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
-							// printf("%d %d %d %d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
-							// fprintf(kp, "%d, %d, %d, %d, ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
-							// printf("%d %d %d | ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
-							// fprintf(kp,"%d, %d, %d, ", msg_logging->phi, msg_logging->theta, msg_logging->psi);
-							// printf("%d %d %d | ", msg_logging->sp, msg_logging->sq, msg_logging->sr);
-							// fprintf(kp,"%d, %d, %d, ", msg_logging->sp, msg_logging->sq, msg_logging->sr); 
-							// printf("%d %d %d | ", msg_logging->sax, msg_logging->say, msg_logging->saz);
-							// fprintf(kp,"%d, %d, %d, ", msg_logging->sax, msg_logging->say, msg_logging->saz); 
-							// printf("%d %d %d %d |%d %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
-							// fprintf(kp,"%d, %d, %d, %d, %d, %d\n", msg_logging->bat_volt, msg_logging->P, msg_logging->P1, msg_logging->P2, msg_logging->temperature, msg_logging->pressure);
 							printf("%4d %9d | %d | %4d %4d %4d %4d | ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
 							fprintf(kp, "%d, %d, %d, %d, %d, %d, %d, ", msg_logging->index_log, msg_logging->time_stamp, msg_logging->mode, msg_logging->thrust, msg_logging->roll, msg_logging->pitch, msg_logging->yaw);
 							printf("%4d %4d %4d %4d | ", msg_logging->ae[0], msg_logging->ae[1], msg_logging->ae[2], msg_logging->ae[3]);
@@ -585,14 +553,10 @@ int main(int argc, char **argv)
 					msg.status = UNITINIT;	// Start to receive a new packet
 					msg.crc_fails = 0;
 				}
-				//if(c == 0x99) printf("\n");
-				//printf("0x%X ", (uint8_t)c);	
 			#else
 				printf("%c", (uint8_t)c);
 			#endif			
 		}
-		//if(combine_msg_all.mode == MODE_FINISH)
-		//	break;
 	}
 	
 

@@ -61,10 +61,10 @@ void update_motors(void)
 
 
 /*------------------------------------------------------------
- * void update_motors(void)
+ * void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw)
  * Author		: Angga Irawan
- * Adapted from :
- * Funtionalty	: Calculate the motor commands from thrust, roll, pitch and yaw commands
+ * Adapted from : Freek van Tienen previousely works in group 13, he gave minor examples
+. * Funtionalty	: Calculate the motor commands from thrust, roll, pitch and yaw commands
  *------------------------------------------------------------*/
 
 static void motor_mixing(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw) {
@@ -160,11 +160,8 @@ void set_control_mode(enum control_mode_t mode) {
 }
 /*---------------------------------------------------------------------------*/
 
-
-
-
 /*------------------------------------------------------------
- * void update_motors(void)
+ * void set_control_gains(uint8_t yaw_d, uint8_t g_angle, uint8_t g_rate)
  * Author		: Reggie
  * Adapted from :
  * Funtionalty	: Set the control gain
@@ -178,7 +175,7 @@ void set_control_gains(uint8_t yaw_d, uint8_t g_angle, uint8_t g_rate) {
 
 
 /*------------------------------------------------------------
- * void set_control_mode(enum control_mode_t mode)
+ * void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t yaw)
  * Author		: Arif Nurhidayat
  * Adapted from :
  * Funtionalty	: Set the control commands (from joystick or keyboard)
@@ -244,7 +241,7 @@ void set_control_command(uint16_t thrust, int16_t roll, int16_t pitch, int16_t y
 
 
 /*------------------------------------------------------------
- * void update_motors(void)
+ * void run_filters_and_control(void)
  * Author		: Angga Irawan
  * Adapted from : Generic program given by example
  * Funtionalty	: Run the filters and control
@@ -273,24 +270,26 @@ void run_filters_and_control(void)
             }
             break;
 
-        /* Manual mode is direct mapping from sticks to controls */
+        // Manual mode is direct mapping from sticks to controls
         case MODE_MANUAL:
             motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);    
             break;
 
-        /* Calibration mode (no thrust at all) */
+        // Calibration mode (no thrust at all)
         case MODE_CALIBRATION:
             ae[0] = ae[1] = ae[2] = ae[3] = 0;
             calibration();
             break;
 
-        /* Yaw rate controlled mode */
+        // Yaw rate control mode
         case MODE_YAW:
-            
+            // notes for DMP mode, sensor reading sign convention
+            // rate = y and z have the opposite sign with the convention
+            // attitude angle = z has the opposite sign with the convent
             // do the yaw control if the thrust is high enough
             if(cmd_thrust > THRUST_MIN_CONTROL)
             {               
-                
+                // remember the sign convention for sr is the opposite
                 if(init_raw == true) cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) - ((r_butter)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 else cmd_yaw = ((((sp_yaw>>RATE_SHIFT_YAW) + ((sr - cr)>>RATE_SHIFT_YAW))* gyaw_d)>>RATE_GAIN_SHIFT_YAW);
                 motor_mixing(cmd_thrust, cmd_roll, cmd_pitch, cmd_yaw);
@@ -302,6 +301,7 @@ void run_filters_and_control(void)
 
             break;
 
+        // Full control mode
         case MODE_FULL:
             // notes for DMP mode, sensor reading sign convention
             // rate = y and z have the opposite sign with the convention

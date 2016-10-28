@@ -34,8 +34,8 @@ PROGRAM FLOW:
 | 3. For every 1 second:																									|
 |    Battery check, if the battery is low in 4 consecutive reading: --> go to panic mode.									| 
 |    Otherwise: --> Continue mission  																						|
-| 4. For every 50 ms:																										|
-|    Send the telemetry data periodically every 50 ms.																		|
+| 4. For every 100 ms:																										|
+|    Send the telemetry data periodically every 100 ms.																		|
 | 																															|
 | In sensor interrupt loop (in DMP mode 100 Hz, in RAW mode 256 Hz)															|																												| 5. Read DMP / RAW sensor data (depends on RAW flag is triggered or not).													|
 | 6. Performs filtering for RAW data (kalman, averaging filter or butterworth)												|
@@ -60,12 +60,9 @@ PROGRAM FLOW:
 #include "in4073.h"
 #include "logging.h"
 #include "kalman.h"
-// #include "logging_protocol.h"
 
-bool loop;
 uint8_t msc_flag = LOG_NO_USE;
 bool update_flag = true;
-
 
 /*------------------------------------------------------------------
  *  Modified by: Arif Nurhidayat
@@ -77,16 +74,15 @@ static void process_bytes(uint8_t byte) {
 		printf("process_bytes()\n");
 	#endif
 	
-	static struct msg_p msg;		// struct to parse the message
-	struct msg_combine_all_t *msg_com_all; 
-	msg_parse(&msg, byte);
-	if(msg.status == GOT_PACKET) { 	// got the packet
-		nrf_gpio_pin_toggle(RED);	// toggle the RED led to indicate the command from PC received
-		switch(msg.msg_id) {		// capture the message based on the message id
-			case MSG_COMBINE_ALL: 		// the message is command message
+	static struct msg_p msg;				// struct to parse the message
+	struct msg_combine_all_t *msg_com_all; 	// struct to capture the command message from PC
+	msg_parse(&msg, byte);					// parsing the RX data
+	if(msg.status == GOT_PACKET) { 			// got the packet
+		nrf_gpio_pin_toggle(RED);			// toggle the RED led to indicate the valid command from PC received
+		switch(msg.msg_id) {				// capture the message based on the message id
+			case MSG_COMBINE_ALL: 			// the message is command message
 			{
 				msg_com_all = (struct msg_combine_all_t *)&msg.payload[0];
-				//update_flag = msg_com_all->update;
 				mmode = msg_com_all->mode;
 				mthrust = msg_com_all->thrust;
 				mroll = msg_com_all->roll;
@@ -118,9 +114,8 @@ static void process_bytes(uint8_t byte) {
 	else if(msc_flag == LOG_USE)
 		log_status = true;
 
-	//set_control_mode(mmode);							// set the mode
 	set_control_mode(msg_com_all->mode);							// set the mode
-	set_control_command(mthrust, mroll, mpitch, myaw);	// set the control command
+	set_control_command(mthrust, mroll, mpitch, myaw);				// set the control command
 	
 	if ((P<=MAX_P)&&(P1<=MAX_P1)&&(P2<=MAX_P2)) //add safety constraint, to prevent use pointer
 		set_control_gains(P, P1, P2);
@@ -152,9 +147,9 @@ int main(void)
 	adc_init();
 	twi_init();
 	imu_init(true, 100);
-	//baro_init();
-	spi_flash_init();
-	//	ble_init();
+	// baro_init();				// we did not use this
+	spi_flash_init();			
+	// ble_init();
 
 	// get imu setting
 	unsigned short gfsr[0];
@@ -201,13 +196,12 @@ int main(void)
  	msg_tele.pitch = 0;
  	msg_tele.yaw = 0;
 					
- 	cphi = ctheta = cpsi = 0;        ///< Calibration values of phi, theta, psi
-	cp = cq = cr = 0;                ///< Calibration valies of p, q and r
+ 	cphi = ctheta = cpsi = 0;        // Calibration values of phi, theta, psi
+	cp = cq = cr = 0;                // Calibration valies of p, q and r
 
 	bool status = true;
 	uint32_t counter = 0;
 	uint32_t counter_tele = 0;
-	// uint32_t counter_link = 0;
 	
 	// profiling
 	#ifdef DRONE_PROFILE
@@ -219,7 +213,6 @@ int main(void)
 	uint32_t proc_log = 0;
 	uint32_t proc_dmp = 0;
 	uint32_t proc_control = 0;
-	// uint32_t counter_prof = 0;
 	uint32_t start_all = 0, end_all = 0, time_all = 0;
 	uint32_t start_send = 0;
 	
