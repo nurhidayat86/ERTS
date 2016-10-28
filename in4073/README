@@ -11,3 +11,72 @@
 	- Reset your terminal
 	- turn off the board
 	- unplug and replug the board.
+	
+4. Contributors:
+
+	Joystick: 
+	init_joystick(): 		Angga Irawan
+
+	Keyboard: 
+	initraw_stat(): 		Angga Irawan
+	KeyboardCommandSplit(): 	Angga Irawan
+
+	PC Terminal:
+	mon_time_ms():                  Reggie Viset
+	main():                         Angga Irawan (modified by)
+
+	Command:
+	InitCommandAll():               Angga Irawan
+	InitCommandUpdate():            Angga Irawan
+	CommandUpdate():                Angga Irawan
+	CommandModeSafe():              Angga Irawan
+	CommandModeSafeAll():           Angga Irawan
+	CombineCommand():               Arif Nurhidayat
+	CombineCommandAll():            Angga Irawan
+	SendCommandAll():               Angga Irawan
+
+	Serial:
+	rs232_open():                   Generic code
+	rs232_close():                  Generic code
+	rs232_getchar_nb():             Angga Irawan (modified by)
+	rs232_getchar():                Generic code
+	rs232_putchar():                Generic code
+	rs232_getchar_nb_u8():          Angga Irawan (modified by)
+
+	Term:
+	term_initio():                  Generic code
+	term_exitio():                  Generic code
+	term_puts():                    Generic code
+	term_putchar():                 Generic code
+	term_getchar_nb():              Generic code
+	term_getchar():                 Generic code
+
+	Quadcopter:
+	main():                         Arif Nurhidayat (modified by)
+	process_bytes():                Arif Nurhidayat (modified by)
+
+	Control:
+	update_motors():
+	motor_mixing():                 Angga Irawan
+	set_control_mode():             Arif Nurhidayat
+	set_control_gains():            Reggie Viset
+	set_control_command():          Arif Nurhidayat
+	run_filters_and_control():      Angga Irawan (modified by)
+	calibration():                  Reggie Viset
+
+	Kalman:
+	kalman():                       Arif Nurhidayat
+	iir_butter_fs256_fc10():        Reggie Viset
+	iir_butter_10_256_8b():         Reggie Viset
+	iir_butter_10_256_16b():        Reggie Viset
+	filter_avg():                   Reggie Viset
+
+	Logging:
+	write_log():                    Arif Nurhidayat
+	read_logs():                    Arif Nurhidayat
+	flash_data():                   Reggie Viset
+
+	Protocol:
+	encode_packet(): 		Arif Nurhidayat
+	msg_parse(): 			Arif Nurhidayat
+	encode_ack(): 			Arif Nurhidayat
