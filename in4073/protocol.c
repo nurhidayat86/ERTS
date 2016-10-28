@@ -10,7 +10,7 @@
 /*------------------------------------------------------------
  * void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_data, uint8_t *output_size)
  * Author		: Arif Nurhidayat
- * Adapted from : Freeks van Tien previousely works in group 13, he gave minor idea examples. (adapted from MAV Link protocol).
+ * Adapted from : Freeks van Tien previousely worked in group 13, he gave minor idea and examples. (adapted from MAV Link protocol).
  * Funtionalty	: Encode the data and write the encoded message to output_data variable which will be sent via serial communication.
  * 				  It contains header 1 byte, payload length 1 byte, message id 1 byte, payload up to 200 btes, and CRC 1 byte.
  *------------------------------------------------------------*/
@@ -26,6 +26,8 @@ void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_d
 	checksum1 = checksum2 = len;
 	output_data[2] = msg_id;
 	checksum1 += msg_id;
+	
+	//checksum 2 is the sum of the sum of message.
 	checksum2 += checksum1;
 	
 	// Encoding the data
@@ -36,6 +38,7 @@ void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_d
 		checksum2 += checksum1;
 		i++;
 	}
+	//Only checksum 2 is used.
 	output_data[i+3] = checksum2;
 
 	// Set the output size
@@ -63,6 +66,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			}
 			break;
 
+		//after the parser reads HDR byte, it waits for <payload length>.
 		case GOT_HDR:
 			msg->ck1 = msg->ck2 = c;
 			msg->payload_len = c;
@@ -72,6 +76,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			#endif
 			break;
 
+		//after the parser reads <payload length>, it waits for <message id>.
 		case GOT_LEN:
 			msg->msg_id = c;
 			msg->ck1 += c;
@@ -83,6 +88,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			#endif
 			break;
 
+		//after the parser reads <message id>, it waits for <payload>, stay in this process until it reach the end of the payload.
 		case GOT_ID:
 			msg->payload[msg->payload_idx] = c;
 			msg->payload_idx++;
@@ -97,23 +103,8 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 			#endif
 			break;
 
+		//after the <payload> is received, check the CRC. if it fails, discard the data.
 		case GOT_PAYLOAD:
-		// 	if (c != msg->ck1) {
-		// 		msg->crc_fails++;
-		// 		msg->status = UNITINIT;
-		// 		//#ifdef PC_DEBUG
-		// 		printf("crc fail %d \n", msg->crc_fails);
-		// 		//#endif
-		// 	}
-		// 	else {
-		// 		msg->status++;
-		// 		#ifdef PC_DEBUG
-		// 		printf("crc success %d \n", msg->ck1);
-		// 		#endif
-		// 	}
-		// 	break;
-
-		// case GOT_CRC1:
 			if (c != msg->ck2) {
 				msg->crc_fails++;
 				msg->status = UNITINIT;
@@ -138,7 +129,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 /*------------------------------------------------------------
  * void encode_ack(uint8_t data, uint8_t *output_data, uint8_t *output_size)
  * Author		: Arif Nurhidayat
- * Adapted from : Freeks van Tien previousely works in group 13, he gave minor idea examples. (adapted from MAV Link protocol).
+ * Adapted from : adapted from MAV Link protocol.
  * Funtionalty	: Encode the ack message.
  *------------------------------------------------------------*/
 void encode_ack(uint8_t data, uint8_t *output_data, uint8_t *output_size) {
