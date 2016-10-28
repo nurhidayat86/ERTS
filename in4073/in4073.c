@@ -251,7 +251,7 @@ int main(void)
 	uint8_t bat_counter_test = 0;		// counter to simulate battery drop after some interval
 	uint16_t BAT_THRESHOLD = 0; 		// testing without battery
 	#else
-	uint16_t BAT_THRESHOLD = 1040; 	// demo
+	uint16_t BAT_THRESHOLD = 0; 	// demo
 	#endif
 	
 	uint8_t bat_counter = 0;

@@ -15,20 +15,19 @@
 4. Contributors:
 
 	Joystick: 
-	init_joystick(): 		Angga Irawan
+	init_joystick(): 				Angga Irawan
 
-	Keyboard: 
-	initraw_stat(): 		Angga Irawan
-	KeyboardCommandSplit(): 	Angga Irawan
+	Keyboard: 	
+	initraw_stat(): 				Angga Irawan
+	KeyboardCommandSplit(): 		Angga Irawan
+	KeyboardCommand(): 				Angga Irawan
 
 	PC Terminal:
 	mon_time_ms():                  Reggie Viset
 	main():                         Angga Irawan (modified by)
 
 	Command:
-	InitCommandAll():               Angga Irawan
 	InitCommandUpdate():            Angga Irawan
-	CommandUpdate():                Angga Irawan
 	CommandModeSafe():              Angga Irawan
 	CommandModeSafeAll():           Angga Irawan
 	CombineCommand():               Arif Nurhidayat
@@ -38,7 +37,7 @@
 	Serial:
 	rs232_open():                   Generic code
 	rs232_close():                  Generic code
-	rs232_getchar_nb():             Angga Irawan (modified by)
+	rs232_getchar_nb():             Generic code
 	rs232_getchar():                Generic code
 	rs232_putchar():                Generic code
 	rs232_getchar_nb_u8():          Angga Irawan (modified by)
@@ -52,11 +51,11 @@
 	term_getchar():                 Generic code
 
 	Quadcopter:
-	main():                         Arif Nurhidayat (modified by)
+	main():                         Angga Irawan (modified by)
 	process_bytes():                Arif Nurhidayat (modified by)
 
 	Control:
-	update_motors():
+	update_motors():				Generic code
 	motor_mixing():                 Angga Irawan
 	set_control_mode():             Arif Nurhidayat
 	set_control_gains():            Reggie Viset
@@ -77,6 +76,6 @@
 	flash_data():                   Reggie Viset
 
 	Protocol:
-	encode_packet(): 		Arif Nurhidayat
-	msg_parse(): 			Arif Nurhidayat
-	encode_ack(): 			Arif Nurhidayat
+	encode_packet(): 				Arif Nurhidayat
+	msg_parse(): 					Arif Nurhidayat
+	encode_ack(): 					Arif Nurhidayat
