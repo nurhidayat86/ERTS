@@ -21,8 +21,6 @@ void initraw_stat()
 
 /*------------------------------------------------------------*/
 
-
-
 /*------------------------------------------------------------
  * Author		: Angga Irawan
  * Adapted from : 
@@ -226,7 +224,7 @@ void KeyboardCommandSplit(char c, struct msg_joystick_t* joystick_msg, struct ms
 /*------------------------------------------------------------
  * Author		: Angga Irawan
  * Adapted from : 
- * Funtionalty	: Write to the keyboard message based on the pressed key. It can be done only from safe mode
+ * Funtionalty	: Write to the keyboard message based on the pressed key. It initially is used, but it erase the trimming mode if the joystick is moved
  *------------------------------------------------------------*/
 
 void KeyboardCommand(char c, struct msg_combine_all_t* combine_msg_all)

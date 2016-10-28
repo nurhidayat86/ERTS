@@ -10,7 +10,7 @@
 /*------------------------------------------------------------
  * void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_data, uint8_t *output_size)
  * Author		: Arif Nurhidayat
- * Adapted from : Freeks van Tien previousely works in group 13, he gave minor idea examples. (adapted from MAV Link protocol).
+ * Adapted from : Freek van Tienen previousely works in group 13, he gave minor examples. (adapted from MAV Link protocol).
  * Funtionalty	: Encode the data and write the encoded message to output_data variable which will be sent via serial communication.
  * 				  It contains header 1 byte, payload length 1 byte, message id 1 byte, payload up to 200 btes, and CRC 1 byte.
  *------------------------------------------------------------*/
@@ -48,7 +48,7 @@ void encode_packet(uint8_t *data, uint8_t len, uint8_t msg_id, uint8_t *output_d
 /*------------------------------------------------------------
  * void msg_parse(struct msg_p *msg, uint8_t c)
  * Author		: Arif Nurhidayat
- * Adapted from : Freeks van Tien previousely works in group 13, he gave minor idea examples.
+ * Adapted from : Freek van Tienen previousely works in group 13, he gave minor examples.
  * Funtionalty	: Decode the data, and save it to decoder structure, the payload can be accessed from sub variable (payload[]).
  *------------------------------------------------------------*/
 void msg_parse(struct msg_p *msg, uint8_t c) {
@@ -138,7 +138,7 @@ void msg_parse(struct msg_p *msg, uint8_t c) {
 /*------------------------------------------------------------
  * void encode_ack(uint8_t data, uint8_t *output_data, uint8_t *output_size)
  * Author		: Arif Nurhidayat
- * Adapted from : Freeks van Tien previousely works in group 13, he gave minor idea examples. (adapted from MAV Link protocol).
+ * Adapted from : Freek van Tienen previousely works in group 13, he gave minor examples. (adapted from MAV Link protocol).
  * Funtionalty	: Encode the ack message.
  *------------------------------------------------------------*/
 void encode_ack(uint8_t data, uint8_t *output_data, uint8_t *output_size) {

@@ -53,59 +53,6 @@ void InitCommandAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* 
 }
 /*---------------------------------------------------------------*/
 
-
-/*------------------------------------------------------------
- * void InitCommandUpdate(struct msg_combine_all_t* combine_msg_all)
- * Author			: Angga Irawan
- * Adapted from 	:
- * Functionality	: This function marks that the input either from keyboard / joystick has been combined into combined massage that to be sent to the board side.
- *------------------------------------------------------------
- */
-
-void InitCommandUpdate(struct msg_combine_all_t* combine_msg_all)
-{
-	combine_msg_all->update = false;
-}
-/*---------------------------------------------------------------*/
-
-
-
-/*------------------------------------------------------------
- * void CommandUpdate(struct msg_combine_all_t* combine_msg_all)
- * Author			: Angga Irawan
- * Adapted from 	:
- * Functionality	: This function marks that There is new input either from joystick or keyboard.
- *------------------------------------------------------------
- */
-
-void CommandUpdate(struct msg_combine_all_t* combine_msg_all)
-{
-	combine_msg_all->update = true;
-
-}
-/*---------------------------------------------------------------*/
-
-
-
-/*------------------------------------------------------------
- * void CommandModeSafe(struct msg_combine_all_t* combine_msg_all)
- * Author			: Angga Irawan
- * Adapted from 	:
- * Functionality	: This function will change the current mode to the safe mode
- *------------------------------------------------------------
- */
-
-void CommandModeSafe(struct msg_combine_all_t* combine_msg_all)
-{
-	combine_msg_all->mode = MODE_SAFE;
-	combine_msg_all->P = 0;
-	combine_msg_all->P1 = 0;
-	combine_msg_all->P2 = 0;
-}
-/*---------------------------------------------------------------*/
-
-
-
 /*------------------------------------------------------------
  * void CommandModeSafeAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
  * Author			: Angga Irawan
@@ -116,51 +63,8 @@ void CommandModeSafe(struct msg_combine_all_t* combine_msg_all)
 void CommandModeSafeAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
 {
 	combine_msg_all->mode = MODE_SAFE;
-	// combine_msg_all->P = 0;
-	// combine_msg_all->P1 = 0;
-	// combine_msg_all->P2 = 0;
-	
 	keyboard_msg->mode = MODE_SAFE;
-	// keyboard_msg->P = 0;
-	// keyboard_msg->P1 = 0;
-	// keyboard_msg->P2 = 0;
-	
 	joystick_msg->mode = MODE_SAFE;
-	// joystick_msg->P = 0;
-	// joystick_msg->P1 = 0;
-	// joystick_msg->P2 = 0;
-}
-/*---------------------------------------------------------------*/
-
-
-/*------------------------------------------------------------
- * void CommandModeSafeAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
- * Author			: Arif nurhidayat
- * Adapted from 	:
- * Functionality	: This function will mark the joystick and keyboard mode to the safe mode, to prevent one of them updating to other mode.
- *------------------------------------------------------------*/
-void CombineCommand(struct msg_combine_all_t* combine_msg_all)
-{
-	// combine the message if the mode are neither safe mode nor panic mode 
-	if(combine_msg_all->mode != MODE_SAFE && combine_msg_all->mode != MODE_PANIC){
-		
-		// limit the command value, it is not fixed yet, it depends on the bit we play especially for the joystick part
-		Bound(combine_msg_all->thrust, MIN_THRUST_COM, MAX_THRUST_COM);
-		Bound(combine_msg_all->roll, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
-		Bound(combine_msg_all->pitch, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
-		Bound(combine_msg_all->yaw, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
-	}
-
-	// reset the combine command if the mode is safe mode
-	if(combine_msg_all->mode == MODE_SAFE) 
-	{
-		combine_msg_all->P = 0;
-		combine_msg_all->P1 = 0;
-		combine_msg_all->P2 = 0;
-	}
-	
-	// update the flag, it indicates the message has been updated
-	combine_msg_all->update=FALSE;
 }
 /*---------------------------------------------------------------*/
 
@@ -187,22 +91,6 @@ void CombineCommandAll(struct msg_joystick_t* joystick_msg, struct msg_keyboard_
 		combine_msg_all->pitch = joystick_msg->pitch + keyboard_msg->pitch;
 		combine_msg_all->yaw = joystick_msg->yaw + keyboard_msg->yaw;
 	
-		// limit the command value, it is not fixed yet, it depends on the bit we play especially for the joystick part
-		Bound(combine_msg_all->thrust, MIN_THRUST_COM, MAX_THRUST_COM);
-		Bound(combine_msg_all->roll, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
-		Bound(combine_msg_all->pitch, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
-		Bound(combine_msg_all->yaw, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
-	}
-
-	// reset the combine command if the mode is safe mode
-	if(combine_msg_all->mode == MODE_SAFE) 
-	{	
-		
-		combine_msg_all->thrust = joystick_msg->thrust + keyboard_msg->thrust;
-		combine_msg_all->roll = joystick_msg->roll + keyboard_msg->roll;
-		combine_msg_all->pitch = joystick_msg->pitch + keyboard_msg->pitch;
-		combine_msg_all->yaw = joystick_msg->yaw + keyboard_msg->yaw;
-
 		Bound(combine_msg_all->thrust, MIN_THRUST_COM, MAX_THRUST_COM);
 		Bound(combine_msg_all->roll, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
 		Bound(combine_msg_all->pitch, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
@@ -240,5 +128,53 @@ void SendCommandAll(struct msg_combine_all_t* combine_msg_all)
 	for (i=0; i<output_size; i++) {	
 		rs232_putchar((char) output_data[i]);
 	}
+}
+/*---------------------------------------------------------------*/
+
+/*------------------------------------------------------------
+ * void CommandModeSafe(struct msg_combine_all_t* combine_msg_all)
+ * Author			: Angga Irawan
+ * Adapted from 	:
+ * Functionality	: This function will change the current mode to the safe mode
+ *------------------------------------------------------------
+ */
+
+void CommandModeSafe(struct msg_combine_all_t* combine_msg_all)
+{
+	combine_msg_all->mode = MODE_SAFE;
+	combine_msg_all->P = 0;
+	combine_msg_all->P1 = 0;
+	combine_msg_all->P2 = 0;
+}
+/*---------------------------------------------------------------*/
+
+/*------------------------------------------------------------
+ * void CombineCommand (struct msg_joystick_t* joystick_msg, struct msg_keyboard_t* keyboard_msg, struct msg_combine_all_t* combine_msg_all)
+ * Author			: Arif nurhidayat
+ * Adapted from 	:
+ * Functionality	: This function will mark the joystick and keyboard mode to the safe mode, to prevent one of them updating to other mode.
+ *------------------------------------------------------------*/
+void CombineCommand(struct msg_combine_all_t* combine_msg_all)
+{
+	// combine the message if the mode are neither safe mode nor panic mode 
+	if(combine_msg_all->mode != MODE_SAFE && combine_msg_all->mode != MODE_PANIC){
+		
+		// limit the command value, it is not fixed yet, it depends on the bit we play especially for the joystick part
+		Bound(combine_msg_all->thrust, MIN_THRUST_COM, MAX_THRUST_COM);
+		Bound(combine_msg_all->roll, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
+		Bound(combine_msg_all->pitch, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
+		Bound(combine_msg_all->yaw, MIN_ATTITUDE_COM, MAX_ATTITUDE_COM);
+	}
+
+	// reset the combine command if the mode is safe mode
+	if(combine_msg_all->mode == MODE_SAFE) 
+	{
+		combine_msg_all->P = 0;
+		combine_msg_all->P1 = 0;
+		combine_msg_all->P2 = 0;
+	}
+	
+	// update the flag, it indicates the message has been updated
+	combine_msg_all->update=FALSE;
 }
 /*---------------------------------------------------------------*/
