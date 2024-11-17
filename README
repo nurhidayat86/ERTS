@@ -1,4 +1,4 @@
-Welcome to the in4073 software pack!
+# Welcome to the in4073 software pack!
 
 If you are on a 32bit system, everything !should! work out of the box.
 If not, you need to be able to run 32bit-compiled executables, like the arm-gcc version we provide.
